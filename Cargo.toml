@@ -12,5 +12,6 @@ structopt = "0.2"
 
 [workspace]
 members = [
-  "badge-maker"
+  "badge-maker",
+  "badge-web"
 ]
