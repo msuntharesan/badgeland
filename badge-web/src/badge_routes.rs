@@ -72,7 +72,7 @@ fn badge_handler(req: HttpRequest) -> HttpResponse {
 pub fn config(cfg: &mut web::ServiceConfig) {
   cfg.service(
     web::scope("/badge")
-      .service(web::resource("/{text}").route(web::get().to(badge_handler)))
+      .service(web::resource("/{subject}").route(web::get().to(badge_handler)))
       .service(web::resource("/{subject}/{text}").route(web::get().to(badge_handler)))
       .service(web::resource("/{subject}/{text}/{color}").route(web::get().to(badge_handler)))
       .service(
