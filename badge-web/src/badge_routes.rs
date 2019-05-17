@@ -5,8 +5,8 @@ use std::str;
 
 #[derive(Deserialize)]
 struct BadgeInfo {
-  text: String,
-  subject: Option<String>,
+  text: Option<String>,
+  subject: String,
   color: Option<String>,
   size: Option<BadgeSize>,
 }
@@ -32,9 +32,9 @@ fn badge_handler(req: HttpRequest) -> HttpResponse {
   let params = web::Path::<BadgeInfo>::extract(&req).unwrap();
   let query = web::Query::<QueryInfo>::extract(&req).unwrap();
 
-  let mut req_badge = Badge::new(&params.text);
-  if let Some(subject) = &params.subject {
-    req_badge.subject(&subject);
+  let mut req_badge = Badge::new(&params.subject);
+  if let Some(text) = &params.text {
+    req_badge.text(&text);
   }
   if let Some(c) = &params.color {
     req_badge.color(c);
