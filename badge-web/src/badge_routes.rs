@@ -8,7 +8,6 @@ struct BadgeInfo {
   text: Option<String>,
   subject: String,
   color: Option<String>,
-  size: Option<BadgeSize>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -24,8 +23,9 @@ enum BadgeSize {
 #[derive(Deserialize, Debug)]
 struct QueryInfo {
   icon: Option<String>,
-  color: Option<String>,
+  icon_color: Option<String>,
   style: Option<String>,
+  size: Option<BadgeSize>,
 }
 
 fn badge_handler(req: HttpRequest) -> HttpResponse {
@@ -34,7 +34,7 @@ fn badge_handler(req: HttpRequest) -> HttpResponse {
 
   let mut req_badge = Badge::new(&params.subject);
   if let Some(text) = &params.text {
-    req_badge.text(&text);
+    req_badge.text(text);
   }
   if let Some(c) = &params.color {
     req_badge.color(c);
@@ -46,7 +46,7 @@ fn badge_handler(req: HttpRequest) -> HttpResponse {
     }
     _ => {}
   }
-  match (&query.icon, &query.color) {
+  match (&query.icon, &query.icon_color) {
     (Some(i), Some(c)) => {
       req_badge.icon(i, Some(c));
     }
@@ -56,27 +56,22 @@ fn badge_handler(req: HttpRequest) -> HttpResponse {
     (_, _) => (),
   }
 
-  if let Some(bs) = &params.size {
+  if let Some(bs) = &query.size {
     req_badge.size(match bs {
       BadgeSize::Large => Size::Large,
       BadgeSize::Medium => Size::Medium,
       BadgeSize::Small => Size::Small,
     });
   }
-
   HttpResponse::Ok()
     .content_type("image/svg+xml")
-    .body(req_badge.to_svg())
+    .body(req_badge.to_string())
+    .into()
 }
 
 pub fn config(cfg: &mut web::ServiceConfig) {
-  cfg.service(
-    web::scope("/badge")
-      .service(web::resource("/{subject}").route(web::get().to(badge_handler)))
-      .service(web::resource("/{subject}/{text}").route(web::get().to(badge_handler)))
-      .service(web::resource("/{subject}/{text}/{color}").route(web::get().to(badge_handler)))
-      .service(
-        web::resource("/{subject}/{text}/{color}/{size}").route(web::get().to(badge_handler)),
-      ),
-  );
+  cfg
+    .route("/badge/{subject}", web::get().to(badge_handler))
+    .route("/badge/{subject}/{text}", web::get().to(badge_handler))
+    .route("/badge/{subject}/{text}/{color}", web::get().to(badge_handler));
 }
