@@ -1,8 +1,5 @@
 // #![feature(proc_macro_hygiene)]
 
-extern crate clap;
-extern crate structopt;
-
 use badge_maker::{icon_exists, Badge, Size, Styles};
 use clap::arg_enum;
 use std::{fs::File, io::prelude::*, num::ParseIntError, path::PathBuf, str::FromStr};
@@ -47,15 +44,9 @@ struct Opt {
   text: Option<String>,
   #[structopt(long)]
   subject: String,
-  #[structopt(
-    raw(possible_values = "&BadgeStyle::variants()", case_insensitive = "true"),
-    long
-  )]
+  #[structopt(raw(possible_values = "&BadgeStyle::variants()", case_insensitive = "true"), long)]
   style: Option<BadgeStyle>,
-  #[structopt(
-    raw(possible_values = "&IconSize::variants()", case_insensitive = "true"),
-    long
-  )]
+  #[structopt(raw(possible_values = "&IconSize::variants()", case_insensitive = "true"), long)]
   size: Option<IconSize>,
   #[structopt(long)]
   color: Option<String>,
@@ -65,10 +56,7 @@ struct Opt {
   icon_colour: Option<String>,
   #[structopt(long, parse(from_os_str))]
   out: Option<PathBuf>,
-  #[structopt(
-    long,
-    raw(takes_value = "true")
-  )]
+  #[structopt(long, raw(takes_value = "true"))]
   data: Option<SparkData>,
 }
 
@@ -110,12 +98,11 @@ fn main() {
       IconSize::Medium => Size::Medium,
       IconSize::Small => Size::Small,
     });
-  let badge = &badge.to_svg();
 
   if let Some(out_file) = opt.out {
     let mut file = File::create(&out_file).unwrap();
-    file.write_all(badge.as_bytes()).unwrap();
+    file.write_all(badge.to_string().as_bytes()).unwrap();
   } else {
-    println!("{}", badge.to_string());
+    println!("{}", badge);
   }
 }

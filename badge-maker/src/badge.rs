@@ -1,12 +1,7 @@
-extern crate maud;
-extern crate rusttype;
-extern crate unicode_normalization;
-
-
 use super::{get_color, icons::Icon};
 use maud::{html, PreEscaped};
 use rusttype::{point, Font, FontCollection, Scale};
-use std::borrow::Cow;
+use std::{borrow::Cow, fmt};
 use unicode_normalization::UnicodeNormalization;
 
 #[derive(Debug, PartialEq)]
@@ -25,7 +20,7 @@ pub enum Size {
 #[derive(Debug)]
 pub struct Badge<'a> {
   subject: &'a str,
-  text: Option<&'a str>,
+  text: Option<Cow<'a, str>>,
   color: Cow<'a, str>,
   style: Styles,
   icon: Option<Icon<'a>>,
@@ -36,9 +31,9 @@ pub struct Badge<'a> {
 impl<'a> Badge<'a> {
   pub fn new(subject: &'a str) -> Self {
     Badge {
+      subject,
       text: None,
       color: "#08C".into(),
-      subject: subject,
       style: Styles::Classic,
       icon: None,
       height: 20,
@@ -56,8 +51,11 @@ impl<'a> Badge<'a> {
     }
     self
   }
-  pub fn text(&mut self, text: &'a str) -> &mut Self {
-    self.text = Some(text);
+  pub fn text<S>(&mut self, text: S) -> &mut Self
+  where
+    S: Into<Cow<'a, str>>,
+  {
+    self.text = Some(text.into());
     self
   }
   pub fn style(&mut self, style: Styles) -> &mut Self {
@@ -90,7 +88,7 @@ impl<'a> Badge<'a> {
     self.data = Some(data);
     self
   }
-  pub fn to_svg(self: &Self) -> String {
+  fn to_svg(self: &Self) -> String {
     let font = get_font();
     let height = self.height;
     let font_size = (height as f32 * 0.65).ceil() as u32;
@@ -101,7 +99,7 @@ impl<'a> Badge<'a> {
       icon_width = icon.size;
     }
 
-    let subject = Content::with_text(self.subject, font_size, &font).unwrap();
+    let subject = Content::with_text(&self.subject, font_size, &font).unwrap();
     let subject_size = {
       let w = subject.width + icon_width;
       let x = (subject.width + padding) / 2 + icon_width;
@@ -173,7 +171,7 @@ impl<'a> Badge<'a> {
               {}
             rect#content
               fill=@match &content {
-                Some(c) if c.is_data => "transparent",
+                Some(c) if c.is_data => "#eee",
                 _ => (self.color)
               }
               height=(height)
@@ -238,6 +236,12 @@ impl<'a> Badge<'a> {
   }
 }
 
+impl<'a> fmt::Display for Badge<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{}", self.to_svg())
+  }
+}
+
 fn get_font() -> Font<'static> {
   let font_data: &[u8] = include_bytes!("../resx/Verdana.ttf");
   let font_col = FontCollection::from_bytes(font_data).expect("Error constructing Font");
@@ -265,13 +269,17 @@ impl Content {
     let first = data.first()?;
     d.push_str(&format!("M0 {}", chart_height - (s * (first - min) as f32)));
     for (i, p) in data.iter().enumerate() {
-      d.push_str(&format!("L{} {}", i as f32 * offset, chart_height - (s * (p - min) as f32)));
+      d.push_str(&format!(
+        "L{} {}",
+        i as f32 * offset,
+        chart_height - (s * (p - min) as f32)
+      ));
     }
     d.push_str(&format!("V{}", height));
     d.push_str(&format!("L0 {}Z", height));
     Some(Content {
       content: d,
-      width: width,
+      width,
       height: chart_height as u32,
       is_data: true,
     })
@@ -302,24 +310,24 @@ impl Content {
     };
     Some(Content {
       content: text.to_owned(),
-      width: width,
+      width,
       height: glyphs_height,
       is_data: false,
     })
   }
 }
 
-
 #[cfg(test)]
 mod tests {
   use super::{get_font, Badge, Content, Size, Styles};
   use scraper::{Html, Selector};
+  use std::borrow::Cow;
 
   const DEF_COLOUR: &str = "#08C";
   #[test]
   fn default_badge_has_classic_style() {
     let badge = Badge::new("just text");
-    let badge_svg = badge.to_svg();
+    let badge_svg = badge.to_string();
     let doc = Html::parse_fragment(&badge_svg);
     assert_eq!(badge.style, Styles::Classic, "style not Classic");
     let lg_selector = Selector::parse("linearGradient").unwrap();
@@ -328,7 +336,7 @@ mod tests {
   #[test]
   fn default_badge_has_20px_height() {
     let badge = Badge::new("just text");
-    let badge_svg = badge.to_svg();
+    let badge_svg = badge.to_string();
     let doc = Html::parse_fragment(&badge_svg);
     let selector = Selector::parse("svg").unwrap();
     let svg = doc.select(&selector).next().unwrap();
@@ -337,22 +345,19 @@ mod tests {
   #[test]
   fn default_badge_only_has_subject() {
     let badge = Badge::new("just subject");
-    let badge_svg = badge.to_svg();
+    let badge_svg = badge.to_string();
     let doc = Html::parse_fragment(&badge_svg);
     let text_sel = Selector::parse("g#text > text").unwrap();
     let text_els = doc.select(&text_sel);
     assert_eq!(text_els.count(), 1);
     let text = doc.select(&text_sel).next().unwrap();
-    assert_eq!(
-      text.text().collect::<String>(),
-      String::from("just subject")
-    );
+    assert_eq!(text.text().collect::<String>(), String::from("just subject"));
   }
   #[test]
   fn default_badge_has_333_as_background_colour() {
     let mut badge = Badge::new("just text");
     badge.color(DEF_COLOUR);
-    let badge_svg = badge.to_svg();
+    let badge_svg = badge.to_string();
     let doc = Html::parse_fragment(&badge_svg);
     let rect_sel = Selector::parse("g#bg > rect#subject").unwrap();
     let rect = doc.select(&rect_sel).next().unwrap();
@@ -363,21 +368,18 @@ mod tests {
   fn badge_with_text() {
     let mut badge = Badge::new("with subject");
     badge.text("badge text");
-    let doc = Html::parse_fragment(&badge.to_svg());
-    assert_eq!(badge.text, Some("badge text"));
+    let doc = Html::parse_fragment(&badge.to_string());
+    assert_eq!(badge.text, Some(Cow::Borrowed("badge text")));
     let subject_sel = Selector::parse("g#text > text:last-child").unwrap();
     let subject = doc.select(&subject_sel).next().unwrap();
-    assert_eq!(
-      subject.text().collect::<String>(),
-      String::from("badge text")
-    );
+    assert_eq!(subject.text().collect::<String>(), String::from("badge text"));
   }
 
   #[test]
   fn badge_with_icon() {
     let mut badge = Badge::new("with icon");
     badge.icon("git", None);
-    let doc = Html::parse_fragment(&badge.to_svg());
+    let doc = Html::parse_fragment(&badge.to_string());
     assert!(badge.icon.is_some());
     let icon_sel = Selector::parse("symbol").unwrap();
     let icon_symbol = doc.select(&icon_sel).next().unwrap();
@@ -387,7 +389,7 @@ mod tests {
   fn badge_has_medium_icon() {
     let mut badge = Badge::new("with icon");
     badge.size(Size::Medium);
-    let doc = Html::parse_fragment(&badge.to_svg());
+    let doc = Html::parse_fragment(&badge.to_string());
     let svg_sel = Selector::parse("svg").unwrap();
     let svg = doc.select(&svg_sel).next().unwrap();
     assert_eq!(svg.value().attr("height"), Some("30"));
@@ -396,7 +398,7 @@ mod tests {
   fn badge_has_large_icon() {
     let mut badge = Badge::new("with icon");
     badge.size(Size::Large);
-    let doc = Html::parse_fragment(&badge.to_svg());
+    let doc = Html::parse_fragment(&badge.to_string());
     let svg_sel = Selector::parse("svg").unwrap();
     let svg = doc.select(&svg_sel).next().unwrap();
     assert_eq!(svg.value().attr("height"), Some("40"));
@@ -407,10 +409,10 @@ mod tests {
     let mut badge = Badge::new("Some data");
     badge.data(vec![1, 2, 3, 4, 5]);
 
-    let doc = Html::parse_fragment(&badge.to_svg());
-    let line_sel = Selector::parse("polyline").unwrap();
+    let doc = Html::parse_fragment(&badge.to_string());
+    let line_sel = Selector::parse("path").unwrap();
     let svg = doc.select(&line_sel).next().unwrap();
-    assert!(svg.value().attr("points").is_some());
+    assert!(svg.value().attr("d").is_some());
   }
   #[test]
   fn content_text_has_width() {

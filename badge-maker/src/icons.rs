@@ -1,5 +1,3 @@
-extern crate scraper;
-
 use super::get_color;
 use lazy_static::*;
 use scraper::{Html, Selector};
@@ -38,13 +36,12 @@ pub struct Icon<'a> {
 impl<'a> Icon<'a> {
   pub fn new(name: &'a str) -> Option<Self> {
     if let Some(icon) = SYMBOLS.get(name) {
-      let icon = Icon {
+      Some(Icon {
+        name,
         color: get_color(DEFAULT_COLOUR).unwrap().into(),
-        name: name,
         size: 13,
         symbol: icon.as_str(),
-      };
-      Some(icon)
+      })
     } else {
       None
     }
