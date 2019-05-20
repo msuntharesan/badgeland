@@ -1,12 +1,14 @@
 #![feature(rustc_private)]
 #[macro_use]
 extern crate actix_web;
-extern crate serde_derive;
 
 mod badge_routes;
+mod services;
 
 use actix_files as fs;
 use actix_web::{middleware, App, HttpServer, Result};
+use dotenv::dotenv;
+use env_logger::Env;
 use listenfd::ListenFd;
 use std::io;
 
@@ -16,15 +18,21 @@ pub fn index() -> Result<fs::NamedFile> {
 }
 
 fn main() -> io::Result<()> {
+  dotenv().ok();
+  let env = Env::new().filter("LOG_LEVEL");
+  env_logger::init_from_env(env);
+
   let mut listenfd = ListenFd::from_env();
 
   let sys = actix_rt::System::new("badge");
 
   let mut server = HttpServer::new(move || {
     App::new()
+      .wrap(middleware::Logger::default())
       .wrap(middleware::NormalizePath)
       .service(index)
       .configure(badge_routes::config)
+      .configure(services::npm::config)
       .service(fs::Files::new("/static", "static/"))
   });
 
@@ -33,7 +41,6 @@ fn main() -> io::Result<()> {
   } else {
     server.bind("127.0.0.1:3000").unwrap()
   };
-
   server.start();
   sys.run()
 }
