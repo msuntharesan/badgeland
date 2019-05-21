@@ -25,7 +25,7 @@ pub struct Badge<'a> {
   style: Styles,
   icon: Option<Icon<'a>>,
   height: u32,
-  data: Option<Vec<i32>>,
+  data: Option<Vec<i64>>,
 }
 
 impl<'a> Badge<'a> {
@@ -84,7 +84,7 @@ impl<'a> Badge<'a> {
     }
     self
   }
-  pub fn data(&mut self, data: Vec<i32>) -> &mut Self {
+  pub fn data(&mut self, data: Vec<i64>) -> &mut Self {
     self.data = Some(data);
     self
   }
@@ -256,7 +256,7 @@ struct Content {
   is_data: bool,
 }
 impl Content {
-  fn with_data(data: &Vec<i32>, height: u32) -> Option<Self> {
+  fn with_data(data: &Vec<i64>, height: u32) -> Option<Self> {
     let width = height * 5;
     let chart_height = (height - 2) as f32;
     let max = data.iter().max()?;
