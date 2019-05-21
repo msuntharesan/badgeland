@@ -1,3 +1,3 @@
 pub mod npm;
 
-mod utils;
+pub mod utils;

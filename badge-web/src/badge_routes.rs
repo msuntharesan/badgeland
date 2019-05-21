@@ -1,3 +1,4 @@
+use super::services::utils::badge_query::{BadgeSize, QueryInfo};
 use actix_web::{web, FromRequest, HttpRequest, HttpResponse};
 use badge_maker::{Badge, Size, Styles};
 use serde_derive::Deserialize;
@@ -8,24 +9,6 @@ struct BadgeInfo {
   text: Option<String>,
   subject: String,
   color: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-enum BadgeSize {
-  #[serde(alias = "large")]
-  Large,
-  #[serde(alias = "medium")]
-  Medium,
-  #[serde(alias = "small")]
-  Small,
-}
-
-#[derive(Deserialize, Debug)]
-struct QueryInfo {
-  icon: Option<String>,
-  icon_color: Option<String>,
-  style: Option<String>,
-  size: Option<BadgeSize>,
 }
 
 fn badge_handler(req: HttpRequest) -> HttpResponse {
