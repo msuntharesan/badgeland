@@ -22,14 +22,14 @@ arg_enum! {
 }
 
 #[derive(Debug)]
-struct SparkData(Vec<i32>);
+struct SparkData(Vec<i64>);
 
 impl FromStr for SparkData {
   type Err = ParseIntError;
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     let values = s
       .split(",")
-      .filter_map(|s| s.parse::<i32>().ok())
+      .filter_map(|s| s.parse::<i64>().ok())
       // .filter (|x| x.is_ok())
       // .map(|x| x.unwrap())
       .collect::<Vec<_>>();
@@ -44,9 +44,15 @@ struct Opt {
   text: Option<String>,
   #[structopt(long)]
   subject: String,
-  #[structopt(raw(possible_values = "&BadgeStyle::variants()", case_insensitive = "true"), long)]
+  #[structopt(
+    raw(possible_values = "&BadgeStyle::variants()", case_insensitive = "true"),
+    long
+  )]
   style: Option<BadgeStyle>,
-  #[structopt(raw(possible_values = "&IconSize::variants()", case_insensitive = "true"), long)]
+  #[structopt(
+    raw(possible_values = "&IconSize::variants()", case_insensitive = "true"),
+    long
+  )]
   size: Option<IconSize>,
   #[structopt(long)]
   color: Option<String>,

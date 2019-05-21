@@ -19,7 +19,7 @@ pub enum Size {
 
 #[derive(Debug)]
 pub struct Badge<'a> {
-  subject: &'a str,
+  subject: Cow<'a, str>,
   text: Option<Cow<'a, str>>,
   color: Cow<'a, str>,
   style: Styles,
@@ -29,9 +29,12 @@ pub struct Badge<'a> {
 }
 
 impl<'a> Badge<'a> {
-  pub fn new(subject: &'a str) -> Self {
+  pub fn new<S>(subject: S) -> Self
+  where
+    S: Into<Cow<'a, str>>,
+  {
     Badge {
-      subject,
+      subject: subject.into(),
       text: None,
       color: "#08C".into(),
       style: Styles::Classic,
@@ -351,7 +354,10 @@ mod tests {
     let text_els = doc.select(&text_sel);
     assert_eq!(text_els.count(), 1);
     let text = doc.select(&text_sel).next().unwrap();
-    assert_eq!(text.text().collect::<String>(), String::from("just subject"));
+    assert_eq!(
+      text.text().collect::<String>(),
+      String::from("just subject")
+    );
   }
   #[test]
   fn default_badge_has_333_as_background_colour() {
@@ -372,7 +378,10 @@ mod tests {
     assert_eq!(badge.text, Some(Cow::Borrowed("badge text")));
     let subject_sel = Selector::parse("g#text > text:last-child").unwrap();
     let subject = doc.select(&subject_sel).next().unwrap();
-    assert_eq!(subject.text().collect::<String>(), String::from("badge text"));
+    assert_eq!(
+      subject.text().collect::<String>(),
+      String::from("badge text")
+    );
   }
 
   #[test]
