@@ -28,15 +28,17 @@ impl fmt::Display for ReqErr {
 
 impl ResponseError for ReqErr {
   fn error_response(&self) -> HttpResponse {
-    HttpResponse::new(self.status)
+    HttpResponse::new(self.status).set_body(dev::Body::from(self.reason.to_owned()))
   }
 
-  fn render_response(&self) -> HttpResponse {
-    let mut resp = self.error_response();
-    resp.headers_mut().insert(
-      http::header::CONTENT_TYPE,
-      http::header::HeaderValue::from_static("image/svg+xml"),
-    );
-    resp
-  }
+  // fn render_response(&self) -> HttpResponse {
+  //   let mut resp = self.error_response();
+  //   resp.headers_mut().insert(
+  //     http::header::CONTENT_TYPE,
+  //     http::header::HeaderValue::from_static("text/plain"),
+  //   );
+  //   resp
+  // }
 }
+
+pub mod humanize;
