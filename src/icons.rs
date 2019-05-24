@@ -21,26 +21,32 @@ lazy_static! {
     symbols
   };
 }
-
+fn get_symbol(name:&str)->Option<String>{
+  match SYMBOLS.get(name) {
+    Some(s) => Some(s.to_owned()),
+    None => None
+  }
+}
 pub fn icon_exists(icon_name: &str) -> bool {
   SYMBOLS.contains_key(icon_name)
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Icon<'a> {
-  pub name: &'a str,
+  pub name: Cow<'a, str>,
   pub size: u32,
   pub color: Cow<'a, str>,
-  pub symbol: &'a str,
+  pub symbol: Cow<'a, str>,
 }
 impl<'a> Icon<'a> {
-  pub fn new(name: &'a str) -> Option<Self> {
-    if let Some(icon) = SYMBOLS.get(name) {
+  pub fn new<S>(name: S) -> Option<Self> where S:Into<Cow<'a, str>>{
+    let name = name.into();
+    if let Some(icon) = get_symbol(&name) {
       Some(Icon {
         name,
         color: get_color(DEFAULT_COLOUR).unwrap().into(),
         size: 13,
-        symbol: icon.as_str(),
+        symbol: icon.into(),
       })
     } else {
       None

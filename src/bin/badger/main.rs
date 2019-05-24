@@ -1,6 +1,4 @@
-// #![feature(proc_macro_hygiene)]
-
-use badge_maker::{icon_exists, Badge, Size, Styles};
+use badger::{icon_exists, Badge, Size, Styles};
 use clap::arg_enum;
 use std::{fs::File, io::prelude::*, num::ParseIntError, path::PathBuf, str::FromStr};
 use structopt::StructOpt;
@@ -30,8 +28,6 @@ impl FromStr for SparkData {
     let values = s
       .split(",")
       .filter_map(|s| s.parse::<i64>().ok())
-      // .filter (|x| x.is_ok())
-      // .map(|x| x.unwrap())
       .collect::<Vec<_>>();
     Ok(SparkData(values))
   }

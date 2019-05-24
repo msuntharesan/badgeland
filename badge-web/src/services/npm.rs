@@ -4,7 +4,7 @@ use super::utils::{
   ReqErr,
 };
 use actix_web::{http, web, Error as ActixError, FromRequest, HttpRequest, HttpResponse};
-use badge_maker::{Badge, Size, Styles};
+use badger::{Badge, Size, Styles};
 use reqwest;
 use serde_derive::Deserialize;
 use serde_json::Value;
@@ -141,7 +141,8 @@ fn npm_v_handler(
           None => "npm".to_string(),
         };
 
-        let badge = create_badge(&subject, version, &query);
+        let version = format!("v{}", version);
+        let badge = create_badge(&subject, &version, &query);
         let svg = badge.to_string();
 
         Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
@@ -298,7 +299,8 @@ pub fn config(cfg: &mut web::ServiceConfig) {
         .route("dl/{period}", web::get().to(npm_dl_numbers))
         .route("hist/{period}", web::get().to(npm_historical_chart))
         .route("/{tag}", web::get().to_async(npm_v_handler))
-        .route("/", web::get().to_async(npm_v_handler)),
+        .route("/", web::get().to_async(npm_v_handler))
+        .route("", web::get().to_async(npm_v_handler)),
     )
     .service(
       web::scope("/npm/{package}")
@@ -306,6 +308,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
         .route("dl/{period}", web::get().to(npm_dl_numbers))
         .route("hist/{period}", web::get().to(npm_historical_chart))
         .route("/{tag}", web::get().to_async(npm_v_handler))
-        .route("/", web::get().to_async(npm_v_handler)),
+        .route("/", web::get().to_async(npm_v_handler))
+        .route("", web::get().to_async(npm_v_handler)),
     );
 }

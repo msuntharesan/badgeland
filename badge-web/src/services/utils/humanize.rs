@@ -1,76 +1,68 @@
 #[derive(Debug)]
-  pub struct HumanizeOptions {
-    base: usize,
-    precision: usize,
-    decimal_separator: &'static str,
-    // decimal_zeroes: usize,
-    lower_case: bool,
-    space: bool,
-    units: Vec<&'static str>,
-  }
+pub struct HumanizeOptions {
+  base: usize,
+  precision: usize,
+  decimal_separator: &'static str,
+  // decimal_zeroes: usize,
+  lower_case: bool,
+  space: bool,
+  units: Vec<&'static str>,
+}
 
-  impl Default for HumanizeOptions {
-    fn default() -> Self {
-      HumanizeOptions {
-        base: 1000,
-        precision: 2,
-        decimal_separator: ".",
-        // decimal_zeroes: 0,
-        lower_case: false,
-        space: false,
-        units: vec!["", "K", "M", "B", "T", "P", "E"],
-      }
+impl Default for HumanizeOptions {
+  fn default() -> Self {
+    HumanizeOptions {
+      base: 1000,
+      precision: 2,
+      decimal_separator: ".",
+      // decimal_zeroes: 0,
+      lower_case: false,
+      space: false,
+      units: vec!["", "K", "M", "B", "T", "P", "E"],
     }
   }
-
-
-  impl AsRef<HumanizeOptions> for HumanizeOptions {
-    fn as_ref(&self) -> &HumanizeOptions {
-      self
-    }
+}
+impl AsRef<HumanizeOptions> for HumanizeOptions {
+  fn as_ref(&self) -> &HumanizeOptions {
+    self
   }
-
-
-  pub fn humanize_options() -> HumanizeOptions {
+}
+pub fn humanize_options() -> HumanizeOptions {
+  HumanizeOptions::default()
+}
+impl HumanizeOptions {
+  pub fn new() -> Self {
     HumanizeOptions::default()
   }
-
-  impl HumanizeOptions {
-    pub fn new() -> Self {
-      HumanizeOptions::default()
-    }
-    pub fn set_base(&mut self, base: usize) -> &mut Self {
-      self.base = base;
-      self
-    }
-    pub fn set_precision(&mut self, precision: usize) -> &mut Self {
-      self.precision = precision;
-      self
-    }
-    pub fn set_decimal_separator(&mut self, decimal_separator: &'static str) -> &mut Self {
-      self.decimal_separator = decimal_separator;
-      self
-    }
-    pub fn set_lowercase(&mut self, lower_case: bool) -> &mut Self {
-      self.lower_case = lower_case;
-      self
-    }
-    pub fn set_space(&mut self, space: bool) -> &mut Self {
-      self.space = space;
-      self
-    }
-    pub fn set_units(&mut self, units: Vec<&'static str>) -> &mut Self {
-      self.units = units;
-      self
-    }
+  pub fn set_base(&mut self, base: usize) -> &mut Self {
+    self.base = base;
+    self
   }
-
-  pub trait Humanize {
-    fn humanize<T: AsRef<HumanizeOptions>>(&self, opts: T) -> Option<String>;
+  pub fn set_precision(&mut self, precision: usize) -> &mut Self {
+    self.precision = precision;
+    self
   }
-
-
-  macro_rules! impl_humanize_u {
+  pub fn set_decimal_separator(&mut self, decimal_separator: &'static str) -> &mut Self {
+    self.decimal_separator = decimal_separator;
+    self
+  }
+  pub fn set_lowercase(&mut self, lower_case: bool) -> &mut Self {
+    self.lower_case = lower_case;
+    self
+  }
+  pub fn set_space(&mut self, space: bool) -> &mut Self {
+    self.space = space;
+    self
+  }
+  pub fn set_units(&mut self, units: Vec<&'static str>) -> &mut Self {
+    self.units = units;
+    self
+  }
+}
+pub trait Humanize {
+  fn humanize<T: AsRef<HumanizeOptions>>(&self, opts: T) -> Option<String>;
+}
+macro_rules! impl_humanize_u {
   (for $($t: ty)*) => ($(
     impl Humanize for $t {
       fn humanize<T: AsRef<HumanizeOptions>>(&self, _opts: T) -> Option<String>{
@@ -101,7 +93,7 @@
   )*)
 }
 
-  macro_rules! impl_humanize_i {
+macro_rules! impl_humanize_i {
   (for $($t: ty)*) => ($(
     impl Humanize for $t {
       fn humanize <T: AsRef<HumanizeOptions>>(&self, _opts: T) -> Option<String>{
@@ -113,7 +105,7 @@
   )*)
 }
 
-  macro_rules! impl_humanize_f {
+macro_rules! impl_humanize_f {
   (for $($t: ty)*) => ($(
     impl Humanize for $t {
       fn humanize <T: AsRef<HumanizeOptions>>(&self, _opts: T) -> Option<String>{
@@ -125,9 +117,9 @@
   )*)
 }
 
-  impl_humanize_u!(for usize u8 u16 u32 u64);
-  impl_humanize_i!(for isize i8 i16 i32 i64);
-  impl_humanize_f!(for f32 f64);
+impl_humanize_u!(for usize u8 u16 u32 u64);
+impl_humanize_i!(for isize i8 i16 i32 i64);
+impl_humanize_f!(for f32 f64);
 
 #[cfg(test)]
 mod tests {
