@@ -1,6 +1,6 @@
 use super::services::utils::badge_query::{BadgeSize, QueryInfo};
 use actix_web::{web, FromRequest, HttpRequest, HttpResponse};
-use badge_maker::{Badge, Size, Styles};
+use badger::{Badge, Size, Styles};
 use serde_derive::Deserialize;
 use std::str;
 

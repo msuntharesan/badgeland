@@ -157,7 +157,7 @@ impl<'a> Badge<'a> {
               feDropShadow dx="-1" dy="-1" stdDeviation="0" flood-color="#000" flood-opacity="0.5" {}
             }
             @if let Some(icon) = &self.icon {
-              (PreEscaped(icon.symbol))
+              (PreEscaped(icon.symbol.to_owned()))
             }
           }
           g#bg mask=@if self.style == Styles::Classic { "url(#m)" } {
