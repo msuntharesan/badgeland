@@ -20,9 +20,6 @@ unicode-normalization = "0.1"
 clap = "2.33"
 structopt = "0.2"
 
-[dev-dependencies]
-speculate = "0.1"
-
 [workspace]
 members = [
   "badge-web"

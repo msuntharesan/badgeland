@@ -134,23 +134,23 @@ fn npm_v_handler(
   let params = web::Path::<NPMVersion>::extract(&req).unwrap();
   let path = unpkg_path(&params);
   npm_get(&client, &path, "version")
-    .and_then(|j: Value| match j.as_str() {
-      Some(version) => {
-        let subject = match &params.tag {
-          Some(t) => format!("npm@{}", t),
-          None => "npm".to_string(),
-        };
-
-        let version = format!("v{}", version);
-        let badge = create_badge(&subject, &version, &query);
-        let svg = badge.to_string();
-
-        Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
-      }
-      None => Err(ReqErr::new(
+    .and_then(|j: Value| {
+      j.as_str().map(String::from).ok_or(ReqErr::new(
         reqwest::StatusCode::INTERNAL_SERVER_ERROR,
         "Cannot find property".to_string(),
-      )),
+      ))
+    })
+    .and_then(|version: String| {
+      let subject = match &params.tag {
+        Some(t) => format!("npm@{}", t),
+        None => "npm".to_string(),
+      };
+
+      let version = format!("v{}", version);
+      let badge = create_badge(&subject, &version, &query);
+      let svg = badge.to_string();
+
+      Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
     .map_err(ActixError::from)
 }
@@ -163,16 +163,16 @@ fn npm_license_handler(
   let params = web::Path::<NPMVersion>::extract(&req).unwrap();
   let path = unpkg_path(&params);
   npm_get(&client, &path, "version")
-    .and_then(|j: Value| match j.as_str() {
-      Some(license) => {
-        let badge = create_badge("license", license, &query);
-        let svg = badge.to_string();
-        Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
-      }
-      None => Err(ReqErr::new(
+    .and_then(|j: Value| {
+      j.as_str().map(String::from).ok_or(ReqErr::new(
         reqwest::StatusCode::INTERNAL_SERVER_ERROR,
         "Cannot find property".to_string(),
-      )),
+      ))
+    })
+    .and_then(|license: String| {
+      let badge = create_badge("license", &license, &query);
+      let svg = badge.to_string();
+      Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
     .map_err(ActixError::from)
 }
@@ -216,7 +216,13 @@ fn npm_dl_numbers(
   let params = web::Path::<NPMVersion>::extract(&req).unwrap();
   let path = npm_dl_path(&params, false);
   npm_get(&client, &path, "downloads")
-    .and_then(|downloads| {
+    .and_then(|downloads: Value| {
+      downloads.as_f64().ok_or(ReqErr::new(
+        reqwest::StatusCode::INTERNAL_SERVER_ERROR,
+        format!("Failed to parse {:?}", downloads),
+      ))
+    })
+    .and_then(|v: f64| {
       let mut badge = Badge::new("Downloads");
       let suffix = match &params.period {
         Some(Period::Daily) => "/d",
@@ -225,19 +231,8 @@ fn npm_dl_numbers(
         Some(Period::Yearly) => "/y",
         _ => "",
       };
-      match downloads.as_f64() {
-        Some(v) => {
-          let text = format!("{}{}", v.humanize(&opts).unwrap(), suffix);
-          badge.text(text);
-        }
-        None => {
-          return Err(ReqErr::new(
-            reqwest::StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to parse {:?}", downloads),
-          ));
-        }
-      };
-
+      let text = format!("{}{}", v.humanize(&opts).unwrap(), suffix);
+      badge.text(text);
       badge.color("8254ed");
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
@@ -255,39 +250,32 @@ fn npm_historical_chart(
   let params = web::Path::<NPMVersion>::extract(&req).unwrap();
   let path = npm_dl_path(&params, true);
   npm_get(&client, &path, "downloads")
-    .and_then(|downloads: Value| {
-      let map: Result<Vec<i64>, ReqErr> = downloads
-        .as_array()
-        .ok_or(ReqErr::new(
-          reqwest::StatusCode::INTERNAL_SERVER_ERROR,
-          format!("Failed to parse {:?}", downloads),
-        ))
-        .and_then(|ds: &Vec<Value>| -> Result<Vec<i64>, ReqErr> {
-          ds.iter()
-            .map(|d: &Value| -> Result<i64, ReqErr> {
-              match d.get("downloads") {
-                Some(d) if d.is_i64() => Ok(d.as_i64().unwrap()),
-                _ => Err(ReqErr::new(
-                  reqwest::StatusCode::INTERNAL_SERVER_ERROR,
-                  format!("Failed to parse {:?}", downloads),
-                )),
-              }
-            })
-            .collect::<Result<Vec<i64>, ReqErr>>()
-        });
+    .and_then(|downloads: Value| -> Result<Vec<Value>, ReqErr> {
+      downloads.as_array().cloned().ok_or(ReqErr::new(
+        reqwest::StatusCode::INTERNAL_SERVER_ERROR,
+        format!("Failed to parse {:?}", &downloads),
+      ))
+    })
+    .and_then(|ds: Vec<Value>| -> Result<Vec<i64>, ReqErr> {
+      ds.iter()
+        .map(|d: &Value| -> Result<i64, ReqErr> {
+          d.get("downloads")
+            .and_then(|d: &Value| d.as_i64())
+            .ok_or(ReqErr::new(
+              reqwest::StatusCode::INTERNAL_SERVER_ERROR,
+              format!("Failed to parse {:?}", d),
+            ))
+        })
+        .collect::<Result<Vec<i64>, ReqErr>>()
+    })
+    .and_then(|map: Vec<i64>| {
       let mut badge = Badge::new("Downloads");
-      match &map {
-        Ok(v) => {
-          badge.data(v.clone());
-        }
-        _ => {}
-      };
+      badge.data(map);
       badge.color("8254ed");
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
     .map_err(ActixError::from)
-
 }
 
 pub fn config(cfg: &mut web::ServiceConfig) {

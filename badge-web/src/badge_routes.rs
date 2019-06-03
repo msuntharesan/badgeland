@@ -49,7 +49,6 @@ fn badge_handler(req: HttpRequest) -> HttpResponse {
   HttpResponse::Ok()
     .content_type("image/svg+xml")
     .body(req_badge.to_string())
-    .into()
 }
 
 pub fn config(cfg: &mut web::ServiceConfig) {

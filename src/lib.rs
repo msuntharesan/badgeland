@@ -20,6 +20,7 @@ pub(self) fn get_color(color: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+
   use super::get_color;
 
   #[test]
@@ -34,7 +35,7 @@ mod tests {
   }
   #[test]
   fn get_color_fails() {
-    let c =get_color("nonexistant");
+    let c = get_color("nonexistant");
     assert!(c.is_none());
   }
 }

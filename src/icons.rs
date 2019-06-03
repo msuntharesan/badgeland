@@ -21,10 +21,10 @@ lazy_static! {
     symbols
   };
 }
-fn get_symbol(name:&str)->Option<String>{
+fn get_symbol(name: &str) -> Option<String> {
   match SYMBOLS.get(name) {
     Some(s) => Some(s.to_owned()),
-    None => None
+    None => None,
   }
 }
 pub fn icon_exists(icon_name: &str) -> bool {
@@ -39,7 +39,10 @@ pub struct Icon<'a> {
   pub symbol: Cow<'a, str>,
 }
 impl<'a> Icon<'a> {
-  pub fn new<S>(name: S) -> Option<Self> where S:Into<Cow<'a, str>>{
+  pub fn new<S>(name: S) -> Option<Self>
+  where
+    S: Into<Cow<'a, str>>,
+  {
     let name = name.into();
     if let Some(icon) = get_symbol(&name) {
       Some(Icon {
