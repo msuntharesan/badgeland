@@ -133,18 +133,27 @@ mod tests {
     assert_eq!(1000000.humanize(&opt), Some("1M".to_owned()));
     assert_eq!(1000000000.humanize(&opt), Some("1B".to_owned()));
     assert_eq!(1000000000000u64.humanize(&opt), Some("1T".to_owned()));
-    assert_eq!(12345.678.humanize(&opt), Some("12.35K".to_owned()))
   }
   #[test]
   fn test_isize() {
     let opt = HumanizeOptions::default();
     assert_eq!((-100).humanize(&opt), Some("-100".to_string()));
-    assert_eq!((-100).humanize(&opt), Some("-100".to_owned()));
+    assert_eq!((100).humanize(&opt), Some("100".to_owned()));
     assert_eq!((-1000).humanize(&opt), Some("-1K".to_owned()));
     assert_eq!((-1000000).humanize(&opt), Some("-1M".to_owned()));
     assert_eq!((-1000000000).humanize(&opt), Some("-1B".to_owned()));
     assert_eq!((-1000000000000i64).humanize(&opt), Some("-1T".to_owned()));
-    assert_eq!((-12345.678).humanize(&opt), Some("-12.35K".to_owned()))
+  }
+  #[test]
+  fn test_floats() {
+    let opt = HumanizeOptions::default();
+    assert_eq!((-100f32).humanize(&opt), Some("-100".to_string()));
+    assert_eq!((100f32).humanize(&opt), Some("100".to_owned()));
+    assert_eq!((-1000f32).humanize(&opt), Some("-1K".to_owned()));
+    assert_eq!((-1000000f32).humanize(&opt), Some("-1M".to_owned()));
+    assert_eq!((-1000000000f32).humanize(&opt), Some("-1B".to_owned()));
+    assert_eq!((-1000000000000f64).humanize(&opt), Some("-1T".to_owned()));
+    assert_eq!((-12345.678f32).humanize(&opt), Some("-12.35K".to_owned()))
   }
   #[test]
   fn test_lowercase_suffix() {
