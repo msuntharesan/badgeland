@@ -9,7 +9,7 @@ publish = false
 name = "badger"
 
 [dependencies]
-cssparser = "0.25.5"
+cssparser = "0.25"
 hashbrown = "0.3"
 lazy_static = "1.3"
 maud = "0.20"
