@@ -1,6 +1,6 @@
 use actix_web::*;
 use reqwest;
-use std::fmt;
+use std::{error::Error, fmt, str};
 
 pub struct ReqErr {
   status: reqwest::StatusCode,
@@ -25,10 +25,21 @@ impl fmt::Display for ReqErr {
   }
 }
 
-
 impl ResponseError for ReqErr {
   fn error_response(&self) -> HttpResponse {
     HttpResponse::new(self.status).set_body(dev::Body::from(self.reason.to_owned()))
+  }
+}
+
+impl From<reqwest::Error> for ReqErr {
+  fn from(err: reqwest::Error) -> Self {
+    match err.status() {
+      Some(s) => ReqErr::new(s, err.description().to_owned()),
+      _ => ReqErr::new(
+        reqwest::StatusCode::INTERNAL_SERVER_ERROR,
+        err.description().to_owned(),
+      ),
+    }
   }
 }
 
