@@ -4,6 +4,7 @@ extern crate actix_web;
 
 mod badge_routes;
 mod services;
+mod utils;
 
 use actix_files as fs;
 use actix_web::{middleware, App, HttpServer, Result};
@@ -39,7 +40,9 @@ fn main() -> io::Result<()> {
   server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
     server.listen(l).unwrap()
   } else {
-    server.bind("127.0.0.1:3000").unwrap()
+    let addr = "127.0.0.1:3000";
+    println!("Listening on {}", addr);
+    server.bind(addr).unwrap()
   };
   server.start();
   sys.run()

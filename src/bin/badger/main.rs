@@ -1,4 +1,4 @@
-use badger::{icon_exists, Badge, Size, Styles};
+use badger::{icon_exists, Badge, IconBuilder, Size, Styles};
 use clap::arg_enum;
 use std::{fs::File, io::prelude::*, num::ParseIntError, path::PathBuf, str::FromStr};
 use structopt::StructOpt;
@@ -40,15 +40,9 @@ struct Opt {
   text: Option<String>,
   #[structopt(long)]
   subject: String,
-  #[structopt(
-    raw(possible_values = "&BadgeStyle::variants()", case_insensitive = "true"),
-    long
-  )]
+  #[structopt(possible_values = &BadgeStyle::variants(), case_insensitive = true, long)]
   style: Option<BadgeStyle>,
-  #[structopt(
-    raw(possible_values = "&IconSize::variants()", case_insensitive = "true"),
-    long
-  )]
+  #[structopt(possible_values = &IconSize::variants(), case_insensitive = true, long)]
   size: Option<IconSize>,
   #[structopt(long)]
   color: Option<String>,
@@ -58,7 +52,7 @@ struct Opt {
   icon_colour: Option<String>,
   #[structopt(long, parse(from_os_str))]
   out: Option<PathBuf>,
-  #[structopt(long, raw(takes_value = "true"))]
+  #[structopt(long, takes_value = true)]
   data: Option<SparkData>,
 }
 
@@ -71,21 +65,45 @@ fn main() {
     }
   }
   let mut badge = Badge::new(&opt.subject);
+
   if let Some(col) = opt.color {
     badge.color(col);
   }
   if let Some(t) = opt.text.as_ref() {
     badge.text(t);
   }
-  match (opt.icon.as_ref(), opt.icon_colour.as_ref()) {
-    (Some(icon), Some(color)) => {
-      badge.icon(icon, Some(color));
+  if let Some(icon) = opt.icon.as_ref() {
+    let mut i = IconBuilder::new(icon);
+    if let Some(ic) = opt.icon_colour.as_ref() {
+      i.set_color(ic);
     }
-    (Some(icon), None) => {
-      badge.icon(icon, None);
-    }
-    _ => {}
+    badge.icon(i.build());
   }
+  // let icon = match(opt.icon.as_ref(), opt.icon_colour.as_ref()){
+  // (Some(i),Some(ic))=>Some(Icon::new(i).unwrap().color(ic).create()),
+  // (Some(i), _)=>Icon::new(i).unwrap().create(),
+  // _=> None
+  // };
+  // let icon = if let Some(icon) = opt.icon.as_ref() {
+  //   Icon::new(icon)
+  // } else {
+  //   None
+  // };
+  // if let (Some(mut icon), Some(color))  = (icon, opt.icon_colour.as_ref()) {
+  //   icon.color(color);
+  // }
+
+  // badge.icon(icon);
+
+  // match (opt.icon.as_ref(), opt.icon_colour.as_ref()) {
+  //   (Some(icon), Some(color)) => {
+  //     Icon::new(icon).color(color);
+  //   }
+  //   (Some(icon), None) => {
+  //     Icon::new(icon);
+  //   }
+  //   _ => None
+  // };
   if let Some(d) = &opt.data {
     badge.data(d.0.to_owned());
   }

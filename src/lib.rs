@@ -5,7 +5,7 @@ mod icons;
 
 pub use badge::{Badge, Size, Styles};
 use cssparser::{parse_color_keyword, Color, ToCss};
-pub use icons::icon_exists;
+pub use icons::{Icon, IconBuilder, icon_exists};
 
 pub(self) fn get_color(color: &str) -> Option<String> {
   match (

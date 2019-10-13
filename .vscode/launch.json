@@ -1,0 +1,138 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'badge-web'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=badge-web",
+          "--package=badge-web"
+        ],
+        "filter": {
+          "name": "badge-web",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'badge-web'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=badge-web",
+          "--package=badge-web"
+        ],
+        "filter": {
+          "name": "badge-web",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'badger'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=badger"
+        ],
+        "filter": {
+          "name": "badger",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'badger'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=badger",
+          "--package=badger"
+        ],
+        "filter": {
+          "name": "badger",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'badger'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=badger",
+          "--package=badger"
+        ],
+        "filter": {
+          "name": "badger",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug example 'badge_default'",
+      "cargo": {
+        "args": [
+          "build",
+          "--example=badge_default",
+          "--package=badger"
+        ],
+        "filter": {
+          "name": "badge_default",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in example 'badge_default'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--example=badge_default",
+          "--package=badger"
+        ],
+        "filter": {
+          "name": "badge_default",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

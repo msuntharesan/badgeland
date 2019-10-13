@@ -1,6 +1,6 @@
-use super::services::utils::badge_query::{BadgeSize, QueryInfo};
+use super::utils::badge_query::{BadgeSize, QueryInfo};
 use actix_web::{web, FromRequest, HttpRequest, HttpResponse};
-use badger::{Badge, Size, Styles};
+use badger::{Badge, IconBuilder, Size, Styles};
 use serde_derive::Deserialize;
 use std::str;
 
@@ -29,15 +29,14 @@ fn badge_handler(req: HttpRequest) -> HttpResponse {
     }
     _ => {}
   }
-  match (&query.icon, &query.icon_color) {
-    (Some(i), Some(c)) => {
-      req_badge.icon(i, Some(c));
+  if let Some(i) = query.icon.as_ref() {
+    let mut icon = IconBuilder::new(i);
+    if let Some(ic) = query.icon_color.as_ref() {
+      icon.set_color(ic);
     }
-    (Some(i), None) => {
-      req_badge.icon(i, None);
-    }
-    (_, _) => (),
+    req_badge.icon(icon.build());
   }
+  
 
   if let Some(bs) = &query.size {
     req_badge.size(match bs {
@@ -55,5 +54,8 @@ pub fn config(cfg: &mut web::ServiceConfig) {
   cfg
     .route("/badge/{subject}", web::get().to(badge_handler))
     .route("/badge/{subject}/{text}", web::get().to(badge_handler))
-    .route("/badge/{subject}/{text}/{color}", web::get().to(badge_handler));
+    .route(
+      "/badge/{subject}/{text}/{color}",
+      web::get().to(badge_handler),
+    );
 }

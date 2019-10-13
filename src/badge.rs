@@ -65,14 +65,8 @@ impl<'a> Badge<'a> {
     self.style = style;
     self
   }
-  pub fn icon(&mut self, icon_key: &'a str, color: Option<&'a str>) -> &mut Self {
-    if let Some(mut icon) = Icon::new(icon_key) {
-      icon.size(((self.height as f32) * 0.65) as u32);
-      if let Some(c) = color {
-        icon.color(c);
-      }
-      self.icon = Some(icon);
-    }
+  pub fn icon(&mut self, icon: Option<Icon<'a>>) -> &mut Self {
+    self.icon = icon;
     self
   }
   pub fn size(&mut self, size: Size) -> &mut Self {
@@ -82,9 +76,6 @@ impl<'a> Badge<'a> {
       Size::Large => 40,
     };
     self.height = height;
-    if let Some(icon) = &mut self.icon {
-      icon.size((height as f32 * 0.65) as u32);
-    }
     self
   }
   pub fn data(&mut self, data: Vec<i64>) -> &mut Self {
@@ -246,7 +237,7 @@ impl<'a> fmt::Display for Badge<'a> {
 }
 
 fn get_font() -> Font<'static> {
-  let font_data: &[u8] = include_bytes!("../resx/Verdana.ttf");
+  let font_data: &[u8] = include_bytes!("./resx/Verdana.ttf");
   let font_col = FontCollection::from_bytes(font_data).expect("Error constructing Font");
   font_col.into_font().unwrap()
 }
@@ -326,6 +317,8 @@ mod tests {
   use scraper::{Html, Selector};
   use std::borrow::Cow;
 
+  use crate::IconBuilder;
+
   const DEF_COLOUR: &str = "#08C";
   #[test]
   fn default_badge_has_classic_style() {
@@ -387,7 +380,8 @@ mod tests {
   #[test]
   fn badge_with_icon() {
     let mut badge = Badge::new("with icon");
-    badge.icon("git", None);
+    let icon = IconBuilder::new("git").build();
+    badge.icon(icon);
     let doc = Html::parse_fragment(&badge.to_string());
     assert!(badge.icon.is_some());
     let icon_sel = Selector::parse("symbol").unwrap();
