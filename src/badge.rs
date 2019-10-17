@@ -89,8 +89,8 @@ impl<'a> Badge<'a> {
     let padding: u32 = (height as f32 * 0.75) as u32;
 
     let mut icon_width = 0;
-    if let Some(icon) = &self.icon {
-      icon_width = icon.size;
+    if let Some(_) = &self.icon {
+      icon_width = ((self.height as f32) * 0.65) as u32;
     }
 
     let subject = Content::with_text(&self.subject, font_size, &font).unwrap();
@@ -192,12 +192,19 @@ impl<'a> Badge<'a> {
             @match &content {
               Some(c) if c.is_data => {
                 path
-                  fill=(self.color)
-                  fill-opacity="0.2"
+                  fill="none"
                   transform=(format!("translate({}, {})", subject_size.2, 0))
                   stroke=(self.color)
                   stroke-width="1px"
                   d=(c.content)
+                  {}
+                path
+                  fill=(self.color)
+                  fill-opacity="0.2"
+                  transform=(format!("translate({}, {})", subject_size.2, 0))
+                  stroke="none"
+                  stroke-width="0px"
+                  d=(format!("{}V{}H0Z", c.content, height))
                   {}
               },
               Some(c) => {
@@ -219,8 +226,8 @@ impl<'a> Badge<'a> {
             xlink:href={"#" (icon.name)}
             x=((padding/3))
             y=(((height  as f32) / 2.0 - (icon_width as f32 / 2.0)))
-            width=(icon.size)
-            height=(icon.size)
+            width=(icon_width)
+            height=(icon_width)
             fill=(icon.color)
             {}
         }
@@ -269,11 +276,9 @@ impl Content {
         chart_height - (s * (p - min) as f32)
       ));
     }
-    d.push_str(&format!("V{}", height));
-    d.push_str(&format!("L0 {}Z", height));
     Some(Content {
       content: d,
-      width,
+      width: width,
       height: chart_height as u32,
       is_data: true,
     })
