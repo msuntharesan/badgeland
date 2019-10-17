@@ -1,5 +1,5 @@
 use super::utils::badge_query::{BadgeSize, QueryInfo};
-use actix_web::{web, FromRequest, HttpRequest, HttpResponse};
+use actix_web::{web, HttpResponse};
 use badger::{Badge, IconBuilder, Size, Styles};
 use serde_derive::Deserialize;
 use std::str;
@@ -11,11 +11,9 @@ struct BadgeInfo {
   color: Option<String>,
 }
 
-fn badge_handler(req: HttpRequest) -> HttpResponse {
-  let params = web::Path::<BadgeInfo>::extract(&req).unwrap();
-  let query = web::Query::<QueryInfo>::extract(&req).unwrap();
-
+fn badge_handler((params, query): (web::Path<BadgeInfo>, web::Query<QueryInfo>)) -> HttpResponse {
   let mut req_badge = Badge::new(&params.subject);
+
   if let Some(text) = &params.text {
     req_badge.text(text);
   }
@@ -36,7 +34,6 @@ fn badge_handler(req: HttpRequest) -> HttpResponse {
     }
     req_badge.icon(icon.build());
   }
-  
 
   if let Some(bs) = &query.size {
     req_badge.size(match bs {
