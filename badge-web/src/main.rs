@@ -1,4 +1,6 @@
 #![feature(rustc_private)]
+#![feature(option_flattening)]
+
 #[macro_use]
 extern crate actix_web;
 
