@@ -46,8 +46,6 @@ impl From<reqwest::Error> for ReqErr {
   }
 }
 
-pub mod humanize;
-
 impl From<Box<dyn Error>> for ReqErr {
   fn from(err: Box<dyn Error>) -> Self {
     ReqErr::new(

@@ -3,7 +3,6 @@ pub struct HumanizeOptions {
   base: usize,
   precision: usize,
   decimal_separator: &'static str,
-  // decimal_zeroes: usize,
   lower_case: bool,
   space: bool,
   units: Vec<&'static str>,
@@ -15,7 +14,6 @@ impl Default for HumanizeOptions {
       base: 1000,
       precision: 2,
       decimal_separator: ".",
-      // decimal_zeroes: 0,
       lower_case: false,
       space: false,
       units: vec!["", "K", "M", "B", "T", "P", "E"],
@@ -134,6 +132,7 @@ mod tests {
     assert_eq!(1000000000.humanize(&opt), Some("1B".to_owned()));
     assert_eq!(1000000000000u64.humanize(&opt), Some("1T".to_owned()));
   }
+
   #[test]
   fn test_isize() {
     let opt = HumanizeOptions::default();
@@ -144,6 +143,7 @@ mod tests {
     assert_eq!((-1000000000).humanize(&opt), Some("-1B".to_owned()));
     assert_eq!((-1000000000000i64).humanize(&opt), Some("-1T".to_owned()));
   }
+
   #[test]
   fn test_floats() {
     let opt = HumanizeOptions::default();
@@ -155,6 +155,7 @@ mod tests {
     assert_eq!((-1000000000000f64).humanize(&opt), Some("-1T".to_owned()));
     assert_eq!((-12345.678f32).humanize(&opt), Some("-12.35K".to_owned()))
   }
+
   #[test]
   fn test_lowercase_suffix() {
     let mut opt = HumanizeOptions::default(); //.set_lower_case(true).get();
@@ -165,6 +166,7 @@ mod tests {
     assert_eq!(1000000000.humanize(&opt), Some("1b".to_owned()));
     assert_eq!(1000000000000u64.humanize(&opt), Some("1t".to_owned()));
   }
+
   #[test]
   fn test_precision() {
     let value = 12345.6789;
@@ -186,6 +188,7 @@ mod tests {
     opt.set_decimal_separator("_");
     assert_eq!(value.humanize(&opt), Some("12_35K".to_owned()));
   }
+
   #[test]
   fn test_units() {
     let value = 123450.6789;
