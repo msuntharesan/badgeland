@@ -1,6 +1,6 @@
 use actix_web::*;
 use reqwest;
-use std::{error::Error, fmt, str};
+use std::{error::Error, fmt};
 
 pub struct ReqErr {
   status: reqwest::StatusCode,
@@ -36,7 +36,10 @@ impl From<reqwest::Error> for ReqErr {
     match err.status() {
       Some(s) => ReqErr::new(s, err.description().to_owned()),
       _ => ReqErr::new(
-        reqwest::StatusCode::INTERNAL_SERVER_ERROR,
+        err
+          .status()
+          .or(Some(reqwest::StatusCode::INTERNAL_SERVER_ERROR))
+          .unwrap(),
         err.description().to_owned(),
       ),
     }
@@ -44,6 +47,15 @@ impl From<reqwest::Error> for ReqErr {
 }
 
 pub mod humanize;
+
+impl From<Box<dyn Error>> for ReqErr {
+  fn from(err: Box<dyn Error>) -> Self {
+    ReqErr::new(
+      reqwest::StatusCode::INTERNAL_SERVER_ERROR,
+      err.description().to_owned(),
+    )
+  }
+}
 
 pub mod badge_query {
 
