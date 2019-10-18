@@ -5,12 +5,16 @@ mod icons;
 
 pub use badge::{Badge, Size, Styles};
 use cssparser::{parse_color_keyword, Color, ToCss};
-pub use icons::{Icon, IconBuilder, icon_exists};
+pub use icons::{icon_exists, Icon, IconBuilder};
 
 pub(self) fn get_color(color: &str) -> Option<String> {
+  let mut color = color.to_string();
+  if color.starts_with("#") {
+    color = color.replace("#", "");
+  }
   match (
     Color::parse_hash(color.as_bytes()),
-    parse_color_keyword(color),
+    parse_color_keyword(&color),
   ) {
     (Ok(c), _) => Some(c.to_css_string()),
     (_, Ok(c)) => Some(c.to_css_string()),
@@ -31,6 +35,11 @@ mod tests {
   #[test]
   fn get_color_from_hex() {
     let c = get_color("ff0000");
+    assert_eq!(c, Some(String::from("rgb(255, 0, 0)")));
+  }
+  #[test]
+  fn get_color_from_hex_with_prefix() {
+    let c = get_color("#ff0000");
     assert_eq!(c, Some(String::from("rgb(255, 0, 0)")));
   }
   #[test]
