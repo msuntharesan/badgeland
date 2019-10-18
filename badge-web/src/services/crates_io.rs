@@ -227,9 +227,9 @@ fn cargo_hist_handler(
 pub fn config(cfg: &mut web::ServiceConfig) {
   cfg.data(req::Client::new()).service(
     web::scope("/crates/{package}")
-      .route("lic", web::get().to_async(crate_license_handler))
-      .route("dl", web::get().to_async(crate_dl_handler))
-      .route("hist", web::get().to_async(cargo_hist_handler))
+      .route("/lic", web::get().to_async(crate_license_handler))
+      .route("/dl", web::get().to_async(crate_dl_handler))
+      .route("/hist", web::get().to_async(cargo_hist_handler))
       .route("/{tag}", web::get().to_async(crate_v_handler))
       .route("/", web::get().to_async(crate_v_handler))
       .route("", web::get().to_async(crate_v_handler)),

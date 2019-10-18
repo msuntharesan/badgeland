@@ -26,8 +26,6 @@ enum Period {
   Monthly,
   #[serde(alias = "y")]
   Yearly,
-  #[serde(alias = "t")]
-  Total,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -324,18 +322,18 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     .data(req::Client::new())
     .service(
       web::scope("/npm/@{scope}/{package}")
-        .route("lic", web::get().to_async(npm_license_handler))
-        .route("dl/{period}", web::get().to_async(npm_dl_numbers))
-        .route("hist/{period}", web::get().to_async(npm_historical_chart))
+        .route("/lic", web::get().to_async(npm_license_handler))
+        .route("/dl/{period}", web::get().to_async(npm_dl_numbers))
+        .route("/hist/{period}", web::get().to_async(npm_historical_chart))
         .route("/{tag}", web::get().to_async(npm_v_handler))
         .route("/", web::get().to_async(npm_v_handler))
         .route("", web::get().to_async(npm_v_handler)),
     )
     .service(
       web::scope("/npm/{package}")
-        .route("lic", web::get().to_async(npm_license_handler))
-        .route("dl/{period}", web::get().to_async(npm_dl_numbers))
-        .route("hist/{period}", web::get().to_async(npm_historical_chart))
+        .route("/lic", web::get().to_async(npm_license_handler))
+        .route("/dl/{period}", web::get().to_async(npm_dl_numbers))
+        .route("/hist/{period}", web::get().to_async(npm_historical_chart))
         .route("/{tag}", web::get().to_async(npm_v_handler))
         .route("/", web::get().to_async(npm_v_handler))
         .route("", web::get().to_async(npm_v_handler)),
