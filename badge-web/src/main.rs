@@ -36,6 +36,7 @@ fn main() -> io::Result<()> {
       .service(index)
       .configure(badge_routes::config)
       .configure(services::npm::config)
+      .configure(services::crates_io::config)
       .service(fs::Files::new("/static", "static/"))
   });
 
