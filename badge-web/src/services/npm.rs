@@ -2,7 +2,7 @@ use crate::utils::{
   badge_query::{BadgeSize, QueryInfo},
   error::ReqwestError,
 };
-use actix_web::{error, http, web, Error as ActixError, HttpResponse};
+use actix_web::{error, web, Error as ActixError, HttpResponse};
 use badger::{Badge, IconBuilder, Size, Styles};
 use chrono::prelude::*;
 use futures::Future;
