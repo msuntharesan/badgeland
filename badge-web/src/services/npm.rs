@@ -1,6 +1,6 @@
 use crate::utils::{
   badge_query::{BadgeSize, QueryInfo},
-  ReqErr,
+  error::ReqwestError,
 };
 use actix_web::{error, http, web, Error as ActixError, HttpResponse};
 use badger::{Badge, IconBuilder, Size, Styles};
@@ -13,8 +13,8 @@ use serde_derive::Deserialize;
 use serde_json::Value;
 use std::str;
 
-static UNPKGURL: &'static str = "https://unpkg.com";
-static DOWNLOAD_COUNT: &'static str = "https://api.npmjs.org/downloads/";
+static UNPKG_API_PATH: &'static str = "https://unpkg.com";
+static DOWNLOAD_COUNT_PATH: &'static str = "https://api.npmjs.org/downloads/";
 
 #[derive(Debug, Deserialize, Clone)]
 enum Period {
@@ -39,36 +39,36 @@ struct NPMVersion {
 }
 
 impl NPMVersion {
-  fn to_path(self: &Self, host: &str) -> String {
+  fn to_path(self: &Self, api_path: &str) -> String {
     match (&self.scope, &self.tag) {
       (Some(s), Some(t)) => format!(
-        "{host}/@{scope}/{package}@{tag}/package.json",
-        host = host,
+        "{api_path}/@{scope}/{package}@{tag}/package.json",
+        api_path = api_path,
         scope = s,
         package = self.package,
         tag = t
       ),
       (Some(s), _) => format!(
-        "{host}/@{scope}/{package}/package.json",
-        host = host,
+        "{api_path}/@{scope}/{package}/package.json",
+        api_path = api_path,
         scope = s,
         package = self.package
       ),
       (_, Some(t)) => format!(
-        "{host}/{package}@{tag}/package.json",
-        host = host,
+        "{api_path}/{package}@{tag}/package.json",
+        api_path = api_path,
         package = self.package,
         tag = t
       ),
       (_, _) => format!(
-        "{host}/{package}/package.json",
-        host = host,
+        "{api_path}/{package}/package.json",
+        api_path = api_path,
         package = self.package
       ),
     }
   }
-  fn to_dl_path(self: &Self, host: &str, is_range: bool) -> String {
-    let mut path_str = format!("{}{}/", host, if is_range { "range" } else { "point" });
+  fn to_dl_path(self: &Self, api_path: &str, is_range: bool) -> String {
+    let mut path_str = format!("{}{}/", api_path, if is_range { "range" } else { "point" });
 
     match (&self.period, is_range) {
       (Some(Period::Daily), false) => {
@@ -138,50 +138,37 @@ fn create_badge<'a>(subject: &'a str, text: &'a str, query: &'a QueryInfo) -> Ba
   badge
 }
 
-fn npm_get(client: &req::Client, path_str: &str) -> impl Future<Item = Value, Error = ReqErr> {
+fn npm_get(client: &req::Client, path_str: &str) -> impl Future<Item = Value, Error = ActixError> {
   client
     .get(path_str)
     .header("accept", "application/json")
     .send()
-    .map_err(ReqErr::from)
-    .and_then(|mut resp: req::Response| match resp.status() {
-      http::StatusCode::OK => Ok(resp.json::<Value>()),
-      _ => Err(ReqErr::new(
-        resp.status(),
-        "Cannot find package".to_string(),
-      )),
-    })
-    .and_then(|json| json.map_err(ReqErr::from).and_then(|j: Value| Ok(j)))
+    .and_then(|mut resp: req::Response| resp.json::<Value>())
+    .map_err(ReqwestError::from)
+    .map_err(ActixError::from)
 }
 
 fn npm_license_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<NPMVersion>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = ActixError> {
-  let path = params.to_path(UNPKGURL);
+  let path = params.to_path(UNPKG_API_PATH);
+
   npm_get(&client, &path)
-    .map_err(ActixError::from)
-    .and_then(|mut value: Value| {
+    .and_then(|value: Value| {
       value
-        .pointer_mut("/license")
-        .map(Value::take)
+        .get("license")
+        .and_then(|v: &Value| v.as_str().map(String::from))
         .ok_or(error::ErrorInternalServerError(
           "Cannot find property".to_string(),
         ))
-        .and_then(|v: Value| {
-          v.as_str()
-            .map(String::from)
-            .ok_or(error::ErrorInternalServerError(
-              "Cannot read property".to_string(),
-            ))
-        })
     })
     .and_then(move |license: String| {
-      let badge = create_badge("license", &license, &query);
+      let badge = create_badge("licence", &license, &query);
+
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
-    .map_err(ActixError::from)
 }
 
 fn npm_dl_numbers(
@@ -189,11 +176,10 @@ fn npm_dl_numbers(
   (params, query): (web::Path<NPMVersion>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = ActixError> {
   let mut opts = humanize_options();
-  opts.set_lowercase(true);
-  opts.set_precision(1);
-  let path = params.to_dl_path(&DOWNLOAD_COUNT, false);
+  opts.set_lowercase(true).set_precision(1);
+  let path = params.to_dl_path(&DOWNLOAD_COUNT_PATH, false);
+
   npm_get(&client, &path)
-    .map_err(ActixError::from)
     .and_then(|value: Value| {
       value
         .get("downloads")
@@ -228,19 +214,15 @@ fn npm_dl_numbers(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
-    .map_err(ActixError::from)
 }
 
 fn npm_historical_chart(
   client: web::Data<req::Client>,
   (params, query): (web::Path<NPMVersion>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = ActixError> {
-  let mut opts = humanize_options();
-  opts.set_lowercase(true);
-  opts.set_precision(1);
-  let path = params.to_dl_path(DOWNLOAD_COUNT, true);
+  let path = &params.to_dl_path(DOWNLOAD_COUNT_PATH, true);
+
   npm_get(&client, &path)
-    .map_err(ActixError::from)
     .and_then(|value: Value| -> Result<Vec<Value>, ActixError> {
       value
         .get("downloads")
@@ -250,72 +232,69 @@ fn npm_historical_chart(
           &value
         )))
     })
-    .and_then(move |ds: Vec<Value>| {
-      ds.iter()
-        .map(|d: &Value| -> Result<((String, i64)), ActixError> {
-          match (d.get("day"), d.get("downloads")) {
-            (Some(d), Some(c)) => Ok((
-              d.as_str().map(String::from).unwrap(),
-              c.as_i64().clone().unwrap(),
-            )),
-            _ => Err(error::ErrorInternalServerError(format!(
-              "Failed to parse {:?}",
-              &d
-            ))),
-          }
+    .and_then(|dls: Vec<Value>| {
+      dls
+        .iter()
+        .map(|dl: &Value| match (dl.get("day"), dl.get("downloads")) {
+          (Some(d), Some(c)) => Some((
+            d.as_str().map(String::from).unwrap(),
+            c.as_i64().clone().unwrap(),
+          )),
+          _ => None,
         })
-        .collect::<Result<Vec<(String, i64)>, ActixError>>()
-        .and_then(|c| {
-          c.iter()
-            .group_by(|(day, _)| {
-              let date = NaiveDate::parse_from_str(day, "%F").unwrap();
-              match &params.period {
-                Some(Period::Daily) => date.format("%F").to_string(),
-                Some(Period::Weekly) => date.format("%Y-%U").to_string(),
-                Some(Period::Monthly) => date.format("%Y-%m").to_string(),
-                Some(Period::Yearly) => date.format("%Y").to_string(),
-                _ => "".to_string(),
-              }
-            })
-            .into_iter()
-            .map(|(_, group)| Ok(group.map(|(_, dls)| dls).sum::<i64>()))
-            .collect::<Result<Vec<i64>, ActixError>>()
-        })
-        .map_err(ActixError::from)
-        .and_then(|dls| {
-          let subject = match &params.period {
-            Some(Period::Daily) => "Daily",
-            Some(Period::Weekly) => "Weekly",
-            Some(Period::Monthly) => "Monthly",
-            Some(Period::Yearly) => "Yearly",
-            _ => "",
-          };
-          let mut badge = Badge::new(subject);
-          badge.data(dls);
-          badge.color("8254ed");
-          badge.icon(IconBuilder::new("download").build());
-          if let Some(bs) = &query.size {
-            badge.size(match bs {
-              BadgeSize::Large => Size::Large,
-              BadgeSize::Medium => Size::Medium,
-              BadgeSize::Small => Size::Small,
-            });
-          }
-          let svg = badge.to_string();
-          Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
-        })
+        .collect::<Option<Vec<(String, i64)>>>()
+        .ok_or(error::ErrorInternalServerError(format!(
+          "Failed to parse {:?}",
+          &dls
+        )))
     })
-    .map_err(ActixError::from)
+    .and_then(move |dls: Vec<((String, i64))>| {
+      let dls = dls
+        .iter()
+        .group_by(|(day, _)| {
+          let date = NaiveDate::parse_from_str(day, "%F").unwrap();
+          match &params.period {
+            Some(Period::Daily) => date.format("%F").to_string(),
+            Some(Period::Weekly) => date.format("%Y-%U").to_string(),
+            Some(Period::Monthly) => date.format("%Y-%m").to_string(),
+            Some(Period::Yearly) => date.format("%Y-%m").to_string(),
+            _ => "".to_string(),
+          }
+        })
+        .into_iter()
+        .map(|(_, group)| group.map(|(_, dls)| dls).sum::<i64>())
+        .collect::<Vec<i64>>();
+
+      let subject = match &params.period {
+        Some(Period::Daily) => "Daily",
+        Some(Period::Weekly) => "Weekly",
+        Some(Period::Monthly) => "Monthly",
+        Some(Period::Yearly) => "Yearly",
+        _ => "",
+      };
+      let mut badge = Badge::new(subject);
+      badge.data(dls);
+      badge.color("8254ed");
+      badge.icon(IconBuilder::new("download").build());
+      if let Some(bs) = &query.size {
+        badge.size(match bs {
+          BadgeSize::Large => Size::Large,
+          BadgeSize::Medium => Size::Medium,
+          BadgeSize::Small => Size::Small,
+        });
+      }
+      let svg = badge.to_string();
+      Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
+    })
 }
 
 fn npm_v_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<NPMVersion>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = ActixError> {
-  let path = params.to_path(UNPKGURL);
+  let path = params.to_path(UNPKG_API_PATH);
 
   npm_get(&client, &path)
-    .map_err(ActixError::from)
     .and_then(|value: Value| {
       value
         .get("version")
@@ -331,13 +310,13 @@ fn npm_v_handler(
       };
 
       let version = format!("{}", version);
+
       let mut badge = create_badge(&subject, &version, &query);
       badge.icon(IconBuilder::new("npm").build());
       let svg = badge.to_string();
 
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
-    .map_err(ActixError::from)
 }
 
 pub fn config(cfg: &mut web::ServiceConfig) {
