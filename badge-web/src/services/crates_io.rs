@@ -4,6 +4,7 @@ use crate::utils::{
 };
 use actix_web::{error, web, Error as ActixError, HttpResponse};
 use badger::{Badge, IconBuilder, Size, Styles};
+use chrono::prelude::*;
 use futures::Future;
 use humanize::*;
 use itertools::Itertools;
@@ -37,7 +38,8 @@ impl CrateParams {
     };
 
     if let Some(api) = api {
-      path.push_str(api);
+      let api = format!("/{}", api);
+      path.push_str(&api);
     }
     path
   }
@@ -202,7 +204,10 @@ fn cargo_hist_handler(
       |dls: Vec<((String, i64))>| -> Result<Vec<i64>, ActixError> {
         let dls = dls
           .iter()
-          .group_by(|(day, _)| day)
+          .group_by(|(day, _)| {
+            let date = NaiveDate::parse_from_str(day, "%F").unwrap();
+            date.format("%Y-%U").to_string()
+          })
           .into_iter()
           .map(|(_, group)| group.map(|(_, dls)| dls).sum::<i64>())
           .collect::<Vec<i64>>();
@@ -224,7 +229,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     web::scope("/crates/{package}")
       .route("lic", web::get().to_async(crate_license_handler))
       .route("dl", web::get().to_async(crate_dl_handler))
-      .route("hist/{period}", web::get().to_async(cargo_hist_handler))
+      .route("hist", web::get().to_async(cargo_hist_handler))
       .route("/{tag}", web::get().to_async(crate_v_handler))
       .route("/", web::get().to_async(crate_v_handler))
       .route("", web::get().to_async(crate_v_handler)),
