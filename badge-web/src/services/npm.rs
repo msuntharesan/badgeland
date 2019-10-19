@@ -1,9 +1,9 @@
 use crate::utils::{
-  badge_query::{BadgeSize, QueryInfo},
+  badge_query::{create_badge, BadgeSize, QueryInfo},
   error::ReqwestError,
 };
 use actix_web::{error, web, Error as ActixError, HttpResponse};
-use badger::{Badge, IconBuilder, Size, Styles};
+use badger::{Badge, IconBuilder, Size};
 use chrono::prelude::*;
 use futures::Future;
 use humanize::*;
@@ -29,14 +29,14 @@ enum Period {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-struct NPMVersion {
+struct NPMParams {
   scope: Option<String>,
   package: String,
   tag: Option<String>,
   period: Option<Period>,
 }
 
-impl NPMVersion {
+impl NPMParams {
   fn to_path(self: &Self, api_path: &str) -> String {
     match (&self.scope, &self.tag) {
       (Some(s), Some(t)) => format!(
@@ -108,34 +108,6 @@ impl NPMVersion {
   }
 }
 
-fn create_badge<'a>(subject: &'a str, text: &'a str, query: &'a QueryInfo) -> Badge<'a> {
-  let mut badge = Badge::new(subject);
-  badge.text(text);
-  match &query.style {
-    Some(x) if x == "flat" => {
-      badge.style(Styles::Flat);
-    }
-    _ => {}
-  }
-
-  if let Some(i) = query.icon.as_ref() {
-    let mut icon = IconBuilder::new(i);
-    if let Some(ic) = query.icon_color.as_ref() {
-      icon.set_color(ic);
-    }
-    badge.icon(icon.build());
-  }
-
-  if let Some(bs) = &query.size {
-    badge.size(match bs {
-      BadgeSize::Large => Size::Large,
-      BadgeSize::Medium => Size::Medium,
-      BadgeSize::Small => Size::Small,
-    });
-  }
-  badge
-}
-
 fn npm_get(client: &req::Client, path_str: &str) -> impl Future<Item = Value, Error = ActixError> {
   client
     .get(path_str)
@@ -148,7 +120,7 @@ fn npm_get(client: &req::Client, path_str: &str) -> impl Future<Item = Value, Er
 
 fn npm_license_handler(
   client: web::Data<req::Client>,
-  (params, query): (web::Path<NPMVersion>, web::Query<QueryInfo>),
+  (params, query): (web::Path<NPMParams>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = ActixError> {
   let path = params.to_path(UNPKG_API_PATH);
 
@@ -162,7 +134,7 @@ fn npm_license_handler(
         ))
     })
     .and_then(move |license: String| {
-      let badge = create_badge("licence", &license, &query);
+      let badge = create_badge("licence", &license, None, &query);
 
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
@@ -171,7 +143,7 @@ fn npm_license_handler(
 
 fn npm_dl_numbers(
   client: web::Data<req::Client>,
-  (params, query): (web::Path<NPMVersion>, web::Query<QueryInfo>),
+  (params, query): (web::Path<NPMParams>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = ActixError> {
   let mut opts = humanize_options();
   opts.set_lowercase(true).set_precision(1);
@@ -195,11 +167,8 @@ fn npm_dl_numbers(
         Some(Period::Yearly) => " last-year",
         _ => "",
       };
-
-      let mut badge = Badge::new(subject);
       let text = v.humanize(&opts).unwrap();
-      badge.text(text);
-      badge.color("8254ed");
+      let mut badge = create_badge(&subject, &text, Some("#8254ed"), &query);
       let icon = IconBuilder::new("download");
       badge.icon(icon.build());
       if let Some(bs) = &query.size {
@@ -216,7 +185,7 @@ fn npm_dl_numbers(
 
 fn npm_historical_chart(
   client: web::Data<req::Client>,
-  (params, query): (web::Path<NPMVersion>, web::Query<QueryInfo>),
+  (params, query): (web::Path<NPMParams>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = ActixError> {
   let path = &params.to_dl_path(DOWNLOAD_COUNT_PATH, true);
 
@@ -288,7 +257,7 @@ fn npm_historical_chart(
 
 fn npm_v_handler(
   client: web::Data<req::Client>,
-  (params, query): (web::Path<NPMVersion>, web::Query<QueryInfo>),
+  (params, query): (web::Path<NPMParams>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = ActixError> {
   let path = params.to_path(UNPKG_API_PATH);
 
@@ -309,7 +278,7 @@ fn npm_v_handler(
 
       let version = format!("{}", version);
 
-      let mut badge = create_badge(&subject, &version, &query);
+      let mut badge = create_badge(&subject, &version, None, &query);
       badge.icon(IconBuilder::new("npm").build());
       let svg = badge.to_string();
 

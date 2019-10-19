@@ -1,9 +1,9 @@
 use crate::utils::{
-  badge_query::{BadgeSize, QueryInfo},
+  badge_query::{create_badge, QueryInfo},
   error::ReqwestError,
 };
 use actix_web::{error, web, Error as ActixError, HttpResponse};
-use badger::{Badge, IconBuilder, Size, Styles};
+use badger::IconBuilder;
 use chrono::prelude::*;
 use futures::Future;
 use humanize::*;
@@ -45,34 +45,6 @@ impl CrateParams {
   }
 }
 
-fn create_badge<'a>(subject: &'a str, text: &'a str, query: &'a QueryInfo) -> Badge<'a> {
-  let mut badge = Badge::new(subject);
-  badge.text(text);
-  match &query.style {
-    Some(x) if x == "flat" => {
-      badge.style(Styles::Flat);
-    }
-    _ => {}
-  }
-
-  if let Some(i) = query.icon.as_ref() {
-    let mut icon = IconBuilder::new(i);
-    if let Some(ic) = query.icon_color.as_ref() {
-      icon.set_color(ic);
-    }
-    badge.icon(icon.build());
-  }
-
-  if let Some(bs) = &query.size {
-    badge.size(match bs {
-      BadgeSize::Large => Size::Large,
-      BadgeSize::Medium => Size::Medium,
-      BadgeSize::Small => Size::Small,
-    });
-  }
-  badge
-}
-
 fn get_crate(
   client: &req::Client,
   path_str: &str,
@@ -98,8 +70,7 @@ fn crate_v_handler(
       .ok_or(error::ErrorNotFound("Cannot find property"))
       .and_then(|ver| {
         let ver = format!("v{}", ver);
-        let mut badge = create_badge("crates.io", &ver, &query);
-        badge.color("#e67233");
+        let badge = create_badge("crates.io", &ver, Some("#e67233"), &query);
 
         let svg = badge.to_string();
         Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
@@ -133,7 +104,7 @@ fn crate_license_handler(
               .ok_or(error::ErrorInternalServerError("Failed to parse license"))
           })
           .and_then(|v: String| {
-            let badge = create_badge("license", &v, &query);
+            let badge = create_badge("license", &v, None, &query);
             let svg = badge.to_string();
             Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
           })
@@ -157,8 +128,7 @@ fn crate_dl_handler(
       .ok_or(error::ErrorNotFound("Cannot find property"))
       .and_then(|dls: i64| {
         let dls = dls.humanize(&opts).unwrap();
-        let mut badge = create_badge("all-time", &dls, &query);
-        badge.color("#e67233");
+        let mut badge = create_badge("all-time", &dls, Some("#e67233"), &query);
 
         let icon = IconBuilder::new("download");
         badge.icon(icon.build());
@@ -215,9 +185,8 @@ fn cargo_hist_handler(
       },
     )
     .and_then(move |dls: Vec<i64>| {
-      let mut badge = create_badge("last 90 days", "", &query);
+      let mut badge = create_badge("last 90 days", "", Some("#e67233"), &query);
       badge.data(dls);
-      badge.color("#e67233");
       badge.icon(IconBuilder::new("download").build());
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
