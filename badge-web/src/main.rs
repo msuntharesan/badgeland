@@ -3,6 +3,7 @@
 
 #[macro_use]
 extern crate actix_web;
+extern crate graphql_client;
 
 mod badge_routes;
 mod services;
@@ -35,8 +36,9 @@ fn main() -> io::Result<()> {
       .wrap(middleware::NormalizePath)
       .service(index)
       .configure(badge_routes::config)
-      .configure(services::npm::config)
       .configure(services::crates_io::config)
+      .configure(services::github::config)
+      .configure(services::npm::config)
       .service(fs::Files::new("/static", "static/"))
   });
 
