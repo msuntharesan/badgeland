@@ -1,6 +1,6 @@
 use crate::utils::{
   merit_query::{create_badge, QueryInfo},
-  error::ReqwestError,
+  error::MeritError,
 };
 use actix_web::{error, web, Error as ActixError, HttpResponse};
 use chrono::prelude::*;
@@ -54,7 +54,7 @@ fn get_crate(
     .header("accept", "application/json")
     .send()
     .and_then(|mut resp: req::Response| resp.json::<Value>())
-    .map_err(ReqwestError::from)
+    .map_err(MeritError::from)
     .map_err(ActixError::from)
 }
 

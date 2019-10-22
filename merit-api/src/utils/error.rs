@@ -2,41 +2,42 @@ use actix_web::{dev, HttpResponse, ResponseError};
 use reqwest;
 use std::{error::Error as StdError, fmt};
 
-pub struct CustomError {
+pub struct BadgeError {
   pub status: reqwest::StatusCode,
   pub description: String,
+  pub icon: Option<String>,
 }
 
-pub enum ReqwestError {
+pub enum MeritError {
   ReqwestErr(reqwest::Error),
-  CustomErr(CustomError),
+  CustomErr(BadgeError),
 }
 
-impl ReqwestError {
+impl MeritError {
   fn status(&self) -> reqwest::StatusCode {
     match self {
-      ReqwestError::ReqwestErr(err) => err
+      MeritError::ReqwestErr(err) => err
         .status()
         .or(Some(reqwest::StatusCode::INTERNAL_SERVER_ERROR))
         .unwrap(),
-      ReqwestError::CustomErr(err) => err.status,
+      MeritError::CustomErr(err) => err.status,
     }
   }
   fn description(&self) -> String {
     match self {
-      ReqwestError::ReqwestErr(err) => err.description().to_string(),
-      ReqwestError::CustomErr(err) => err.description.to_string(),
+      MeritError::ReqwestErr(err) => err.description().to_string(),
+      MeritError::CustomErr(err) => err.description.to_string(),
     }
   }
   fn url(&self) -> Option<&reqwest::Url> {
     match self {
-      ReqwestError::ReqwestErr(err) => err.url(),
+      MeritError::ReqwestErr(err) => err.url(),
       _ => None,
     }
   }
 }
 
-impl ResponseError for ReqwestError {
+impl ResponseError for MeritError {
   fn error_response(&self) -> HttpResponse {
     HttpResponse::new(self.status()).set_body(dev::Body::from(format!(
       "URL: {:?} Description: {}",
@@ -46,7 +47,7 @@ impl ResponseError for ReqwestError {
   }
 }
 
-impl fmt::Display for ReqwestError {
+impl fmt::Display for MeritError {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(
       f,
@@ -58,7 +59,7 @@ impl fmt::Display for ReqwestError {
   }
 }
 
-impl fmt::Debug for ReqwestError {
+impl fmt::Debug for MeritError {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(
       f,
@@ -70,17 +71,18 @@ impl fmt::Debug for ReqwestError {
   }
 }
 
-impl From<reqwest::Error> for ReqwestError {
+impl From<reqwest::Error> for MeritError {
   fn from(err: reqwest::Error) -> Self {
-    ReqwestError::ReqwestErr(err)
+    MeritError::ReqwestErr(err)
   }
 }
 
-impl From<String> for ReqwestError {
+impl From<String> for MeritError {
   fn from(description: String) -> Self {
-    ReqwestError::CustomErr(CustomError {
+    MeritError::CustomErr(BadgeError {
       status: reqwest::StatusCode::INTERNAL_SERVER_ERROR,
       description,
+      icon: None,
     })
   }
 }
