@@ -1,8 +1,8 @@
 pub mod error;
 
-pub mod badge_query {
+pub mod merit_query {
 
-  use badger::*;
+  use merit::*;
   use serde_derive::Deserialize;
   use std::str;
 

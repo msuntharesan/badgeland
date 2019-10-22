@@ -1,6 +1,6 @@
-use super::utils::badge_query::{BadgeSize, QueryInfo};
+use super::utils::merit_query::{BadgeSize, QueryInfo};
 use actix_web::{web, HttpResponse};
-use badger::{Badge, IconBuilder, Size, Styles};
+use merit::{Badge, IconBuilder, Size, Styles};
 use serde_derive::Deserialize;
 use std::str;
 

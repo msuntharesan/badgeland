@@ -1,5 +1,5 @@
-use badger::{icon_exists, Badge, IconBuilder, Size, Styles};
 use clap::arg_enum;
+use merit::{icon_exists, Badge, IconBuilder, Size, Styles};
 use std::{fs::File, io::prelude::*, num::ParseIntError, path::PathBuf, str::FromStr};
 use structopt::StructOpt;
 
@@ -45,10 +45,13 @@ struct Opt {
   #[structopt(possible_values = &IconSize::variants(), case_insensitive = true, long)]
   size: Option<IconSize>,
   #[structopt(long)]
+  /// 6 or 8 digit hex color or a valid css color name
   color: Option<String>,
   #[structopt(long)]
+  /// Icon cany be any Brand or Solid icons from fontawesome
   icon: Option<String>,
   #[structopt(long)]
+  /// 6 or 8 digit hex color or a valid css color name
   icon_colour: Option<String>,
   #[structopt(long, parse(from_os_str))]
   out: Option<PathBuf>,
@@ -79,31 +82,6 @@ fn main() {
     }
     badge.icon(i.build());
   }
-  // let icon = match(opt.icon.as_ref(), opt.icon_colour.as_ref()){
-  // (Some(i),Some(ic))=>Some(Icon::new(i).unwrap().color(ic).create()),
-  // (Some(i), _)=>Icon::new(i).unwrap().create(),
-  // _=> None
-  // };
-  // let icon = if let Some(icon) = opt.icon.as_ref() {
-  //   Icon::new(icon)
-  // } else {
-  //   None
-  // };
-  // if let (Some(mut icon), Some(color))  = (icon, opt.icon_colour.as_ref()) {
-  //   icon.color(color);
-  // }
-
-  // badge.icon(icon);
-
-  // match (opt.icon.as_ref(), opt.icon_colour.as_ref()) {
-  //   (Some(icon), Some(color)) => {
-  //     Icon::new(icon).color(color);
-  //   }
-  //   (Some(icon), None) => {
-  //     Icon::new(icon);
-  //   }
-  //   _ => None
-  // };
   if let Some(d) = &opt.data {
     badge.data(d.0.to_owned());
   }

@@ -1,12 +1,12 @@
 [package]
-name = "badger"
+name = "merit"
 version = "0.1.0"
 authors = ["Suntharesan Mohan <suntharesan.mohan@gmail.com>"]
 edition = "2018"
 publish = false
 
 [lib]
-name = "badger"
+name = "merit"
 
 [dependencies]
 cssparser = "0.25"
@@ -22,9 +22,9 @@ structopt = "0.3"
 
 [workspace]
 members = [
-  "badge-web",
+  "merit-api",
   "humanize"
 ]
 
 [[bin]]
-name = "badger"
+name = "merit"

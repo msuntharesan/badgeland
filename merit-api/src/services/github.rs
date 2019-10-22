@@ -1,11 +1,11 @@
 use crate::utils::{
-  badge_query::{create_badge, QueryInfo},
+  merit_query::{create_badge, QueryInfo},
   error::ReqwestError,
 };
 use actix_web::{error, web, Error as ActixError, HttpResponse};
-use badger::IconBuilder;
 use futures::Future;
 use graphql_client::GraphQLQuery;
+use merit::IconBuilder;
 use reqwest::r#async as req;
 use serde;
 use serde_derive::Deserialize;

@@ -1,13 +1,13 @@
 use crate::utils::{
-  badge_query::{create_badge, BadgeSize, QueryInfo},
+  merit_query::{create_badge, BadgeSize, QueryInfo},
   error::ReqwestError,
 };
 use actix_web::{error, web, Error as ActixError, HttpResponse};
-use badger::{Badge, IconBuilder, Size};
 use chrono::prelude::*;
 use futures::Future;
 use humanize::*;
 use itertools::Itertools;
+use merit::{Badge, IconBuilder, Size};
 use reqwest::r#async as req;
 use serde_derive::Deserialize;
 use serde_json::Value;
