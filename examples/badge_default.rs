@@ -1,4 +1,4 @@
-use badger::Badge;
+use merit::Badge;
 
 fn main() {
   let badge = Badge::new("Badge Maker");

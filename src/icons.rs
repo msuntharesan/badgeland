@@ -3,7 +3,7 @@ use lazy_static::*;
 use scraper::{Html, Selector};
 use std::{collections::HashMap, str};
 
-static DEFAULT_COLOUR: &str = "fff";
+static DEFAULT_COLOUR: &str = "#fff";
 
 lazy_static! {
   static ref SYMBOLS: HashMap<String, String> = {
@@ -66,7 +66,6 @@ impl<'a> IconBuilder<'a> {
     Some(Icon {
       name: self.name,
       color: get_color(self.color).unwrap(),
-      // size: self.size,
       symbol: get_symbol(&self.name).unwrap(),
     })
   }
