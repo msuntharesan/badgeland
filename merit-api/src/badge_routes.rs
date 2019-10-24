@@ -11,11 +11,31 @@ struct BadgeInfo {
   color: Option<String>,
 }
 
+fn get_data(data: &str) -> Option<Vec<i64>> {
+  let splited: Vec<&str> = data.split(",").collect();
+
+  if splited.len() > 0 {
+    Some(
+      splited
+        .into_iter()
+        .map(|s| s.trim())
+        .map(|s| s.parse::<i64>().unwrap_or(0))
+        .collect::<Vec<i64>>(),
+    )
+  } else {
+    None
+  }
+}
+
 fn badge_handler((params, query): (web::Path<BadgeInfo>, web::Query<QueryInfo>)) -> HttpResponse {
   let mut req_badge = Badge::new(&params.subject);
 
   if let Some(text) = &params.text {
-    req_badge.text(text);
+    if let Some(data) = get_data(text) {
+      req_badge.data(data);
+    } else {
+      req_badge.text(text);
+    }
   }
   if let Some(c) = &params.color {
     req_badge.color(c);
