@@ -1,4 +1,5 @@
 use actix_web::{dev, HttpResponse, ResponseError};
+use merit::icon_exists;
 use reqwest;
 use std::{error::Error as StdError, fmt};
 
@@ -85,4 +86,23 @@ impl From<String> for MeritError {
       icon: None,
     })
   }
+}
+
+pub fn badge_error_for_service(
+  service: &str,
+  description: &str,
+  status: Option<reqwest::StatusCode>,
+) -> MeritError {
+  let badge_err = BadgeError {
+    status: status
+      .or(Some(reqwest::StatusCode::INTERNAL_SERVER_ERROR))
+      .unwrap(),
+    description: description.into(),
+    icon: if icon_exists(service) {
+      Some(service.into())
+    } else {
+      None
+    },
+  };
+  MeritError::CustomErr(badge_err)
 }
