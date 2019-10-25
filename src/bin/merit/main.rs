@@ -1,6 +1,6 @@
 use clap::arg_enum;
-use merit::{icon_exists, Badge, IconBuilder, Size, Styles};
-use std::{fs::File, io::prelude::*, num::ParseIntError, path::PathBuf, str::FromStr};
+use merit::{icon_exists, Badge, IconBuilder, Size, BadgeData, Styles};
+use std::{fs::File, io::prelude::*, path::PathBuf};
 use structopt::StructOpt;
 
 arg_enum! {
@@ -19,20 +19,6 @@ arg_enum! {
   }
 }
 
-#[derive(Debug)]
-struct SparkData(Vec<i64>);
-
-impl FromStr for SparkData {
-  type Err = ParseIntError;
-  fn from_str(s: &str) -> Result<Self, Self::Err> {
-    let values = s
-      .split(",")
-      .filter_map(|s| s.parse::<i64>().ok())
-      .collect::<Vec<_>>();
-    Ok(SparkData(values))
-  }
-}
-
 #[derive(StructOpt, Debug)]
 #[structopt(name = "svg")]
 struct Opt {
@@ -45,18 +31,18 @@ struct Opt {
   #[structopt(possible_values = &IconSize::variants(), case_insensitive = true, long)]
   size: Option<IconSize>,
   #[structopt(long)]
-  /// 6 or 8 digit hex color or a valid css color name
+  /// rgb(), rgba(), 6 or 8 digit hex color or a valid css color name
   color: Option<String>,
   #[structopt(long)]
   /// Icon cany be any Brand or Solid icons from fontawesome
   icon: Option<String>,
   #[structopt(long)]
-  /// 6 or 8 digit hex color or a valid css color name
+  /// rgb(), rgba(), 6 or 8 digit hex color or a valid css color name
   icon_colour: Option<String>,
   #[structopt(long, parse(from_os_str))]
   out: Option<PathBuf>,
   #[structopt(long, takes_value = true)]
-  data: Option<SparkData>,
+  data: Option<BadgeData>,
 }
 
 fn main() {
@@ -69,19 +55,22 @@ fn main() {
   }
   let mut badge = Badge::new(&opt.subject);
 
-  if let Some(col) = opt.color {
+  if let Some(col) = &opt.color {
     badge.color(col);
   }
-  if let Some(t) = opt.text.as_ref() {
+
+  if let Some(t) = &opt.text {
     badge.text(t);
   }
-  if let Some(icon) = opt.icon.as_ref() {
+
+  if let Some(icon) = &opt.icon {
     let mut i = IconBuilder::new(icon);
     if let Some(ic) = opt.icon_colour.as_ref() {
       i.set_color(ic);
     }
     badge.icon(i.build());
   }
+
   if let Some(d) = &opt.data {
     badge.data(d.0.to_owned());
   }
