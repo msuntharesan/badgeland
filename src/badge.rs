@@ -1,7 +1,7 @@
 use super::{get_color, icons::Icon};
 use maud::{html, PreEscaped};
 use rusttype::{point, Font, FontCollection, Scale};
-use std::{borrow::Cow, fmt};
+use std::fmt;
 use unicode_normalization::UnicodeNormalization;
 
 #[derive(Debug, PartialEq)]
@@ -19,9 +19,9 @@ pub enum Size {
 
 #[derive(Debug)]
 pub struct Badge<'a> {
-  subject: Cow<'a, str>,
-  text: Option<Cow<'a, str>>,
-  color: Cow<'a, str>,
+  subject: &'a str,
+  text: Option<&'a str>,
+  color: String,
   style: Styles,
   icon: Option<Icon<'a>>,
   height: u32,
@@ -29,12 +29,9 @@ pub struct Badge<'a> {
 }
 
 impl<'a> Badge<'a> {
-  pub fn new<S>(subject: S) -> Self
-  where
-    S: Into<Cow<'a, str>>,
-  {
+  pub fn new(subject: &'a str) -> Self {
     Badge {
-      subject: subject.into(),
+      subject: subject,
       text: None,
       color: "#08C".into(),
       style: Styles::Classic,
@@ -43,22 +40,14 @@ impl<'a> Badge<'a> {
       data: None,
     }
   }
-  pub fn color<S>(&mut self, color: S) -> &mut Self
-  where
-    S: Into<Cow<'a, str>>,
-  {
-    let c = color.into();
-    let c = get_color(&c);
-    if let Some(c) = c {
-      self.color = c.into();
+  pub fn color(&mut self, color: &'a str) -> &mut Self {
+    if let Some(c) = get_color(color) {
+      self.color = c;
     }
     self
   }
-  pub fn text<S>(&mut self, text: S) -> &mut Self
-  where
-    S: Into<Cow<'a, str>>,
-  {
-    self.text = Some(text.into());
+  pub fn text(&mut self, text: &'a str) -> &mut Self {
+    self.text = Some(text);
     self
   }
   pub fn style(&mut self, style: Styles) -> &mut Self {
@@ -318,9 +307,8 @@ impl Content {
 
 #[cfg(test)]
 mod tests {
-  use super::{get_font, Badge, Content, Size, Styles};
+  use super::{get_color, get_font, Badge, Content, Size, Styles};
   use scraper::{Html, Selector};
-  use std::borrow::Cow;
 
   use crate::IconBuilder;
 
@@ -361,11 +349,12 @@ mod tests {
   fn default_badge_has_333_as_background_colour() {
     let mut badge = Badge::new("just text");
     badge.color(DEF_COLOUR);
+    let def_color = get_color(DEF_COLOUR).unwrap();
     let badge_svg = badge.to_string();
     let doc = Html::parse_fragment(&badge_svg);
     let rect_sel = Selector::parse("g#bg > rect#subject").unwrap();
     let rect = doc.select(&rect_sel).next().unwrap();
-    assert_eq!(rect.value().attr("fill"), Some(DEF_COLOUR));
+    assert_eq!(rect.value().attr("fill").unwrap(), &def_color);
   }
 
   #[test]
@@ -373,7 +362,7 @@ mod tests {
     let mut badge = Badge::new("with subject");
     badge.text("badge text");
     let doc = Html::parse_fragment(&badge.to_string());
-    assert_eq!(badge.text, Some(Cow::Borrowed("badge text")));
+    assert_eq!(badge.text, Some("badge text"));
     let subject_sel = Selector::parse("g#text > text:last-child").unwrap();
     let subject = doc.select(&subject_sel).next().unwrap();
     assert_eq!(

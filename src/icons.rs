@@ -24,12 +24,7 @@ lazy_static! {
     symbols
   };
 }
-fn get_symbol(name: &str) -> Option<String> {
-  match SYMBOLS.get(name) {
-    Some(s) => Some(s.to_owned()),
-    None => None,
-  }
-}
+
 pub fn icon_exists(icon_name: &str) -> bool {
   SYMBOLS.contains_key(icon_name)
 }
@@ -44,7 +39,6 @@ pub struct Icon<'a> {
 pub struct IconBuilder<'a> {
   name: &'a str,
   color: &'a str,
-  has_symbol: bool,
 }
 
 impl<'a> IconBuilder<'a> {
@@ -52,7 +46,6 @@ impl<'a> IconBuilder<'a> {
     IconBuilder {
       name,
       color: DEFAULT_COLOUR,
-      has_symbol: icon_exists(name),
     }
   }
   pub fn set_color(&mut self, color: &'a str) -> &mut Self {
@@ -60,13 +53,10 @@ impl<'a> IconBuilder<'a> {
     self
   }
   pub fn build(self) -> Option<Icon<'a>> {
-    if !self.has_symbol {
-      return None;
-    }
-    Some(Icon {
+    SYMBOLS.get(self.name).map(String::from).map(|s| Icon {
       name: self.name,
       color: get_color(self.color).unwrap(),
-      symbol: get_symbol(&self.name).unwrap(),
+      symbol: s,
     })
   }
 }

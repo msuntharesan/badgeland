@@ -1,6 +1,6 @@
 use crate::utils::{
-  merit_query::{create_badge, QueryInfo},
   error::MeritError,
+  merit_query::{create_badge, QueryInfo},
 };
 use actix_web::{error, web, Error as ActixError, HttpResponse};
 use chrono::prelude::*;
