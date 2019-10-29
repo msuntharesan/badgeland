@@ -1,4 +1,4 @@
-use actix_web::{dev, http::StatusCode, HttpResponse, ResponseError};
+use actix_web::{http::StatusCode, HttpResponse, ResponseError};
 use merit::{icon_exists, Badge, IconBuilder};
 use std::fmt;
 
@@ -78,7 +78,8 @@ impl ResponseError for BadgeError {
     let text = u16::from(self.status).to_string();
     err_badge.text(&text);
 
-    dev::HttpResponseBuilder::new(self.status)
+    HttpResponse::InternalServerError()
+      .status(self.status)
       .content_type("image/svg+xml")
       .body(err_badge.to_string())
   }

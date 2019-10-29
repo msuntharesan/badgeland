@@ -10,15 +10,26 @@ mod services;
 mod utils;
 
 use actix_files as fs;
-use actix_web::{middleware, App, HttpServer, Result};
+use actix_web::{middleware, web, App, HttpResponse, HttpServer, Result};
 use dotenv::dotenv;
 use env_logger::Env;
 use listenfd::ListenFd;
 use std::io;
+use utils::merit_query::*;
 
 #[get("/")]
-pub fn index() -> Result<fs::NamedFile> {
+fn index() -> Result<fs::NamedFile> {
   Ok(fs::NamedFile::open("static/index.html")?)
+}
+
+fn default_404(query: web::Query<QueryInfo>) -> Result<HttpResponse> {
+  let badge = create_badge("Error", "404", Some("grey"), &query);
+
+  Ok(
+    HttpResponse::NotFound()
+      .content_type("image/svg+xml")
+      .body(badge.to_string()),
+  )
 }
 
 fn main() -> io::Result<()> {
@@ -34,6 +45,7 @@ fn main() -> io::Result<()> {
     App::new()
       .wrap(middleware::Logger::default())
       .wrap(middleware::NormalizePath)
+      .default_service(web::route().to(default_404))
       .service(index)
       .configure(badge_routes::config)
       .configure(services::crates_io::config)
