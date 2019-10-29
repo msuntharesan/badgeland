@@ -71,7 +71,7 @@ impl<'a> Badge<'a> {
     self.data = Some(data);
     self
   }
-  fn to_svg(self: &Self) -> String {
+  fn to_svg(&self) -> String {
     let font = get_font();
     let height = self.height;
     let font_size = (height as f32 * 0.65).ceil() as u32;
@@ -134,7 +134,7 @@ impl<'a> Badge<'a> {
               }
             }
             filter id="shadow" {
-              feDropShadow dx="-1" dy="-1" stdDeviation="0" flood-color="#000" flood-opacity="0.5" {}
+              feDropShadow dx="-0.8" dy="-0.8" stdDeviation="0" flood-color="#000" flood-opacity="0.4" {}
             }
             @if let Some(icon) = &self.icon {
               (PreEscaped(icon.symbol.to_owned()))
