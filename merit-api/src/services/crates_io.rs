@@ -2,7 +2,7 @@ use crate::utils::{
   error::{BadgeError, BadgeErrorBuilder},
   merit_query::{create_badge, QueryInfo},
 };
-use actix_web::{http::StatusCode, web, Error as ActixError, HttpResponse};
+use actix_web::{http::StatusCode, web, HttpResponse};
 use chrono::prelude::*;
 use futures::Future;
 use humanize::*;
@@ -67,7 +67,7 @@ fn get_crate(
 fn crate_v_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<CrateParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = ActixError> {
+) -> impl Future<Item = HttpResponse, Error = BadgeError> {
   let path = params.to_path(CRATES_API_PATH, None);
   get_crate(&client, &path)
     .and_then(move |json: Value| {
@@ -89,13 +89,12 @@ fn crate_v_handler(
           Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
         })
     })
-    .map_err(ActixError::from)
 }
 
 fn crate_license_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<CrateParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = ActixError> {
+) -> impl Future<Item = HttpResponse, Error = BadgeError> {
   let path = params.to_path(CRATES_API_PATH, None);
   get_crate(&client, &path)
     .and_then(|json: Value| {
@@ -143,13 +142,12 @@ fn crate_license_handler(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
-    .map_err(ActixError::from)
 }
 
 fn crate_dl_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<CrateParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = ActixError> {
+) -> impl Future<Item = HttpResponse, Error = BadgeError> {
   let path = params.to_path(CRATES_API_PATH, None);
 
   let mut opts = humanize_options();
@@ -178,13 +176,12 @@ fn crate_dl_handler(
           Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
         })
     })
-    .map_err(ActixError::from)
 }
 
 fn cargo_hist_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<CrateParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = ActixError> {
+) -> impl Future<Item = HttpResponse, Error = BadgeError> {
   let path = params.to_path(CRATES_API_PATH, Some("downloads"));
   get_crate(&client, &path)
     .and_then(|value: Value| -> Result<Vec<Value>, BadgeError> {
@@ -239,7 +236,6 @@ fn cargo_hist_handler(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
-    .map_err(ActixError::from)
 }
 
 pub fn config(cfg: &mut web::ServiceConfig) {

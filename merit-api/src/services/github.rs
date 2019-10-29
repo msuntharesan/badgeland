@@ -2,7 +2,7 @@ use crate::utils::{
   error::{BadgeError, BadgeErrorBuilder},
   merit_query::{create_badge, QueryInfo},
 };
-use actix_web::{error, http::StatusCode, web, Error as ActixError, HttpResponse};
+use actix_web::{http::StatusCode, web, HttpResponse};
 use futures::Future;
 use graphql_client::*;
 use merit::IconBuilder;
@@ -84,7 +84,7 @@ where
 fn github_lic_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<GithubParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = ActixError> {
+) -> impl Future<Item = HttpResponse, Error = BadgeError> {
   let q = GithubLicense::build_query(github_license::Variables {
     owner: String::from(&params.owner),
     name: String::from(&params.name),
@@ -106,13 +106,12 @@ fn github_lic_handler(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
-    .map_err(ActixError::from)
 }
 
 fn github_stars_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<GithubParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = ActixError> {
+) -> impl Future<Item = HttpResponse, Error = BadgeError> {
   let q = GithubStarCount::build_query(github_star_count::Variables {
     owner: String::from(&params.owner),
     name: String::from(&params.name),
@@ -133,13 +132,12 @@ fn github_stars_handler(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
-    .map_err(ActixError::from)
 }
 
 fn github_watch_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<GithubParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = ActixError> {
+) -> impl Future<Item = HttpResponse, Error = BadgeError> {
   let q = GithubWatchCount::build_query(github_watch_count::Variables {
     owner: String::from(&params.owner),
     name: String::from(&params.name),
@@ -160,13 +158,12 @@ fn github_watch_handler(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
-    .map_err(ActixError::from)
 }
 
 fn github_fork_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<GithubParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = ActixError> {
+) -> impl Future<Item = HttpResponse, Error = BadgeError> {
   let q = GithubForkCount::build_query(github_fork_count::Variables {
     owner: String::from(&params.owner),
     name: String::from(&params.name),
@@ -184,11 +181,15 @@ fn github_fork_handler(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
-    .map_err(ActixError::from)
 }
 
-fn not_impl() -> impl Future<Item = (), Error = ActixError> {
-  futures::done(Err(error::ErrorNotImplemented("No ready yet")))
+fn not_impl() -> impl Future<Item = (), Error = BadgeError> {
+  futures::done(Err(
+    BadgeErrorBuilder::new()
+      .service("github")
+      .status(StatusCode::NOT_IMPLEMENTED)
+      .build(),
+  ))
 }
 
 pub fn config(cfg: &mut web::ServiceConfig) {

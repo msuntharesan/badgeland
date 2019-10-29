@@ -2,7 +2,7 @@ use crate::utils::{
   error::{BadgeError, BadgeErrorBuilder},
   merit_query::{create_badge, BadgeSize, QueryInfo},
 };
-use actix_web::{http::StatusCode, web, Error as ActixError, HttpResponse};
+use actix_web::{http::StatusCode, web, HttpResponse};
 use chrono::prelude::*;
 use futures::Future;
 use humanize::*;
@@ -149,7 +149,7 @@ fn npm_license_handler(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
-    // .map_err(ActixError::from)
+  // .map_err(ActixError::from)
 }
 
 fn npm_dl_numbers(
@@ -195,7 +195,7 @@ fn npm_dl_numbers(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
-    // .map_err(ActixError::from)
+  // .map_err(ActixError::from)
 }
 
 fn npm_historical_chart(
@@ -274,7 +274,7 @@ fn npm_historical_chart(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
-    // .map_err(ActixError::from)
+  // .map_err(ActixError::from)
 }
 
 fn npm_v_handler(
@@ -310,7 +310,7 @@ fn npm_v_handler(
 
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
-    // .map_err(ActixError::from)
+  // .map_err(ActixError::from)
 }
 
 pub fn config(cfg: &mut web::ServiceConfig) {
