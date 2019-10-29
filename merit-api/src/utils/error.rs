@@ -1,108 +1,105 @@
-use actix_web::{dev, HttpResponse, ResponseError};
-use merit::icon_exists;
-use reqwest;
-use std::{error::Error as StdError, fmt};
+use actix_web::{dev, http::StatusCode, HttpResponse, ResponseError};
+use merit::{icon_exists, Badge, IconBuilder};
+use std::fmt;
 
 pub struct BadgeError {
-  pub status: reqwest::StatusCode,
-  pub description: String,
-  pub icon: Option<String>,
+  status: StatusCode,
+  description: String,
+  url: Option<String>,
+  service: Option<String>,
 }
 
-pub enum MeritError {
-  ReqwestErr(reqwest::Error),
-  CustomErr(BadgeError),
+pub struct BadgeErrorBuilder {
+  status: Option<StatusCode>,
+  description: String,
+  url: Option<String>,
+  service: Option<String>,
 }
 
-impl MeritError {
-  fn status(&self) -> reqwest::StatusCode {
-    match self {
-      MeritError::ReqwestErr(err) => err
-        .status()
-        .or(Some(reqwest::StatusCode::INTERNAL_SERVER_ERROR))
-        .unwrap(),
-      MeritError::CustomErr(err) => err.status,
+impl BadgeErrorBuilder {
+  pub fn new() -> Self {
+    BadgeErrorBuilder {
+      status: Some(StatusCode::INTERNAL_SERVER_ERROR),
+      description: "unknown err".into(),
+      url: None,
+      service: None,
     }
   }
-  fn description(&self) -> String {
-    match self {
-      MeritError::ReqwestErr(err) => err.description().to_string(),
-      MeritError::CustomErr(err) => err.description.to_string(),
-    }
+  pub fn description<T>(&mut self, description: T) -> &mut Self
+  where
+    T: Into<String>,
+  {
+    self.description = description.into();
+    self
   }
-  fn url(&self) -> Option<&reqwest::Url> {
-    match self {
-      MeritError::ReqwestErr(err) => err.url(),
-      _ => None,
+  pub fn status(&mut self, status: StatusCode) -> &mut Self {
+    self.status = Some(status);
+    self
+  }
+  pub fn url<T>(&mut self, url: Option<T>) -> &mut Self
+  where
+    T: Into<String>,
+  {
+    self.url = url.map(|u| u.into());
+    self
+  }
+  pub fn service<T>(&mut self, service: T) -> &mut Self
+  where
+    T: Into<String>,
+  {
+    self.service = Some(service.into());
+    self
+  }
+  pub fn build(&self) -> BadgeError {
+    BadgeError {
+      description: self.description.to_owned(),
+      status: self.status.unwrap(),
+      url: self.url.to_owned(),
+      service: self.service.to_owned(),
     }
   }
 }
 
-impl ResponseError for MeritError {
-  fn error_response(&self) -> HttpResponse {
-    HttpResponse::new(self.status()).set_body(dev::Body::from(format!(
-      "URL: {:?} Description: {}",
-      self.url(),
-      self.description()
-    )))
+impl ResponseError for BadgeError {
+  fn render_response(&self) -> HttpResponse {
+    let mut err_badge = Badge::new("Error");
+
+    match &self.service {
+      Some(icon) if icon_exists(&icon) => {
+        let icon = IconBuilder::new(&icon).build().unwrap();
+        err_badge.icon(Some(icon));
+      }
+      Some(service) => {
+        err_badge = Badge::new(&service);
+      }
+      _ => {}
+    }
+    err_badge.color("red");
+    let text = u16::from(self.status).to_string();
+    err_badge.text(&text);
+
+    dev::HttpResponseBuilder::new(self.status)
+      .content_type("image/svg+xml")
+      .body(err_badge.to_string())
   }
 }
 
-impl fmt::Display for MeritError {
+impl fmt::Display for BadgeError {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(
       f,
-      "URL: {:?} Status Code: {:#?} Reason: {}",
-      self.url(),
-      self.status(),
-      self.description()
+      "URL: {:?} | Status Code: {:#?} | Reason: {}",
+      self.url, self.status, self.description
     )
   }
 }
 
-impl fmt::Debug for MeritError {
+impl fmt::Debug for BadgeError {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(
       f,
       "URL: {:?} Status Code: {:#?} Reason: {}",
-      self.url(),
-      self.status(),
-      self.description()
+      self.url, self.status, self.description
     )
   }
-}
-
-impl From<reqwest::Error> for MeritError {
-  fn from(err: reqwest::Error) -> Self {
-    MeritError::ReqwestErr(err)
-  }
-}
-
-impl From<String> for MeritError {
-  fn from(description: String) -> Self {
-    MeritError::CustomErr(BadgeError {
-      status: reqwest::StatusCode::INTERNAL_SERVER_ERROR,
-      description,
-      icon: None,
-    })
-  }
-}
-
-pub fn badge_error_for_service(
-  service: &str,
-  description: &str,
-  status: Option<reqwest::StatusCode>,
-) -> MeritError {
-  let badge_err = BadgeError {
-    status: status
-      .or(Some(reqwest::StatusCode::INTERNAL_SERVER_ERROR))
-      .unwrap(),
-    description: description.into(),
-    icon: if icon_exists(service) {
-      Some(service.into())
-    } else {
-      None
-    },
-  };
-  MeritError::CustomErr(badge_err)
 }

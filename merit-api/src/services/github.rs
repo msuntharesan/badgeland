@@ -1,15 +1,15 @@
 use crate::utils::{
-  error::MeritError,
+  error::{BadgeError, BadgeErrorBuilder},
   merit_query::{create_badge, QueryInfo},
 };
-use actix_web::{error, web, Error as ActixError, HttpResponse};
+use actix_web::{error, http::StatusCode, web, Error as ActixError, HttpResponse};
 use futures::Future;
-use graphql_client::GraphQLQuery;
+use graphql_client::*;
 use merit::IconBuilder;
 use reqwest::r#async as req;
 use serde;
 use serde_derive::Deserialize;
-use std::{env, str};
+use std::{env, error::Error as StdErr, str};
 
 #[derive(GraphQLQuery)]
 #[graphql(
@@ -60,7 +60,7 @@ struct GithubParams {
 
 static GITHUB_GQL_ENDPOINT: &'static str = "https://api.github.com/graphql";
 
-fn make_req<T, Q>(client: &req::Client, query: &Q) -> impl Future<Item = T, Error = ActixError>
+fn make_req<T, Q>(client: &req::Client, query: &Q) -> impl Future<Item = T, Error = BadgeError>
 where
   for<'de> T: serde::Deserialize<'de>,
   Q: serde::Serialize,
@@ -71,8 +71,14 @@ where
     .json(&query)
     .send()
     .and_then(|mut resp: req::Response| resp.json::<T>())
-    .map_err(MeritError::from)
-    .map_err(ActixError::from)
+    .map_err(|err: reqwest::Error| {
+      BadgeErrorBuilder::new()
+        .description(err.description())
+        .service("github")
+        .status(err.status().unwrap_or(StatusCode::INTERNAL_SERVER_ERROR))
+        .url(err.url().map(|url: &reqwest::Url| url.as_str()))
+        .build()
+    })
 }
 
 fn github_lic_handler(
@@ -100,6 +106,7 @@ fn github_lic_handler(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
+    .map_err(ActixError::from)
 }
 
 fn github_stars_handler(
@@ -126,6 +133,7 @@ fn github_stars_handler(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
+    .map_err(ActixError::from)
 }
 
 fn github_watch_handler(
@@ -152,6 +160,7 @@ fn github_watch_handler(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
+    .map_err(ActixError::from)
 }
 
 fn github_fork_handler(
@@ -175,6 +184,7 @@ fn github_fork_handler(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
+    .map_err(ActixError::from)
 }
 
 fn not_impl() -> impl Future<Item = (), Error = ActixError> {

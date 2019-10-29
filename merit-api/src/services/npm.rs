@@ -1,8 +1,8 @@
 use crate::utils::{
+  error::{BadgeError, BadgeErrorBuilder},
   merit_query::{create_badge, BadgeSize, QueryInfo},
-  error::MeritError,
 };
-use actix_web::{error, web, Error as ActixError, HttpResponse};
+use actix_web::{http::StatusCode, web, Error as ActixError, HttpResponse};
 use chrono::prelude::*;
 use futures::Future;
 use humanize::*;
@@ -11,7 +11,7 @@ use merit::{Badge, IconBuilder, Size};
 use reqwest::r#async as req;
 use serde_derive::Deserialize;
 use serde_json::Value;
-use std::str;
+use std::{error::Error as StdError, str};
 
 static UNPKG_API_PATH: &'static str = "https://unpkg.com";
 static DOWNLOAD_COUNT_PATH: &'static str = "https://api.npmjs.org/downloads/";
@@ -108,20 +108,26 @@ impl NPMParams {
   }
 }
 
-fn npm_get(client: &req::Client, path_str: &str) -> impl Future<Item = Value, Error = ActixError> {
+fn npm_get(client: &req::Client, path_str: &str) -> impl Future<Item = Value, Error = BadgeError> {
   client
     .get(path_str)
     .header("accept", "application/json")
     .send()
     .and_then(|mut resp: req::Response| resp.json::<Value>())
-    .map_err(MeritError::from)
-    .map_err(ActixError::from)
+    .map_err(|err: reqwest::Error| {
+      BadgeErrorBuilder::new()
+        .description(err.description())
+        .service("npm")
+        .status(err.status().unwrap_or(StatusCode::INTERNAL_SERVER_ERROR))
+        .url(err.url().map(|url: &reqwest::Url| url.as_str()))
+        .build()
+    })
 }
 
 fn npm_license_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<NPMParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = ActixError> {
+) -> impl Future<Item = HttpResponse, Error = BadgeError> {
   let path = params.to_path(UNPKG_API_PATH);
 
   npm_get(&client, &path)
@@ -129,9 +135,13 @@ fn npm_license_handler(
       value
         .get("license")
         .and_then(|v: &Value| v.as_str().map(String::from))
-        .ok_or(error::ErrorInternalServerError(
-          "Cannot find property".to_string(),
-        ))
+        .ok_or(
+          BadgeErrorBuilder::new()
+            .status(StatusCode::NOT_FOUND)
+            .description(format!("Cannot find property 'license' in {:?}", value))
+            .service("npm")
+            .build(),
+        )
     })
     .and_then(move |license: String| {
       let badge = create_badge("licence", &license, None, &query);
@@ -139,12 +149,13 @@ fn npm_license_handler(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
+    // .map_err(ActixError::from)
 }
 
 fn npm_dl_numbers(
   client: web::Data<req::Client>,
   (params, query): (web::Path<NPMParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = ActixError> {
+) -> impl Future<Item = HttpResponse, Error = BadgeError> {
   let mut opts = humanize_options();
   opts.set_lowercase(true).set_precision(1);
   let path = params.to_dl_path(&DOWNLOAD_COUNT_PATH, false);
@@ -154,10 +165,13 @@ fn npm_dl_numbers(
       value
         .get("downloads")
         .and_then(|v: &Value| v.as_f64())
-        .ok_or(error::ErrorInternalServerError(format!(
-          "Failed to parse {:?}",
-          value
-        )))
+        .ok_or(
+          BadgeErrorBuilder::new()
+            .status(StatusCode::NOT_FOUND)
+            .description(format!("Cannot find property 'downloads' in {:?}", value))
+            .service("npm")
+            .build(),
+        )
     })
     .and_then(move |v: f64| {
       let subject = match &params.period {
@@ -181,23 +195,27 @@ fn npm_dl_numbers(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
+    // .map_err(ActixError::from)
 }
 
 fn npm_historical_chart(
   client: web::Data<req::Client>,
   (params, query): (web::Path<NPMParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = ActixError> {
+) -> impl Future<Item = HttpResponse, Error = BadgeError> {
   let path = &params.to_dl_path(DOWNLOAD_COUNT_PATH, true);
 
   npm_get(&client, &path)
-    .and_then(|value: Value| -> Result<Vec<Value>, ActixError> {
+    .and_then(|value: Value| -> Result<Vec<Value>, BadgeError> {
       value
         .get("downloads")
         .and_then(|v: &Value| v.as_array().cloned())
-        .ok_or(error::ErrorInternalServerError(format!(
-          "Failed to parse {:?}",
-          &value
-        )))
+        .ok_or(
+          BadgeErrorBuilder::new()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .description(format!("Cannot find property 'downloads' in {:?}", &value))
+            .service("npm")
+            .build(),
+        )
     })
     .and_then(|dls: Vec<Value>| {
       dls
@@ -210,10 +228,13 @@ fn npm_historical_chart(
           _ => None,
         })
         .collect::<Option<Vec<(String, i64)>>>()
-        .ok_or(error::ErrorInternalServerError(format!(
-          "Failed to parse {:?}",
-          &dls
-        )))
+        .ok_or(
+          BadgeErrorBuilder::new()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .description(format!("Cannot find property 'downloads' in {:?}", dls))
+            .service("npm")
+            .build(),
+        )
     })
     .and_then(move |dls: Vec<((String, i64))>| {
       let dls = dls
@@ -253,12 +274,13 @@ fn npm_historical_chart(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
+    // .map_err(ActixError::from)
 }
 
 fn npm_v_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<NPMParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = ActixError> {
+) -> impl Future<Item = HttpResponse, Error = BadgeError> {
   let path = params.to_path(UNPKG_API_PATH);
 
   npm_get(&client, &path)
@@ -266,9 +288,13 @@ fn npm_v_handler(
       value
         .get("version")
         .and_then(|v: &Value| v.as_str().map(String::from))
-        .ok_or(error::ErrorInternalServerError(
-          "Cannot read property".to_string(),
-        ))
+        .ok_or(
+          BadgeErrorBuilder::new()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .description(format!("Cannot find property 'version' in {:?}", value))
+            .service("npm")
+            .build(),
+        )
     })
     .and_then(move |version: String| {
       let subject = match &params.tag {
@@ -284,6 +310,7 @@ fn npm_v_handler(
 
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
+    // .map_err(ActixError::from)
 }
 
 pub fn config(cfg: &mut web::ServiceConfig) {
