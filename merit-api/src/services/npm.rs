@@ -7,7 +7,7 @@ use chrono::prelude::*;
 use futures::Future;
 use humanize::*;
 use itertools::Itertools;
-use merit::{Badge, IconBuilder, Size};
+use merit::{Badge, IconBuilder, Size, Styles};
 use reqwest::r#async as req;
 use serde_derive::Deserialize;
 use serde_json::Value;
@@ -264,6 +264,14 @@ fn npm_historical_chart(
       badge.data(dls);
       badge.color("8254ed");
       badge.icon(IconBuilder::new("download").build());
+
+      match &query.style {
+        Some(x) if x == "flat" => {
+          badge.style(Styles::Flat);
+        }
+        _ => {}
+      }
+
       if let Some(bs) = &query.size {
         badge.size(match bs {
           BadgeSize::Large => Size::Large,
