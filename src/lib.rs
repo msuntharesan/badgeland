@@ -1,6 +1,6 @@
 #![feature(proc_macro_hygiene)]
 
-use cssparser::{parse_color_keyword, Color, ToCss};
+use cssparser::{Color, Parser, ParserInput, ToCss};
 use std::{num::ParseIntError, str::FromStr};
 
 mod badge;
@@ -10,18 +10,13 @@ pub use badge::{Badge, Size, Styles};
 pub use icons::{icon_exists, Icon, IconBuilder};
 
 pub(self) fn get_color(color: &str) -> Option<String> {
-  let mut color = color.to_string();
-  if color.starts_with("#") {
-    color = color.replace("#", "");
-  }
-  match (
-    Color::parse_hash(color.as_bytes()),
-    parse_color_keyword(&color),
-  ) {
-    (Ok(c), _) => Some(c.to_css_string()),
-    (_, Ok(c)) => Some(c.to_css_string()),
-    (_, _) => None,
-  }
+  let mut input = ParserInput::new(color);
+  let mut parser = Parser::new(&mut input);
+
+  Color::parse(&mut parser)
+    .map(|c: Color| c.to_css_string())
+    .or_else(|_| Color::parse_hash(&color.as_bytes()).map(|c: Color| c.to_css_string()))
+    .ok()
 }
 
 #[derive(Debug)]
@@ -43,24 +38,48 @@ mod tests {
   use super::{get_color, BadgeData};
 
   #[test]
-  fn get_color_from_name() {
-    let c = get_color("red");
-    assert_eq!(c, Some(String::from("rgb(255, 0, 0)")));
+  fn get_color_pass() {
+    let colors = vec![
+      "red",
+      "#ff0000",
+      "ff0000",
+      "rgb(255, 0, 0)",
+      "rgba(255, 0, 0, 1)",
+    ];
+
+    let expected = Some(String::from("rgb(255, 0, 0)"));
+
+    for c in colors {
+      let cx = get_color(c);
+      assert_eq!(
+        cx, expected,
+        "input = {},  received = {:?}, expected = {:?}",
+        c, cx, expected
+      );
+    }
   }
   #[test]
-  fn get_color_from_hex() {
-    let c = get_color("ff0000");
-    assert_eq!(c, Some(String::from("rgb(255, 0, 0)")));
-  }
-  #[test]
-  fn get_color_from_hex_with_prefix() {
-    let c = get_color("#ff0000");
-    assert_eq!(c, Some(String::from("rgb(255, 0, 0)")));
-  }
-  #[test]
-  fn get_color_fails() {
-    let c = get_color("nonexistant");
-    assert!(c.is_none());
+  fn get_color_fail() {
+    let colors = vec![
+      "2983492837498723",
+      "mixed",
+      "#gg0000",
+      "gg0000",
+      "rbx(adf, 0, 0)",
+      "rgba(ee0, 0, 0, 1)",
+    ];
+
+    for c in colors {
+      let cx = get_color(c);
+
+      assert!(
+        cx.is_none(),
+        "input = {},  received = {:?}, expected = {:?}",
+        c,
+        cx,
+        None::<String>
+      );
+    }
   }
 
   #[test]
