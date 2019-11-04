@@ -4,52 +4,42 @@ use crate::utils::{
 };
 use actix_web::{http::StatusCode, web, HttpResponse};
 use futures::Future;
-use graphql_client::*;
+use humanize::*;
 use merit::IconBuilder;
 use reqwest::r#async as req;
-use serde;
-use serde_derive::Deserialize;
+use serde_derive::{Deserialize, Serialize};
+use serde_json::Value;
 use std::{env, error::Error as StdErr, str};
 
-#[derive(GraphQLQuery)]
-#[graphql(
-  schema_path = "src/resx/github_schema.graphql",
-  query_path = "src/resx/github_query.graphql",
-  response_derives = "Debug"
-)]
-struct GithubLicense;
+pub fn config(cfg: &mut web::ServiceConfig) {
+  cfg.data(req::Client::new()).service(
+    web::scope("/github/{owner}/{name}")
+      .route("/lic", web::get().to_async(github_lic_handler))
+      .route("/stars", web::get().to_async(github_stars_handler))
+      .route("/watches", web::get().to_async(github_watch_handler))
+      .route("/forks", web::get().to_async(github_fork_handler))
+      .route("/release/{tag_name}", web::get().to_async(not_impl)),
+  );
+}
 
-#[derive(GraphQLQuery)]
-#[graphql(
-  schema_path = "src/resx/github_schema.graphql",
-  query_path = "src/resx/github_query.graphql",
-  response_derives = "Debug"
-)]
-struct GithubStarCount;
+const QUERY: &'static str = include_str!("../resx/github_query.graphql");
 
-#[derive(GraphQLQuery)]
-#[graphql(
-  schema_path = "src/resx/github_schema.graphql",
-  query_path = "src/resx/github_query.graphql",
-  response_derives = "Debug"
-)]
-struct GithubWatchCount;
+#[derive(Serialize)]
+struct Variables {
+  owner: String,
+  name: String,
+}
 
-#[derive(GraphQLQuery)]
-#[graphql(
-  schema_path = "src/resx/github_schema.graphql",
-  query_path = "src/resx/github_query.graphql",
-  response_derives = "Debug"
-)]
-struct GithubForkCount;
-
-#[derive(GraphQLQuery)]
-#[graphql(
-  schema_path = "src/resx/github_schema.graphql",
-  query_path = "src/resx/github_query.graphql",
-  response_derives = "Debug"
-)]
-struct GithubTag;
+#[derive(Debug, Serialize, Deserialize)]
+struct QueryBody<'a, Variables>
+where
+  Variables: serde::Serialize,
+{
+  variables: Variables,
+  query: &'a str,
+  #[serde(rename = "operationName")]
+  operation_name: &'a str,
+}
 
 #[derive(Deserialize, Debug, Clone)]
 struct GithubParams {
@@ -60,17 +50,22 @@ struct GithubParams {
 
 static GITHUB_GQL_ENDPOINT: &'static str = "https://api.github.com/graphql";
 
-fn make_req<T, Q>(client: &req::Client, query: &Q) -> impl Future<Item = T, Error = BadgeError>
-where
-  for<'de> T: serde::Deserialize<'de>,
-  Q: serde::Serialize,
-{
+fn make_req<'a>(
+  client: &req::Client,
+  variables: Variables,
+  operation_name: &'a str,
+) -> impl Future<Item = Value, Error = BadgeError> {
+  let query = QueryBody {
+    variables,
+    query: QUERY,
+    operation_name,
+  };
   client
     .post(GITHUB_GQL_ENDPOINT)
     .bearer_auth(env::var("GH_ACCESS_TOKEN").unwrap())
     .json(&query)
     .send()
-    .and_then(|mut resp: req::Response| resp.json::<T>())
+    .and_then(|mut resp: req::Response| resp.json::<Value>())
     .map_err(|err: reqwest::Error| {
       BadgeErrorBuilder::new()
         .description(err.description())
@@ -85,21 +80,19 @@ fn github_lic_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<GithubParams>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = BadgeError> {
-  let q = GithubLicense::build_query(github_license::Variables {
+  let variables = Variables {
     owner: String::from(&params.owner),
     name: String::from(&params.name),
-  });
-  make_req(&client, &q)
-    .and_then(|rd: github_license::ResponseData| {
+  };
+  make_req(&client, variables, "GithubLicense")
+    .and_then(|rd: Value| {
       let lic_str = rd
-        .repository
-        .map(|lic| lic.license_info.map(|spdx| spdx.spdx_id))
-        .flatten()
-        .flatten()
-        .unwrap_or("no license".to_string());
+        .pointer("/data/repository/licenseInfo/spixId")
+        .and_then(|lic: &Value| lic.as_str().map(String::from))
+        .unwrap_or("no license".into());
       Ok(lic_str)
     })
-    .and_then(move |lic_str| {
+    .and_then(move |lic_str: String| {
       let mut badge = create_badge("license", &lic_str, None, &query);
       let icon = IconBuilder::new("github").build();
       badge.icon(icon);
@@ -112,21 +105,21 @@ fn github_stars_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<GithubParams>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = BadgeError> {
-  let q = GithubStarCount::build_query(github_star_count::Variables {
+  let variables = Variables {
     owner: String::from(&params.owner),
     name: String::from(&params.name),
-  });
-  make_req(&client, &q)
-    .and_then(|rd: github_star_count::ResponseData| {
+  };
+  make_req(&client, variables, "GithubStarCount")
+    .and_then(|rd: Value| {
       let star_count = rd
-        .repository
-        .map(|repo| repo.stargazers.total_count)
-        .unwrap_or(0);
+        .pointer("/data/repository/stargazers/totalCount")
+        .and_then(|total: &Value| total.as_i64())
+        .and_then(|v| v.humanize(humanize_options().set_lowercase(true).set_precision(1)))
+        .unwrap_or("0".into());
       Ok(star_count)
     })
     .and_then(move |star_count| {
-      let count = star_count.to_string();
-      let mut badge = create_badge("stars", &count, None, &query);
+      let mut badge = create_badge("stars", &star_count, None, &query);
       let icon = IconBuilder::new("github").build();
       badge.icon(icon);
       let svg = badge.to_string();
@@ -138,21 +131,21 @@ fn github_watch_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<GithubParams>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = BadgeError> {
-  let q = GithubWatchCount::build_query(github_watch_count::Variables {
-    owner: String::from(&params.owner),
+  let variables = Variables {
+    owner: String::from(&params.name),
     name: String::from(&params.name),
-  });
-  make_req(&client, &q)
-    .and_then(|rd: github_watch_count::ResponseData| {
-      let star_count = rd
-        .repository
-        .map(|repo| repo.watchers.total_count)
-        .unwrap_or(0);
-      Ok(star_count)
+  };
+  make_req(&client, variables, "GithubWatchCount")
+    .and_then(|rd: Value| {
+      let watchers = rd
+        .pointer("/data/repository/watchers/totalCount")
+        .and_then(|total: &Value| total.as_i64())
+        .and_then(|v| v.humanize(humanize_options().set_lowercase(true).set_precision(1)))
+        .unwrap_or("0".into());
+      Ok(watchers)
     })
-    .and_then(move |star_count| {
-      let count = star_count.to_string();
-      let mut badge = create_badge("watchers", &count, None, &query);
+    .and_then(move |watchers| {
+      let mut badge = create_badge("watchers", &watchers, None, &query);
       let icon = IconBuilder::new("github").build();
       badge.icon(icon);
       let svg = badge.to_string();
@@ -164,17 +157,21 @@ fn github_fork_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<GithubParams>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = BadgeError> {
-  let q = GithubForkCount::build_query(github_fork_count::Variables {
-    owner: String::from(&params.owner),
+  let variables = Variables {
+    owner: String::from(&params.name),
     name: String::from(&params.name),
-  });
-  make_req(&client, &q)
-    .and_then(|rd: github_fork_count::ResponseData| {
-      let star_count = rd.repository.map(|repo| repo.fork_count).unwrap_or(0);
-      Ok(star_count)
+  };
+  make_req(&client, variables, "GithubForkCount")
+    .and_then(|rd: Value| {
+      let forks = rd
+        .pointer("/data/repository/forkCount")
+        .and_then(|total: &Value| total.as_i64())
+        .and_then(|v| v.humanize(humanize_options().set_lowercase(true).set_precision(1)))
+        .unwrap_or("0".into());
+      Ok(forks)
     })
-    .and_then(move |star_count| {
-      let count = star_count.to_string();
+    .and_then(move |forks| {
+      let count = forks.to_string();
       let mut badge = create_badge("forks", &count, None, &query);
       let icon = IconBuilder::new("github").build();
       badge.icon(icon);
@@ -192,13 +189,8 @@ fn not_impl() -> impl Future<Item = (), Error = BadgeError> {
   ))
 }
 
-pub fn config(cfg: &mut web::ServiceConfig) {
-  cfg.data(req::Client::new()).service(
-    web::scope("/github/{owner}/{name}")
-      .route("/lic", web::get().to_async(github_lic_handler))
-      .route("/stars", web::get().to_async(github_stars_handler))
-      .route("/watches", web::get().to_async(github_watch_handler))
-      .route("/forks", web::get().to_async(github_fork_handler))
-      .route("/release/{tag_name}", web::get().to_async(not_impl)),
-  );
-}
+//  pub const OPERATION_NAME: &'static str = "GithubLicense";
+//  pub const OPERATION_NAME: &'static str = "GithubStarCount";
+//  pub const OPERATION_NAME: &'static str = "GithubWatchCount";
+//  pub const OPERATION_NAME: &'static str = "GithubForkCount";
+//  pub const OPERATION_NAME: &'static str = "GithubTag";

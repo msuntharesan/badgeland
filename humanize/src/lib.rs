@@ -20,14 +20,17 @@ impl Default for HumanizeOptions {
     }
   }
 }
+
 impl AsRef<HumanizeOptions> for HumanizeOptions {
   fn as_ref(&self) -> &HumanizeOptions {
     self
   }
 }
+
 pub fn humanize_options() -> HumanizeOptions {
   HumanizeOptions::default()
 }
+
 impl HumanizeOptions {
   pub fn new() -> Self {
     HumanizeOptions::default()
@@ -57,9 +60,11 @@ impl HumanizeOptions {
     self
   }
 }
+
 pub trait Humanize {
   fn humanize<T: AsRef<HumanizeOptions>>(&self, opts: T) -> Option<String>;
 }
+
 macro_rules! impl_humanize_u {
   (for $($t: ty)*) => ($(
     impl Humanize for $t {
@@ -73,8 +78,12 @@ macro_rules! impl_humanize_u {
           val /= denominator;
           unit += 1;
         }
-        unit = if unit > opts.units.len() { opts.units.len() - 1 } else { unit };
-        let mut suffix: String = opts.units[unit].to_owned();
+        let mut suffix:String = if unit > opts.units.len() {
+          opts.units.last().unwrap().to_string()
+        } else {
+          opts.units[unit].to_owned()
+        };
+
         if opts.lower_case {
           suffix = suffix.to_lowercase();
         }

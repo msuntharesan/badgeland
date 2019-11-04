@@ -1,9 +1,7 @@
 #![feature(rustc_private)]
-#![feature(option_flattening)]
 
 #[macro_use]
 extern crate actix_web;
-extern crate graphql_client;
 
 mod badge_routes;
 mod services;
@@ -54,12 +52,12 @@ fn main() -> io::Result<()> {
       .service(fs::Files::new("/static", "static/"))
   });
 
-  server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
+  server = if let Some(l) = listenfd.take_tcp_listener(0)? {
     server.listen(l).unwrap()
   } else {
     let addr = "127.0.0.1:3000";
     println!("Listening on {}", addr);
-    server.bind(addr).unwrap()
+    server.bind(addr)?
   };
   server.start();
   sys.run()
