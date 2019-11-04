@@ -1,13 +1,12 @@
 use super::utils::merit_query::{BadgeSize, QueryInfo};
 use actix_web::{web, HttpResponse};
-use merit::{Badge, IconBuilder, Size, BadgeData, Styles};
+use merit::{Badge, BadgeData, IconBuilder, Size, Styles};
 use serde_derive::Deserialize;
 
 #[derive(Deserialize)]
 struct BadgeInfo {
   text: Option<String>,
   subject: String,
-  color: Option<String>,
 }
 
 fn badge_handler((params, query): (web::Path<BadgeInfo>, web::Query<QueryInfo>)) -> HttpResponse {
@@ -20,7 +19,7 @@ fn badge_handler((params, query): (web::Path<BadgeInfo>, web::Query<QueryInfo>))
       req_badge.text(text);
     }
   }
-  if let Some(c) = &params.color {
+  if let Some(c) = &query.color {
     req_badge.color(c);
   }
 
@@ -53,9 +52,5 @@ fn badge_handler((params, query): (web::Path<BadgeInfo>, web::Query<QueryInfo>))
 pub fn config(cfg: &mut web::ServiceConfig) {
   cfg
     .route("/badge/{subject}", web::get().to(badge_handler))
-    .route("/badge/{subject}/{text}", web::get().to(badge_handler))
-    .route(
-      "/badge/{subject}/{text}/{color}",
-      web::get().to(badge_handler),
-    );
+    .route("/badge/{subject}/{text}", web::get().to(badge_handler));
 }
