@@ -1,5 +1,5 @@
 use clap::arg_enum;
-use merit::{icon_exists, Badge, BadgeData, IconBuilder, Size, Styles};
+use merit::{icon_exists, Badge, BadgeData, Icon, Size, Styles};
 use std::{fs::File, io::prelude::*, path::PathBuf};
 use structopt::StructOpt;
 
@@ -64,8 +64,8 @@ fn main() {
     }
 
     if let Some(icon) = &opt.icon {
-        let mut i = IconBuilder::new(icon);
-        if let Some(ic) = opt.icon_colour.as_ref() {
+        let mut i = Icon::new(icon);
+        if let Some(ic) = opt.icon_colour {
             i.set_color(ic);
         }
         badge.icon(i.build());

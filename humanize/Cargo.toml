@@ -4,3 +4,5 @@ version = "0.1.0"
 authors = ["Suntharesan Mohan <suntharesan.mohan@gmail.com>"]
 edition = "2018"
 
+[dependencies]
+derive_builder = "0.8"

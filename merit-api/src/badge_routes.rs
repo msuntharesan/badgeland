@@ -1,6 +1,6 @@
 use super::utils::merit_query::{BadgeSize, QueryInfo};
 use actix_web::{web, HttpResponse};
-use merit::{Badge, BadgeData, IconBuilder, Size, Styles};
+use merit::{Badge, BadgeData, Icon, Size, Styles};
 use serde_derive::Deserialize;
 
 #[derive(Deserialize)]
@@ -30,8 +30,8 @@ fn badge_handler((params, query): (web::Path<BadgeInfo>, web::Query<QueryInfo>))
     _ => {}
   }
   if let Some(i) = query.icon.as_ref() {
-    let mut icon = IconBuilder::new(i);
-    if let Some(ic) = query.icon_color.as_ref() {
+    let mut icon = Icon::new(i);
+    if let Some(ic) = &query.icon_color {
       icon.set_color(ic);
     }
     req_badge.icon(icon.build());

@@ -9,21 +9,21 @@ publish = false
 name = "merit"
 
 [dependencies]
-cssparser = "0.25"
+cssparser = "0.27"
+clap = "2.33"
+derive_builder = "0.8"
 hashbrown = "0.6"
 lazy_static = "1.4"
 maud = "0.21"
 rusttype = "0.8"
 scraper = "0.11"
-unicode-normalization = "0.1"
-
-clap = "2.33"
 structopt = "0.3"
+unicode-normalization = "0.1"
 
 [workspace]
 members = [
+  "humanize",
   "merit-api",
-  "humanize"
 ]
 
 [[bin]]

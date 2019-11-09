@@ -310,7 +310,7 @@ mod tests {
   use super::{get_color, get_font, Badge, Content, Size, Styles};
   use scraper::{Html, Selector};
 
-  use crate::IconBuilder;
+  use crate::Icon;
 
   const DEF_COLOUR: &str = "#08C";
   #[test]
@@ -374,7 +374,7 @@ mod tests {
   #[test]
   fn badge_with_icon() {
     let mut badge = Badge::new("with icon");
-    let icon = IconBuilder::new("git").build();
+    let icon = Icon::new("git").build();
     badge.icon(icon);
     let doc = Html::parse_fragment(&badge.to_string());
     assert!(badge.icon.is_some());

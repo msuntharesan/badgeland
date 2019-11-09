@@ -1,5 +1,5 @@
 use actix_web::{http::StatusCode, HttpResponse, ResponseError};
-use merit::{icon_exists, Badge, IconBuilder};
+use merit::{icon_exists, Badge, Icon};
 use std::fmt;
 
 pub struct BadgeError {
@@ -66,7 +66,7 @@ impl ResponseError for BadgeError {
 
     match &self.service {
       Some(icon) if icon_exists(&icon) => {
-        let icon = IconBuilder::new(&icon).build().unwrap();
+        let icon = Icon::new(&icon).build().unwrap();
         err_badge.icon(Some(icon));
       }
       Some(service) => {

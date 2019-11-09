@@ -5,7 +5,7 @@ use crate::utils::{
 use actix_web::{http::StatusCode, web, HttpResponse};
 use futures::Future;
 use humanize::*;
-use merit::IconBuilder;
+use merit::Icon;
 use reqwest::r#async as req;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
@@ -94,7 +94,7 @@ fn github_lic_handler(
     })
     .and_then(move |lic_str: String| {
       let mut badge = create_badge("license", &lic_str, None, &query);
-      let icon = IconBuilder::new("github").build();
+      let icon = Icon::new("github").build();
       badge.icon(icon);
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
@@ -109,18 +109,25 @@ fn github_stars_handler(
     owner: String::from(&params.owner),
     name: String::from(&params.name),
   };
+
+  let opt = HumanizeOptions::builder()
+    .lower_case(true)
+    .precision(1usize)
+    .build()
+    .unwrap();
+
   make_req(&client, variables, "GithubStarCount")
     .and_then(|rd: Value| {
       let star_count = rd
         .pointer("/data/repository/stargazers/totalCount")
         .and_then(|total: &Value| total.as_i64())
-        .and_then(|v| v.humanize(humanize_options().set_lowercase(true).set_precision(1)))
+        .and_then(|v| v.humanize(opt))
         .unwrap_or("0".into());
       Ok(star_count)
     })
     .and_then(move |star_count| {
       let mut badge = create_badge("stars", &star_count, None, &query);
-      let icon = IconBuilder::new("github").build();
+      let icon = Icon::new("github").build();
       badge.icon(icon);
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
@@ -135,18 +142,25 @@ fn github_watch_handler(
     owner: String::from(&params.name),
     name: String::from(&params.name),
   };
+
+  let opt = HumanizeOptions::builder()
+    .lower_case(true)
+    .precision(1usize)
+    .build()
+    .unwrap();
+
   make_req(&client, variables, "GithubWatchCount")
     .and_then(|rd: Value| {
       let watchers = rd
         .pointer("/data/repository/watchers/totalCount")
         .and_then(|total: &Value| total.as_i64())
-        .and_then(|v| v.humanize(humanize_options().set_lowercase(true).set_precision(1)))
+        .and_then(|v| v.humanize(opt))
         .unwrap_or("0".into());
       Ok(watchers)
     })
     .and_then(move |watchers| {
       let mut badge = create_badge("watchers", &watchers, None, &query);
-      let icon = IconBuilder::new("github").build();
+      let icon = Icon::new("github").build();
       badge.icon(icon);
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
@@ -161,19 +175,26 @@ fn github_fork_handler(
     owner: String::from(&params.name),
     name: String::from(&params.name),
   };
+
+  let opt = HumanizeOptions::builder()
+    .lower_case(true)
+    .precision(1usize)
+    .build()
+    .unwrap();
+
   make_req(&client, variables, "GithubForkCount")
     .and_then(|rd: Value| {
       let forks = rd
         .pointer("/data/repository/forkCount")
         .and_then(|total: &Value| total.as_i64())
-        .and_then(|v| v.humanize(humanize_options().set_lowercase(true).set_precision(1)))
+        .and_then(|v| v.humanize(opt))
         .unwrap_or("0".into());
       Ok(forks)
     })
     .and_then(move |forks| {
       let count = forks.to_string();
       let mut badge = create_badge("forks", &count, None, &query);
-      let icon = IconBuilder::new("github").build();
+      let icon = Icon::new("github").build();
       badge.icon(icon);
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
@@ -188,9 +209,3 @@ fn not_impl() -> impl Future<Item = (), Error = BadgeError> {
       .build(),
   ))
 }
-
-//  pub const OPERATION_NAME: &'static str = "GithubLicense";
-//  pub const OPERATION_NAME: &'static str = "GithubStarCount";
-//  pub const OPERATION_NAME: &'static str = "GithubWatchCount";
-//  pub const OPERATION_NAME: &'static str = "GithubForkCount";
-//  pub const OPERATION_NAME: &'static str = "GithubTag";

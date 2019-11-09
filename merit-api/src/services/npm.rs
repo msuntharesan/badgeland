@@ -7,14 +7,14 @@ use chrono::prelude::*;
 use futures::Future;
 use humanize::*;
 use itertools::Itertools;
-use merit::{Badge, IconBuilder, Size, Styles};
+use merit::{Badge, Icon, Size, Styles};
 use reqwest::r#async as req;
 use serde_derive::Deserialize;
 use serde_json::Value;
 use std::{error::Error as StdError, str};
 
-static UNPKG_API_PATH: &'static str = "https://unpkg.com";
-static DOWNLOAD_COUNT_PATH: &'static str = "https://api.npmjs.org/downloads/";
+const UNPKG_API_PATH: &'static str = "https://unpkg.com";
+const DOWNLOAD_COUNT_PATH: &'static str = "https://api.npmjs.org/downloads/";
 
 #[derive(Debug, Deserialize, Clone)]
 enum Period {
@@ -155,9 +155,13 @@ fn npm_dl_numbers(
   client: web::Data<req::Client>,
   (params, query): (web::Path<NPMParams>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = BadgeError> {
-  let mut opts = humanize_options();
-  opts.set_lowercase(true).set_precision(1);
   let path = params.to_dl_path(&DOWNLOAD_COUNT_PATH, false);
+
+  let opt = HumanizeOptions::builder()
+    .lower_case(true)
+    .precision(1usize)
+    .build()
+    .unwrap();
 
   npm_get(&client, &path)
     .and_then(|value: Value| {
@@ -180,9 +184,9 @@ fn npm_dl_numbers(
         Some(Period::Yearly) => " last-year",
         _ => "",
       };
-      let text = v.humanize(&opts).unwrap();
+      let text = v.humanize(opt).unwrap();
       let mut badge = create_badge(&subject, &text, Some("#8254ed"), &query);
-      let icon = IconBuilder::new("download");
+      let icon = Icon::new("download");
       badge.icon(icon.build());
       if let Some(bs) = &query.size {
         badge.size(match bs {
@@ -261,7 +265,7 @@ fn npm_historical_chart(
       let mut badge = Badge::new(subject);
       badge.data(dls);
       badge.color("8254ed");
-      badge.icon(IconBuilder::new("download").build());
+      badge.icon(Icon::new("download").build());
 
       match &query.style {
         Some(x) if x == "flat" => {
@@ -310,7 +314,7 @@ fn npm_v_handler(
       let version = format!("{}", version);
 
       let mut badge = create_badge(&subject, &version, None, &query);
-      badge.icon(IconBuilder::new("npm").build());
+      badge.icon(Icon::new("npm").build());
       let svg = badge.to_string();
 
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))

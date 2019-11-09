@@ -1,62 +1,31 @@
-#[derive(Debug)]
+use derive_builder::Builder;
+
+#[derive(Debug, Builder)]
 pub struct HumanizeOptions {
-  base: usize,
+  #[builder(default = "1000")]
+  denominator: usize,
+  #[builder(default = "2")]
   precision: usize,
+  #[builder(default = "false")]
+  keep_zero: bool,
+  #[builder(default = r#"".""#)]
   decimal_separator: &'static str,
+  #[builder(default = "false")]
   lower_case: bool,
+  #[builder(default = "false")]
   space: bool,
+  #[builder(default = r#"vec!["", "K", "M", "B", "T", "P", "E"]"#)]
   units: Vec<&'static str>,
 }
 
-impl Default for HumanizeOptions {
-  fn default() -> Self {
-    HumanizeOptions {
-      base: 1000,
-      precision: 2,
-      decimal_separator: ".",
-      lower_case: false,
-      space: false,
-      units: vec!["", "K", "M", "B", "T", "P", "E"],
-    }
+impl HumanizeOptions {
+  pub fn builder() -> HumanizeOptionsBuilder {
+    HumanizeOptionsBuilder::default()
   }
 }
 
 impl AsRef<HumanizeOptions> for HumanizeOptions {
   fn as_ref(&self) -> &HumanizeOptions {
-    self
-  }
-}
-
-pub fn humanize_options() -> HumanizeOptions {
-  HumanizeOptions::default()
-}
-
-impl HumanizeOptions {
-  pub fn new() -> Self {
-    HumanizeOptions::default()
-  }
-  pub fn set_base(&mut self, base: usize) -> &mut Self {
-    self.base = base;
-    self
-  }
-  pub fn set_precision(&mut self, precision: usize) -> &mut Self {
-    self.precision = precision;
-    self
-  }
-  pub fn set_decimal_separator(&mut self, decimal_separator: &'static str) -> &mut Self {
-    self.decimal_separator = decimal_separator;
-    self
-  }
-  pub fn set_lowercase(&mut self, lower_case: bool) -> &mut Self {
-    self.lower_case = lower_case;
-    self
-  }
-  pub fn set_space(&mut self, space: bool) -> &mut Self {
-    self.space = space;
-    self
-  }
-  pub fn set_units(&mut self, units: Vec<&'static str>) -> &mut Self {
-    self.units = units;
     self
   }
 }
@@ -70,11 +39,11 @@ macro_rules! impl_humanize_u {
     impl Humanize for $t {
       fn humanize<T: AsRef<HumanizeOptions>>(&self, _opts: T) -> Option<String>{
         let opts: &HumanizeOptions = _opts.as_ref();
-        let denominator = opts.base as f64;
+        let denominator = opts.denominator as f64;
 
         let mut val: f64 = *self as f64;
         let mut unit = 0;
-        while val>= opts.base as f64{
+        while val>= denominator as f64 {
           val /= denominator;
           unit += 1;
         }
@@ -88,9 +57,12 @@ macro_rules! impl_humanize_u {
           suffix = suffix.to_lowercase();
         }
 
-        let precision = if val.fract() == 0.0 { 0 } else { opts.precision };
+        let fract = (val.fract() * (10.0f64).powi(opts.precision as i32)).round() / 10.0f64.powi(opts.precision as i32);
+
+        let precision: usize = if fract == 0.0 && !opts.keep_zero { 0 } else { opts.precision as usize };
+
         let space = if opts.space { " " } else { "" };
-        let mut formatted:String = format!("{:.*}{}{}", precision, val, space, suffix);
+        let mut formatted:String = format!("{:.*}{}{}", precision , val, space, suffix);
         if opts.decimal_separator != "." {
           formatted = formatted.replace(".", opts.decimal_separator);
         }
@@ -103,8 +75,8 @@ macro_rules! impl_humanize_u {
 macro_rules! impl_humanize_i {
   (for $($t: ty)*) => ($(
     impl Humanize for $t {
-      fn humanize <T: AsRef<HumanizeOptions>>(&self, _opts: T) -> Option<String>{
-        let opts = _opts.as_ref();
+      fn humanize<T: AsRef<HumanizeOptions>>(&self, _opts: T) -> Option<String>{
+        let opts: &HumanizeOptions = _opts.as_ref();
         let sign = if *self < 0 { "-" } else { "" };
         Some(format!("{}{}", sign, (self.abs() as u64).humanize(opts).unwrap()))
       }
@@ -115,8 +87,8 @@ macro_rules! impl_humanize_i {
 macro_rules! impl_humanize_f {
   (for $($t: ty)*) => ($(
     impl Humanize for $t {
-      fn humanize <T: AsRef<HumanizeOptions>>(&self, _opts: T) -> Option<String>{
-        let opts = _opts.as_ref();
+      fn humanize<T: AsRef<HumanizeOptions>>(&self, _opts: T) -> Option<String>{
+        let opts: &HumanizeOptions = _opts.as_ref();
         let sign = if *self < 0.0 { "-" } else { "" };
         Some(format!("{}{}", sign, (self.abs() as u64).humanize(opts).unwrap()))
       }
@@ -134,7 +106,7 @@ mod tests {
 
   #[test]
   fn test_usize() {
-    let opt = HumanizeOptions::default();
+    let opt = HumanizeOptions::builder().build().unwrap();
     assert_eq!(100.humanize(&opt), Some("100".to_owned()));
     assert_eq!(1000.humanize(&opt), Some("1K".to_owned()));
     assert_eq!(1000000.humanize(&opt), Some("1M".to_owned()));
@@ -144,7 +116,7 @@ mod tests {
 
   #[test]
   fn test_isize() {
-    let opt = HumanizeOptions::default();
+    let opt = HumanizeOptions::builder().build().unwrap();
     assert_eq!((-100).humanize(&opt), Some("-100".to_string()));
     assert_eq!((100).humanize(&opt), Some("100".to_owned()));
     assert_eq!((-1000).humanize(&opt), Some("-1K".to_owned()));
@@ -155,7 +127,7 @@ mod tests {
 
   #[test]
   fn test_floats() {
-    let opt = HumanizeOptions::default();
+    let opt = HumanizeOptions::builder().build().unwrap();
     assert_eq!((-100f32).humanize(&opt), Some("-100".to_string()));
     assert_eq!((100f32).humanize(&opt), Some("100".to_owned()));
     assert_eq!((-1000f32).humanize(&opt), Some("-1K".to_owned()));
@@ -167,8 +139,7 @@ mod tests {
 
   #[test]
   fn test_lowercase_suffix() {
-    let mut opt = HumanizeOptions::default(); //.set_lower_case(true).get();
-    opt.set_lowercase(true);
+    let opt = HumanizeOptions::builder().lower_case(true).build().unwrap();
 
     assert_eq!(1000.humanize(&opt), Some("1k".to_owned()));
     assert_eq!(1000000.humanize(&opt), Some("1m".to_owned()));
@@ -179,30 +150,103 @@ mod tests {
   #[test]
   fn test_precision() {
     let value = 12345.6789;
-    let mut opt = HumanizeOptions::new(); //.set_lower_case(true).get();
-    opt.set_precision(0);
-    assert_eq!(value.humanize(&opt), Some("12K".to_owned()));
-    opt.set_precision(1);
-    assert_eq!(value.humanize(&opt), Some("12.3K".to_owned()));
-    opt.set_precision(2);
-    assert_eq!(value.humanize(&opt), Some("12.35K".to_owned()));
-    opt.set_precision(3);
-    assert_eq!(value.humanize(&opt), Some("12.345K".to_owned()));
+
+    let mut opts = HumanizeOptions::builder();
+    assert_eq!(
+      value.humanize(&opts.precision(0usize).build().unwrap()),
+      Some("12K".to_owned())
+    );
+    assert_eq!(
+      value.humanize(&opts.precision(1usize).build().unwrap()),
+      Some("12.3K".to_owned())
+    );
+    assert_eq!(
+      value.humanize(&opts.precision(2usize).build().unwrap()),
+      Some("12.35K".to_owned())
+    );
+    assert_eq!(
+      value.humanize(&opts.precision(3usize).build().unwrap()),
+      Some("12.345K".to_owned())
+    );
+  }
+
+  #[test]
+  fn test_precision_with_zero() {
+    let mut opt_builder = HumanizeOptions::builder();
+    let opt = opt_builder.precision(1usize).build().unwrap();
+
+    assert_eq!(1010000000.humanize(&opt), Some("1B".to_owned()));
+    assert_eq!(1060000000.humanize(&opt), Some("1.1B".to_owned()));
+    assert_eq!(1810000000.humanize(&opt), Some("1.8B".to_owned()));
+
+    let opt = opt_builder
+      .keep_zero(true)
+      .precision(1usize)
+      .build()
+      .unwrap();
+
+    assert_eq!(1010000000.humanize(&opt), Some("1.0B".to_owned()));
+    assert_eq!(1060000000.humanize(&opt), Some("1.1B".to_owned()));
+    assert_eq!(1810000000.humanize(&opt), Some("1.8B".to_owned()));
+
+    let opt = opt_builder
+      .keep_zero(false)
+      .precision(2usize)
+      .build()
+      .unwrap();
+
+    assert_eq!(1001000000.humanize(&opt), Some("1B".to_owned()));
+    assert_eq!(1060000000.humanize(&opt), Some("1.06B".to_owned()));
+    assert_eq!(1810000000.humanize(&opt), Some("1.81B".to_owned()));
+
+    let opt = opt_builder
+      .precision(2usize)
+      .keep_zero(true)
+      .build()
+      .unwrap();
+
+    assert_eq!(1001000000.humanize(&opt), Some("1.00B".to_owned()));
+    assert_eq!(1060000000.humanize(&opt), Some("1.06B".to_owned()));
+    assert_eq!(1810000000.humanize(&opt), Some("1.81B".to_owned()));
+
+    let opt = opt_builder
+      .keep_zero(false)
+      .precision(3usize)
+      .build()
+      .unwrap();
+
+    assert_eq!(1000100000.humanize(&opt), Some("1B".to_owned()));
+    assert_eq!(1060000000.humanize(&opt), Some("1.060B".to_owned()));
+    assert_eq!(1813450000.humanize(&opt), Some("1.813B".to_owned()));
+
+    let opt = opt_builder
+      .keep_zero(true)
+      .precision(3usize)
+      .build()
+      .unwrap();
+
+    assert_eq!(1000100000.humanize(&opt), Some("1.000B".to_owned()));
+    assert_eq!(1060000000.humanize(&opt), Some("1.060B".to_owned()));
+    assert_eq!(1813450000.humanize(&opt), Some("1.813B".to_owned()));
   }
 
   #[test]
   fn test_decimal_separator() {
     let value = 12345.6789;
-    let mut opt = HumanizeOptions::new(); //.set_lower_case(true).get();
-    opt.set_decimal_separator("_");
+    let opt = HumanizeOptions::builder()
+      .decimal_separator("_")
+      .build()
+      .unwrap();
     assert_eq!(value.humanize(&opt), Some("12_35K".to_owned()));
   }
 
   #[test]
   fn test_units() {
     let value = 123450.6789;
-    let mut opt = HumanizeOptions::new(); //.set_lower_case(true).get();
-    opt.set_units(vec!["m", "km"]);
+    let opt = HumanizeOptions::builder()
+      .units(vec!["m", "km"])
+      .build()
+      .unwrap();
     assert_eq!(value.humanize(&opt), Some("123.45km".to_owned()));
   }
 }

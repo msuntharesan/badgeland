@@ -41,8 +41,8 @@ pub mod merit_query {
     }
 
     if let Some(i) = query.icon.as_ref() {
-      let mut icon = IconBuilder::new(i);
-      if let Some(ic) = query.icon_color.as_ref() {
+      let mut icon = Icon::new(i);
+      if let Some(ic) = &query.icon_color {
         icon.set_color(ic);
       }
       badge.icon(icon.build());

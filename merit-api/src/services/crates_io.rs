@@ -7,7 +7,7 @@ use chrono::prelude::*;
 use futures::Future;
 use humanize::*;
 use itertools::Itertools;
-use merit::IconBuilder;
+use merit::Icon;
 use reqwest::r#async as req;
 use serde_derive::Deserialize;
 use serde_json::Value;
@@ -69,26 +69,25 @@ fn crate_v_handler(
   (params, query): (web::Path<CrateParams>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = BadgeError> {
   let path = params.to_path(CRATES_API_PATH, None);
-  get_crate(&client, &path)
-    .and_then(move |json: Value| {
-      json
-        .pointer("/crate/max_version")
-        .and_then(|v: &Value| v.as_str().map(String::from))
-        .ok_or(
-          BadgeErrorBuilder::new()
-            .status(StatusCode::NOT_FOUND)
-            .description(format!("Cannot find property 'version' in {:?}", json))
-            .service("crates.io")
-            .build(),
-        )
-        .and_then(|ver| {
-          let ver = format!("v{}", ver);
-          let badge = create_badge("crates.io", &ver, Some("#e67233"), &query);
+  get_crate(&client, &path).and_then(move |json: Value| {
+    json
+      .pointer("/crate/max_version")
+      .and_then(|v: &Value| v.as_str().map(String::from))
+      .ok_or(
+        BadgeErrorBuilder::new()
+          .status(StatusCode::NOT_FOUND)
+          .description(format!("Cannot find property 'version' in {:?}", json))
+          .service("crates.io")
+          .build(),
+      )
+      .and_then(|ver| {
+        let ver = format!("v{}", ver);
+        let badge = create_badge("crates.io", &ver, Some("#e67233"), &query);
 
-          let svg = badge.to_string();
-          Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
-        })
-    })
+        let svg = badge.to_string();
+        Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
+      })
+  })
 }
 
 fn crate_license_handler(
@@ -150,32 +149,34 @@ fn crate_dl_handler(
 ) -> impl Future<Item = HttpResponse, Error = BadgeError> {
   let path = params.to_path(CRATES_API_PATH, None);
 
-  let mut opts = humanize_options();
-  opts.set_lowercase(true).set_precision(1);
+  let opts = HumanizeOptions::builder()
+    .lower_case(true)
+    .precision(1usize)
+    .build()
+    .unwrap();
 
-  get_crate(&client, &path)
-    .and_then(move |json: Value| {
-      json
-        .pointer("/crate/downloads")
-        .and_then(|v: &Value| v.as_i64().clone())
-        .ok_or(
-          BadgeErrorBuilder::new()
-            .status(StatusCode::NOT_FOUND)
-            .description(format!("Cannot find property 'downloads' in {:?}", json))
-            .service("crates.io")
-            .build(),
-        )
-        .and_then(|dls: i64| {
-          let dls = dls.humanize(&opts).unwrap();
-          let mut badge = create_badge("all-time", &dls, Some("#e67233"), &query);
+  get_crate(&client, &path).and_then(move |json: Value| {
+    json
+      .pointer("/crate/downloads")
+      .and_then(|v: &Value| v.as_i64().clone())
+      .ok_or(
+        BadgeErrorBuilder::new()
+          .status(StatusCode::NOT_FOUND)
+          .description(format!("Cannot find property 'downloads' in {:?}", json))
+          .service("crates.io")
+          .build(),
+      )
+      .and_then(|dls: i64| {
+        let dls = dls.humanize(opts).unwrap();
+        let mut badge = create_badge("all-time", &dls, Some("#e67233"), &query);
 
-          let icon = IconBuilder::new("download");
-          badge.icon(icon.build());
+        let icon = Icon::new("download");
+        badge.icon(icon.build());
 
-          let svg = badge.to_string();
-          Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
-        })
-    })
+        let svg = badge.to_string();
+        Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
+      })
+  })
 }
 
 fn cargo_hist_handler(
@@ -232,7 +233,7 @@ fn cargo_hist_handler(
     .and_then(move |dls: Vec<i64>| {
       let mut badge = create_badge("last 90 days", "", Some("#e67233"), &query);
       badge.data(dls);
-      badge.icon(IconBuilder::new("download").build());
+      badge.icon(Icon::new("download").build());
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
