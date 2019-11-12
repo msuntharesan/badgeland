@@ -139,26 +139,26 @@ OPTIONS:
     --text <text>
 ```
 
-[badge_sub]: http://localhost:3000/badge/subject 'badge with only subject'
-[badge_def]: http://localhost:3000/badge/subject/text 'default badge'
-[badge_md]: http://localhost:3000/badge/subject/text?size=medium 'badge with medium size'
-[badge_lg]: http://localhost:3000/badge/subject/text?size=large 'badge with large size'
-[badge_color]: http://localhost:3000/badge/color/red?color=ff0000 'red badge'
-[badge_icon1]: http://localhost:3000/badge/icon/brand?icon=npm 'badge with brand icon'
-[badge_icon2]: http://localhost:3000/badge/icon/solid?icon=code 'badge with solid icon'
-[badge_data]: http://localhost:3000/badge/data/1,5,2,4,8,3,7 'badge with sparkline chart'
-[badge_flat]: http://localhost:3000/badge/style/flat?style=flat 'flat badge'
-[npm]: http://localhost:3000/npm/react
-[npm_tag]: http://localhost:3000/npm/typescript/next
-[npm_scope]: http://localhost:3000/npm/@types/react
-[npm_dl]: http://localhost:3000/npm/typescript/dl/m
-[npm_hist]: http://localhost:3000/npm/typescript/hist/m
-[crates_latest]: http://localhost:3000/crates/actix-web
-[crates_tag]: http://localhost:3000/crates/actix-web/alpha
-[crates_lic]: http://localhost:3000/crates/actix-web/lic
-[crates_dl]: http://localhost:3000/crates/actix-web/dl
-[crates_hist]: http://localhost:3000/crates/actix-web/hist
-[github_lic]: http://localhost:3000/github/rust-lang/rust/lic
-[github_stars]: http://localhost:3000/github/rust-lang/rust/stars
-[github_watches]: http://localhost:3000/github/rust-lang/rust/watches
-[github_forks]: http://localhost:3000/github/rust-lang/rust/forks
+[badge_sub]: https://merit-badge.herokuapp.com/badge/subject 'badge with only subject'
+[badge_def]: https://merit-badge.herokuapp.com/badge/subject/text 'default badge'
+[badge_md]: https://merit-badge.herokuapp.com/badge/subject/text?size=medium 'badge with medium size'
+[badge_lg]: https://merit-badge.herokuapp.com/badge/subject/text?size=large 'badge with large size'
+[badge_color]: https://merit-badge.herokuapp.com/badge/color/red?color=ff0000 'red badge'
+[badge_icon1]: https://merit-badge.herokuapp.com/badge/icon/brand?icon=npm 'badge with brand icon'
+[badge_icon2]: https://merit-badge.herokuapp.com/badge/icon/solid?icon=code 'badge with solid icon'
+[badge_data]: https://merit-badge.herokuapp.com/badge/data/1,5,2,4,8,3,7 'badge with sparkline chart'
+[badge_flat]: https://merit-badge.herokuapp.com/badge/style/flat?style=flat 'flat badge'
+[npm]: https://merit-badge.herokuapp.com/npm/react
+[npm_tag]: https://merit-badge.herokuapp.com/npm/typescript/next
+[npm_scope]: https://merit-badge.herokuapp.com/npm/@types/react
+[npm_dl]: https://merit-badge.herokuapp.com/npm/typescript/dl/m
+[npm_hist]: https://merit-badge.herokuapp.com/npm/typescript/hist/m
+[crates_latest]: https://merit-badge.herokuapp.com/crates/actix-web
+[crates_tag]: https://merit-badge.herokuapp.com/crates/actix-web/alpha
+[crates_lic]: https://merit-badge.herokuapp.com/crates/actix-web/lic
+[crates_dl]: https://merit-badge.herokuapp.com/crates/actix-web/dl
+[crates_hist]: https://merit-badge.herokuapp.com/crates/actix-web/hist
+[github_lic]: https://merit-badge.herokuapp.com/github/rust-lang/rust/lic
+[github_stars]: https://merit-badge.herokuapp.com/github/rust-lang/rust/stars
+[github_watches]: https://merit-badge.herokuapp.com/github/rust-lang/rust/watches
+[github_forks]: https://merit-badge.herokuapp.com/github/rust-lang/rust/forks
