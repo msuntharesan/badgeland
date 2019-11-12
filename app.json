@@ -1,0 +1,12 @@
+{
+  "name": "Merit",
+  "description": "Badge generation web app",
+  "repository": "https://github.com/msuntharesan/merit",
+  "success_url": "/",
+  "keywords": ["rust", "actix"],
+  "website": "https://github.com/msuntharesan/merit",
+  "env": {
+    "BUILDPACK_URL": "https://github.com/emk/heroku-buildpack-rust.git",
+    "RUST_CARGO_BUILD_FLAGS": "-p merit-api --release"
+  }
+}
