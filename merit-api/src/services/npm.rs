@@ -261,7 +261,7 @@ fn npm_historical_chart(
             .build(),
         )
     })
-    .and_then(move |dls: Vec<((String, i64))>| {
+    .and_then(move |dls: Vec<(String, i64)>| {
       let dls = dls
         .iter()
         .group_by(|(day, _)| {

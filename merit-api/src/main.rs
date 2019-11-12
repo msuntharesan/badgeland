@@ -12,7 +12,7 @@ use actix_web::{middleware, web, App, HttpResponse, HttpServer, Result};
 use dotenv::dotenv;
 use env_logger::Env;
 use listenfd::ListenFd;
-use std::io;
+use std::{env, io};
 use utils::merit_query::*;
 
 #[get("/")]
@@ -55,7 +55,8 @@ fn main() -> io::Result<()> {
   server = if let Some(l) = listenfd.take_tcp_listener(0)? {
     server.listen(l).unwrap()
   } else {
-    let addr = "127.0.0.1:3000";
+    let port = env::var("PORT").unwrap_or("3000".into());
+    let addr = format!("127.0.0.1:{}", port);
     println!("Listening on {}", addr);
     server.bind(addr)?
   };

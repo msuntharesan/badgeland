@@ -229,7 +229,7 @@ fn cargo_hist_handler(
         )
     })
     .and_then(
-      |dls: Vec<((String, i64))>| -> Result<Vec<i64>, BadgeError> {
+      |dls: Vec<(String, i64)>| -> Result<Vec<i64>, BadgeError> {
         let dls = dls
           .iter()
           .group_by(|(day, _)| {
