@@ -11,6 +11,7 @@ arg_enum! {
     Small
   }
 }
+
 arg_enum! {
   #[derive(Debug)]
   enum BadgeStyle {

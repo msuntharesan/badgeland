@@ -13,6 +13,29 @@ use serde_derive::Deserialize;
 use serde_json::Value;
 use std::{error::Error as StdError, str};
 
+pub fn config(cfg: &mut web::ServiceConfig) {
+  cfg
+    .data(req::Client::new())
+    .service(
+      web::scope("/npm/@{scope}/{package}")
+        .route("/lic", web::get().to_async(npm_license_handler))
+        .route("/dl/{period}", web::get().to_async(npm_dl_numbers))
+        .route("/hist/{period}", web::get().to_async(npm_historical_chart))
+        .route("/{tag}", web::get().to_async(npm_v_handler))
+        .route("/", web::get().to_async(npm_v_handler))
+        .route("", web::get().to_async(npm_v_handler)),
+    )
+    .service(
+      web::scope("/npm/{package}")
+        .route("/lic", web::get().to_async(npm_license_handler))
+        .route("/dl/{period}", web::get().to_async(npm_dl_numbers))
+        .route("/hist/{period}", web::get().to_async(npm_historical_chart))
+        .route("/{tag}", web::get().to_async(npm_v_handler))
+        .route("/", web::get().to_async(npm_v_handler))
+        .route("", web::get().to_async(npm_v_handler)),
+    );
+}
+
 const UNPKG_API_PATH: &'static str = "https://unpkg.com";
 const DOWNLOAD_COUNT_PATH: &'static str = "https://api.npmjs.org/downloads/";
 
@@ -319,27 +342,4 @@ fn npm_v_handler(
 
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
-}
-
-pub fn config(cfg: &mut web::ServiceConfig) {
-  cfg
-    .data(req::Client::new())
-    .service(
-      web::scope("/npm/@{scope}/{package}")
-        .route("/lic", web::get().to_async(npm_license_handler))
-        .route("/dl/{period}", web::get().to_async(npm_dl_numbers))
-        .route("/hist/{period}", web::get().to_async(npm_historical_chart))
-        .route("/{tag}", web::get().to_async(npm_v_handler))
-        .route("/", web::get().to_async(npm_v_handler))
-        .route("", web::get().to_async(npm_v_handler)),
-    )
-    .service(
-      web::scope("/npm/{package}")
-        .route("/lic", web::get().to_async(npm_license_handler))
-        .route("/dl/{period}", web::get().to_async(npm_dl_numbers))
-        .route("/hist/{period}", web::get().to_async(npm_historical_chart))
-        .route("/{tag}", web::get().to_async(npm_v_handler))
-        .route("/", web::get().to_async(npm_v_handler))
-        .route("", web::get().to_async(npm_v_handler)),
-    );
 }

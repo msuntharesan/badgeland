@@ -13,6 +13,18 @@ use serde_derive::Deserialize;
 use serde_json::Value;
 use std::{error::Error as StdError, str};
 
+pub fn config(cfg: &mut web::ServiceConfig) {
+  cfg.data(req::Client::new()).service(
+    web::scope("/crates/{package}")
+      .route("/lic", web::get().to_async(crate_license_handler))
+      .route("/dl", web::get().to_async(crate_dl_handler))
+      .route("/hist", web::get().to_async(cargo_hist_handler))
+      .route("/{tag}", web::get().to_async(crate_v_handler))
+      .route("/", web::get().to_async(crate_v_handler))
+      .route("", web::get().to_async(crate_v_handler)),
+  );
+}
+
 static CRATES_API_PATH: &'static str = "https://crates.io/api/v1/crates";
 
 #[derive(Deserialize, Debug)]
@@ -237,16 +249,4 @@ fn cargo_hist_handler(
       let svg = badge.to_string();
       Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
     })
-}
-
-pub fn config(cfg: &mut web::ServiceConfig) {
-  cfg.data(req::Client::new()).service(
-    web::scope("/crates/{package}")
-      .route("/lic", web::get().to_async(crate_license_handler))
-      .route("/dl", web::get().to_async(crate_dl_handler))
-      .route("/hist", web::get().to_async(cargo_hist_handler))
-      .route("/{tag}", web::get().to_async(crate_v_handler))
-      .route("/", web::get().to_async(crate_v_handler))
-      .route("", web::get().to_async(crate_v_handler)),
-  );
 }
