@@ -56,7 +56,7 @@ fn main() -> io::Result<()> {
     server.listen(l).unwrap()
   } else {
     let port = env::var("PORT").unwrap_or("3000".into());
-    let addr = format!("127.0.0.1:{}", port);
+    let addr = format!("0.0.0.0:{}", port);
     println!("Listening on {}", addr);
     server.bind(addr)?
   };
