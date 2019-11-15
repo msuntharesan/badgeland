@@ -1,0 +1,9 @@
+# Ignore everything
+*
+
+# But not these files
+!humanize
+!merit-api
+!src
+!static
+!Cargo.toml
