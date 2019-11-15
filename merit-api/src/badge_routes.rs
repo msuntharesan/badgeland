@@ -13,11 +13,10 @@ fn badge_handler((params, query): (web::Path<BadgeInfo>, web::Query<QueryInfo>))
   let mut req_badge = Badge::new(&params.subject);
 
   if let Some(text) = &params.text {
-    if let Ok(data) = text.parse::<BadgeData>() {
-      req_badge.data(data.0);
-    } else {
-      req_badge.text(text);
-    }
+    match text.parse::<BadgeData>() {
+      Ok(data) if data.0.len() > 1 => req_badge.data(data.0),
+      _ => req_badge.text(text)
+    };
   }
   if let Some(c) = &query.color {
     req_badge.color(c);
