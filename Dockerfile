@@ -23,6 +23,8 @@ RUN OPENSSL_STATIC=true \
 
 FROM alpine:latest
 
+ENV PORT=8080
+
 WORKDIR /home/merit/bin/
 
 COPY --from=cargo-build /usr/src/target/x86_64-unknown-linux-musl/release/merit-api .
@@ -32,6 +34,9 @@ RUN addgroup -g 1000 merit \
     && adduser -D -s /bin/sh -u 1000 -G merit merit \
     && chown merit:merit merit-api
 
+
 USER merit
+
+EXPOSE ${PORT}
 
 CMD ["./merit-api"]
