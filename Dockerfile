@@ -23,7 +23,11 @@ RUN OPENSSL_STATIC=true \
 
 FROM alpine:latest
 
-ENV PORT=8080
+ARG GH_ACCESS_TOKEN
+
+ENV GH_ACCESS_TOKEN=${GH_ACCESS_TOKEN} \
+    PORT=8080 \
+    LOG_LEVEL="actix_web=info"
 
 WORKDIR /home/merit/bin/
 
@@ -33,7 +37,6 @@ COPY --from=cargo-build /usr/src/static ./static
 RUN addgroup -g 1000 merit \
     && adduser -D -s /bin/sh -u 1000 -G merit merit \
     && chown merit:merit merit-api
-
 
 USER merit
 
