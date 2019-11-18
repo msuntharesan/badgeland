@@ -110,7 +110,7 @@ fn crate_license_handler(
   get_crate(&client, &path)
     .and_then(|json: Value| {
       json
-        .pointer("versions")
+        .get("versions")
         .and_then(|v: &Value| v.as_array().cloned())
         .ok_or(
           BadgeErrorBuilder::new()
@@ -228,20 +228,18 @@ fn cargo_hist_handler(
             .build(),
         )
     })
-    .and_then(
-      |dls: Vec<(String, i64)>| -> Result<Vec<i64>, BadgeError> {
-        let dls = dls
-          .iter()
-          .group_by(|(day, _)| {
-            let date = NaiveDate::parse_from_str(day, "%F").unwrap();
-            date.format("%Y-%U").to_string()
-          })
-          .into_iter()
-          .map(|(_, group)| group.map(|(_, dls)| dls).sum::<i64>())
-          .collect::<Vec<i64>>();
-        Ok(dls)
-      },
-    )
+    .and_then(|dls: Vec<(String, i64)>| -> Result<Vec<i64>, BadgeError> {
+      let dls = dls
+        .iter()
+        .group_by(|(day, _)| {
+          let date = NaiveDate::parse_from_str(day, "%F").unwrap();
+          date.format("%Y-%U").to_string()
+        })
+        .into_iter()
+        .map(|(_, group)| group.map(|(_, dls)| dls).sum::<i64>())
+        .collect::<Vec<i64>>();
+      Ok(dls)
+    })
     .and_then(move |dls: Vec<i64>| {
       let mut badge = create_badge("last 90 days", "", Some("#e67233"), &query);
       badge.data(dls);
