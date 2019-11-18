@@ -3,6 +3,14 @@ use actix_web::{web, HttpResponse};
 use merit::{Badge, BadgeData, Icon, Size, Styles};
 use serde_derive::Deserialize;
 
+pub fn config(cfg: &mut web::ServiceConfig) {
+  cfg.service(
+    web::scope("/badge")
+      .route("/{subject}", web::get().to(badge_handler))
+      .route("/{subject}/{text}", web::get().to(badge_handler)),
+  );
+}
+
 #[derive(Deserialize)]
 struct BadgeInfo {
   text: Option<String>,
@@ -15,7 +23,7 @@ fn badge_handler((params, query): (web::Path<BadgeInfo>, web::Query<QueryInfo>))
   if let Some(text) = &params.text {
     match text.parse::<BadgeData>() {
       Ok(data) if data.0.len() > 1 => req_badge.data(data.0),
-      _ => req_badge.text(text)
+      _ => req_badge.text(text),
     };
   }
   if let Some(c) = &query.color {
@@ -46,10 +54,4 @@ fn badge_handler((params, query): (web::Path<BadgeInfo>, web::Query<QueryInfo>))
   HttpResponse::Ok()
     .content_type("image/svg+xml")
     .body(req_badge.to_string())
-}
-
-pub fn config(cfg: &mut web::ServiceConfig) {
-  cfg
-    .route("/badge/{subject}", web::get().to(badge_handler))
-    .route("/badge/{subject}/{text}", web::get().to(badge_handler));
 }

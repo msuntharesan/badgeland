@@ -43,6 +43,10 @@ fn main() -> io::Result<()> {
     App::new()
       .wrap(middleware::Logger::default())
       .wrap(middleware::NormalizePath)
+      .wrap(
+        middleware::DefaultHeaders::new()
+          .header("Cache-Control", format!("public, max-age={}", 60 * 24)),
+      )
       .default_service(web::route().to(default_404))
       .service(index)
       .configure(badge_routes::config)
