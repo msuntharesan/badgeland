@@ -19,7 +19,6 @@ pub fn config(cfg: &mut web::ServiceConfig) {
       .route("/lic", web::get().to_async(crate_license_handler))
       .route("/dl", web::get().to_async(crate_dl_handler))
       .route("/hist", web::get().to_async(cargo_hist_handler))
-      .route("/{tag}", web::get().to_async(crate_v_handler))
       .route("/", web::get().to_async(crate_v_handler))
       .route("", web::get().to_async(crate_v_handler)),
   );
@@ -83,7 +82,7 @@ fn crate_v_handler(
   let path = params.to_path(CRATES_API_PATH, None);
   get_crate(&client, &path).and_then(move |json: Value| {
     json
-      .pointer("/crate/max_version")
+      .pointer("crate/max_version")
       .and_then(|v: &Value| v.as_str().map(String::from))
       .ok_or(
         BadgeErrorBuilder::new()

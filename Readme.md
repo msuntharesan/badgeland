@@ -89,7 +89,6 @@ PATH:
 |                                              |                  |
 | -------------------------------------------- | ---------------- |
 | https://merit-badge.appspot.com/crates/actix-web       | ![crates_latest] |
-| https://merit-badge.appspot.com/crates/actix-web/alpha | ![crates_tag]    |
 | https://merit-badge.appspot.com/crates/actix-web/lic   | ![crates_lic]    |
 | https://merit-badge.appspot.com/crates/actix-web/dl    | ![crates_dl]     |
 | https://merit-badge.appspot.com/crates/actix-web/hist  | ![crates_hist]   |
@@ -154,7 +153,6 @@ OPTIONS:
 [npm_dl]: https://merit-badge.appspot.com/npm/typescript/dl/m
 [npm_hist]: https://merit-badge.appspot.com/npm/typescript/hist/m
 [crates_latest]: https://merit-badge.appspot.com/crates/actix-web
-[crates_tag]: https://merit-badge.appspot.com/crates/actix-web/alpha
 [crates_lic]: https://merit-badge.appspot.com/crates/actix-web/lic
 [crates_dl]: https://merit-badge.appspot.com/crates/actix-web/dl
 [crates_hist]: https://merit-badge.appspot.com/crates/actix-web/hist
