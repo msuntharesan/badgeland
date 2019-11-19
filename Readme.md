@@ -73,13 +73,11 @@ PATH:
 ```
 USAGE:
     GET VERSION             : https://merit-badge.appspot.com/crates/{package}
-    GET VERSION FOR A TAG   : https://merit-badge.appspot.com/crates/{package}/{tag}
     GET LICENSE             : https://merit-badge.appspot.com/crates/{package}/lic
     GET DOWNLOAD #          : https://merit-badge.appspot.com/crates/{package}/dl
     GET DOWNLOAD SPARKLINE  : https://merit-badge.appspot.com/crates/{package}/hist
 
 PATH:
-    /{tag}  : Specific tag of the package. Eg: beta, next, rc 1.0.8
     /lic    : Get the license of the package
     /dl     : Get download count for given period.
     /hist   : Get download trending in sparkline chart
