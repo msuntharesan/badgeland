@@ -1,3 +1,63 @@
+//! Fast badge generator for any purpose
+//!
+//! Create badges with text, icons and sparkline chart
+//!
+//! # Web
+//! 
+//! See <https://github.com/msuntharesan/merit#web>
+//! 
+//! # Cli
+//!
+//! Install using `cargo install merit`
+//!
+//! ```
+//! USAGE:
+//!     merit [OPTIONS] --subject <subject>
+//!
+//! FLAGS:
+//!     -h, --help       Prints help information
+//!     -V, --version    Prints version information
+//!
+//! OPTIONS:
+//!     --color <color>                6 or 8 digit hex color or a valid css color name
+//!     --data <data>
+//!     --icon <icon>                  Icon cany be any Brand or Solid icons from fontawesome
+//!     --icon-colour <icon-colour>    6 or 8 digit hex color or a valid css color name
+//!     --out <out>
+//!     --size <size>                   [possible values: Large, Medium, Small]
+//!     --style <style>                 [possible values: Flat, Classic]
+//!     --subject <subject>
+//!     --text <text>
+//! ```
+//!
+//! # Quick start
+//!
+//! Add `merit` to your `Cargo.toml` as as a dependency.
+//!
+//! # Examples
+//!
+//! ```rust
+//! use merit::{Badge};
+//!
+//! fn badge() {
+//!   let mut badge = Badge::new("Subject");
+//!   badge.text("Text");
+//!   println!("{}", badge.to_string());
+//! }
+//! ```
+//! This produce a svg badge: ![](https://merit-badge.appspot.com/badge/Subject/Text)
+//!```rust
+//! use merit::{Badge};
+//! 
+//! fn badge_with_data() {
+//!   let mut badge = Badge::new("Subject");
+//!   badge.data(vec![12, 34, 23,56,45]);
+//!   println!("{}", badge.to_string());
+//! }
+//! ```
+//! This produce a svg badge: ![](http://merit-badge.appspot.com/badge/testing/12,34,23,56,45)
+//!
+
 #![feature(proc_macro_hygiene)]
 
 use cssparser::{Color, Parser, ParserInput, ToCss};

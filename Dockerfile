@@ -27,7 +27,7 @@ ARG GH_ACCESS_TOKEN
 
 ENV GH_ACCESS_TOKEN=${GH_ACCESS_TOKEN} \
     PORT=8080 \
-    LOG_LEVEL="actix_web=info"
+    LOG_LEVEL="actix_web=error"
 
 WORKDIR /home/merit/bin/
 

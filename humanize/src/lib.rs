@@ -1,5 +1,27 @@
+//! Formatter for human readable number or struct
+//!
+//! This crate exposes `humanize` fn to format numbers to human readable string
+//!
+//! # Quick Start
+//!
+//! Add `humanize` to your `Cargo.toml` as as a dependency.
+//!
+//! # Examples
+//!
+//! ```rust
+//! use humanize::*;
+//!
+//! fn main() {
+//!   let opts = HumanizeOptions::builder().build().unwrap();
+//!   let human_readable = 1234;
+//!   assert_eq!(human_readable.humanize(opts), Some("1.23K".to_string()))
+//! }
+//! ```
+//!
+
 use derive_builder::Builder;
 
+/// Options to pass to humanize function
 #[derive(Debug, Builder)]
 pub struct HumanizeOptions {
   #[builder(default = "1000")]
@@ -19,6 +41,7 @@ pub struct HumanizeOptions {
 }
 
 impl HumanizeOptions {
+  /// Create a builder for HumanizeOptions
   pub fn builder() -> HumanizeOptionsBuilder {
     HumanizeOptionsBuilder::default()
   }
@@ -30,15 +53,18 @@ impl AsRef<HumanizeOptions> for HumanizeOptions {
   }
 }
 
+
+/// Trait that can be implemented for any type.
 pub trait Humanize {
+  /// formats a type to human readable string
   fn humanize<T: AsRef<HumanizeOptions>>(&self, opts: T) -> Option<String>;
 }
 
 macro_rules! impl_humanize_u {
   (for $($t: ty)*) => ($(
     impl Humanize for $t {
-      fn humanize<T: AsRef<HumanizeOptions>>(&self, _opts: T) -> Option<String>{
-        let opts: &HumanizeOptions = _opts.as_ref();
+      fn humanize<T: AsRef<HumanizeOptions>>(&self, opts: T) -> Option<String>{
+        let opts = opts.as_ref();
         let denominator = opts.denominator as f64;
 
         let mut val: f64 = *self as f64;

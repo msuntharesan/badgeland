@@ -6,19 +6,19 @@ skip_files:
 
 # default_expiration: "10m"
 
-# handlers:
-#   - url: /badge
-#     expiration: 1d
-#     static_dir: /badge
+handlers:
+  - url: /badge
+    expiration: 1d
+    static_dir: /badge
 
-#   - url: /npm
-#     expiration: 1d
-#     static_dir: /npm
+  - url: /npm
+    expiration: 1d
+    static_dir: /npm
 
-#   - url: /github
-#     expiration: 1d
-#     static_dir: /github
+  - url: /github
+    expiration: 1d
+    static_dir: /github
 
-#   - url: /crates
-#     expiration: 1d
-#     static_dir: /crates
+  - url: /crates
+    expiration: 1d
+    static_dir: /crates
