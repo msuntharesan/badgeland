@@ -12,16 +12,22 @@ use actix_web::{middleware, web, App, HttpResponse, HttpServer, Result};
 use dotenv::dotenv;
 use env_logger::Env;
 use listenfd::ListenFd;
+use merit::*;
 use std::{env, io};
-use utils::merit_query::*;
 
 #[get("/")]
 fn index() -> Result<fs::NamedFile> {
   Ok(fs::NamedFile::open("static/index.html")?)
 }
 
-fn default_404(query: web::Query<QueryInfo>) -> Result<HttpResponse> {
-  let badge = create_badge("Error", "404", Some("grey"), &query);
+#[get("/favicon.ico")]
+fn favicon() -> Result<fs::NamedFile> {
+  Ok(fs::NamedFile::open("static/favicon.ico")?)
+}
+
+fn default_404() -> Result<HttpResponse> {
+  let mut badge = Badge::new("Error");
+  badge.text("404").color("grey");
 
   Ok(
     HttpResponse::NotFound()
@@ -49,6 +55,7 @@ fn main() -> io::Result<()> {
       )
       .default_service(web::route().to(default_404))
       .service(index)
+      .service(favicon)
       .configure(badge_routes::config)
       .configure(services::crates_io::config)
       .configure(services::github::config)
