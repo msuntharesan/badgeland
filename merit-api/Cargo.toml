@@ -3,6 +3,7 @@ name = "merit-api"
 version = "0.1.0"
 authors = ["Suntharesan Mohan <suntharesan.mohan@gmail.com>"]
 edition = "2018"
+publish = false
 
 [dependencies]
 actix-rt = "0.2"
@@ -10,7 +11,7 @@ actix-files = "0.1"
 actix-web = { version = "1.0", features = ["ssl"] }
 merit = { version = "0", path = ".." }
 chrono = "0.4"
-dotenv = "0.14"
+dotenv = "0.15"
 env_logger = "0.7"
 futures = "0.1"
 humanize = { version = "0", path = "../humanize" }
