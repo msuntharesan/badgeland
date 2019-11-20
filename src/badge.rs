@@ -249,8 +249,11 @@ impl Content {
   fn with_data(data: &Vec<i64>, height: u32) -> Option<Self> {
     let width = height * 5;
     let chart_height = (height - 2) as f32;
-    let max = data.iter().max()?;
-    let min = data.iter().min()?;
+    let max = *data.iter().max()?;
+    let mut min = *data.iter().min()?;
+    if min > 0 {
+      min = 0
+    };
     let s = chart_height / (max - min) as f32;
 
     let offset = width as f32 / (data.len() as f32 - 1.0);

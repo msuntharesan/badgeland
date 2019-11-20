@@ -4,6 +4,7 @@ use crate::utils::{
 };
 use actix_web::{http::StatusCode, web, HttpResponse};
 use chrono::prelude::*;
+use chrono::Duration;
 use futures::Future;
 use humanize::*;
 use itertools::Itertools;
@@ -88,40 +89,43 @@ impl NPMParams {
       ),
     }
   }
-  fn to_dl_path(self: &Self, api_path: &str, is_range: bool) -> String {
-    let mut path_str = format!("{}{}/", api_path, if is_range { "range" } else { "point" });
-
-    match (&self.period, is_range) {
-      (Some(Period::Daily), false) => {
+  
+  fn to_dl_point(&self, api_path: &str) -> String {
+    let mut path_str = format!("{}point/", api_path);
+    match &self.period {
+      Some(Period::Daily) => {
         path_str.push_str("last-day/");
       }
-      (Some(Period::Weekly), false) => {
+      Some(Period::Weekly) => {
         path_str.push_str("last-week/");
       }
-      (Some(Period::Monthly), false) => {
+      Some(Period::Monthly) => {
         path_str.push_str("last-month/");
       }
-      (Some(Period::Yearly), false) => {
+      Some(Period::Yearly) => {
         path_str.push_str("last-year/");
-      }
-      (Some(Period::Daily), true) => {
-        path_str.push_str("last-week/");
-      }
-      (Some(Period::Weekly), true) => {
-        path_str.push_str("last-month/");
-      }
-      (Some(Period::Monthly), true) => {
-        path_str.push_str("last-year/");
-      }
-      (Some(Period::Yearly), true) => {
-        let end = Utc::today();
-        let start_year = &end.year() - 10;
-        let start = Utc.ymd(start_year, 1, 1);
-        let range = format!("{}:{}/", start.format("%Y-%m-%d"), end.format("%Y-%m-%d"));
-        path_str.push_str(&range);
       }
       _ => {}
     };
+    if let Some(s) = &self.scope {
+      path_str.push_str(&format!("@{}/", s));
+    }
+    path_str.push_str(&self.package);
+    path_str
+  }
+
+  fn to_dl_range(&self, api_path: &str) -> String {
+    let mut path_str = format!("{}range/", api_path);
+
+    let end = Utc::today();
+
+    let start = if let Some(Period::Yearly) = &self.period {
+      Utc.ymd(&end.year() - 5, 1, 1)
+    } else {
+      *&end - Duration::days(365)
+    };
+    let range = format!("{}:{}/", start.format("%Y-%m-%d"), end.format("%Y-%m-%d"));
+    path_str.push_str(&range);
 
     if let Some(s) = &self.scope {
       path_str.push_str(&format!("@{}/", s));
@@ -178,7 +182,7 @@ fn npm_dl_numbers(
   client: web::Data<req::Client>,
   (params, query): (web::Path<NPMParams>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = BadgeError> {
-  let path = params.to_dl_path(&DOWNLOAD_COUNT_PATH, false);
+  let path = params.to_dl_point(&DOWNLOAD_COUNT_PATH);
 
   let opt = HumanizeOptions::builder()
     .lower_case(true)
@@ -227,8 +231,8 @@ fn npm_historical_chart(
   client: web::Data<req::Client>,
   (params, query): (web::Path<NPMParams>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = BadgeError> {
-  let path = &params.to_dl_path(DOWNLOAD_COUNT_PATH, true);
-
+  let path = &params.to_dl_range(DOWNLOAD_COUNT_PATH);
+  println!("{}", path);
   npm_get(&client, &path)
     .and_then(|value: Value| -> Result<Vec<Value>, BadgeError> {
       value
@@ -270,7 +274,7 @@ fn npm_historical_chart(
             Some(Period::Daily) => date.format("%F").to_string(),
             Some(Period::Weekly) => date.format("%Y-%U").to_string(),
             Some(Period::Monthly) => date.format("%Y-%m").to_string(),
-            Some(Period::Yearly) => date.format("%Y-%m").to_string(),
+            Some(Period::Yearly) => date.format("%Y").to_string(),
             _ => "".to_string(),
           }
         })
