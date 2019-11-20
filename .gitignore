@@ -62,3 +62,4 @@ Temporary Items
 # End of https://www.gitignore.io/api/macOS
 
 node_modules
+bench
