@@ -7,15 +7,28 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'badge-web'",
+      "name": "Debug executable 'merit-api'",
       "cargo": {
-        "args": [
-          "build",
-          "--bin=badge-web",
-          "--package=badge-web"
-        ],
+        "args": ["build", "--package=merit-api"],
         "filter": {
-          "name": "badge-web",
+          "name": "merit-api",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "env": {
+        "PORT": "4000"
+      },
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'merit-api'",
+      "cargo": {
+        "args": ["test", "--no-run", "--package=merit-api"],
+        "filter": {
+          "name": "merit-api",
           "kind": "bin"
         }
       },
@@ -25,16 +38,11 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in executable 'badge-web'",
+      "name": "Debug executable 'merit'",
       "cargo": {
-        "args": [
-          "test",
-          "--no-run",
-          "--bin=badge-web",
-          "--package=badge-web"
-        ],
+        "args": ["build", "--bin=merit"],
         "filter": {
-          "name": "badge-web",
+          "name": "merit",
           "kind": "bin"
         }
       },
@@ -44,72 +52,12 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in library 'badger'",
+      "name": "Debug unit tests in executable 'merit'",
       "cargo": {
-        "args": [
-          "test",
-          "--no-run",
-          "--lib",
-          "--package=badger"
-        ],
+        "args": ["test", "--no-run", "--bin=merit", "--package=merit"],
         "filter": {
-          "name": "badger",
-          "kind": "lib"
-        }
-      },
-      "args": [],
-      "cwd": "${workspaceFolder}"
-    },
-    {
-      "type": "lldb",
-      "request": "launch",
-      "name": "Debug executable 'badger'",
-      "cargo": {
-        "args": [
-          "build",
-          "--bin=badger",
-          "--package=badger"
-        ],
-        "filter": {
-          "name": "badger",
+          "name": "merit",
           "kind": "bin"
-        }
-      },
-      "args": [],
-      "cwd": "${workspaceFolder}"
-    },
-    {
-      "type": "lldb",
-      "request": "launch",
-      "name": "Debug unit tests in executable 'badger'",
-      "cargo": {
-        "args": [
-          "test",
-          "--no-run",
-          "--bin=badger",
-          "--package=badger"
-        ],
-        "filter": {
-          "name": "badger",
-          "kind": "bin"
-        }
-      },
-      "args": [],
-      "cwd": "${workspaceFolder}"
-    },
-    {
-      "type": "lldb",
-      "request": "launch",
-      "name": "Debug example 'badge_default'",
-      "cargo": {
-        "args": [
-          "build",
-          "--example=badge_default",
-          "--package=badger"
-        ],
-        "filter": {
-          "name": "badge_default",
-          "kind": "example"
         }
       },
       "args": [],
