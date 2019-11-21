@@ -1,5 +1,0 @@
-# disable-push = true
-# disable-tag= true
-sign-commit = true
-
-tag-prefix = "{{crate_name}}"

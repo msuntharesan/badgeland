@@ -1,2 +1,2 @@
 sign-commit = true
-tag-prefix = "{{crate_name}}"
+tag-prefix = "{{crate_name}}@"
