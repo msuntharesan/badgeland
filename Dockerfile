@@ -32,7 +32,6 @@ ENV GH_ACCESS_TOKEN=${GH_ACCESS_TOKEN} \
 WORKDIR /home/merit/bin/
 
 COPY --from=cargo-build /usr/src/target/x86_64-unknown-linux-musl/release/merit-api .
-COPY --from=cargo-build /usr/src/static ./static
 
 RUN addgroup -g 1000 merit \
     && adduser -D -s /bin/sh -u 1000 -G merit merit \

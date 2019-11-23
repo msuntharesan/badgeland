@@ -7,7 +7,6 @@ publish = false
 
 [dependencies]
 actix-rt = "0.2"
-actix-files = "0.1"
 actix-web = { version = "1.0", features = ["ssl"] }
 merit = { version = "0", path = ".." }
 chrono = "0.4"

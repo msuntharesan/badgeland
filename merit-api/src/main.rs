@@ -7,8 +7,11 @@ mod badge_routes;
 mod services;
 mod utils;
 
-use actix_files as fs;
-use actix_web::{middleware, web, App, HttpResponse, HttpServer, Result};
+use actix_web::{
+  dev,
+  http::{header, StatusCode},
+  middleware, web, App, HttpResponse, HttpServer, Result,
+};
 use dotenv::dotenv;
 use env_logger::Env;
 use listenfd::ListenFd;
@@ -16,13 +19,23 @@ use merit::*;
 use std::{env, io};
 
 #[get("/")]
-fn index() -> Result<fs::NamedFile> {
-  Ok(fs::NamedFile::open("static/index.html")?)
+fn index() -> Result<HttpResponse> {
+  Ok(
+    HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
+      .header(header::LOCATION, "https://github.com/msuntharesan/merit")
+      .finish(),
+  )
 }
 
 #[get("/favicon.ico")]
-fn favicon() -> Result<fs::NamedFile> {
-  Ok(fs::NamedFile::open("static/favicon.ico")?)
+fn favicon() -> Result<HttpResponse> {
+  Ok(
+    HttpResponse::Ok()
+      .content_type("image/x-icon")
+      .body(dev::Body::from_slice(include_bytes!(
+        "../static/favicon.ico"
+      ))),
+  )
 }
 
 fn default_404() -> Result<HttpResponse> {
@@ -60,7 +73,6 @@ fn main() -> io::Result<()> {
       .configure(services::crates_io::config)
       .configure(services::github::config)
       .configure(services::npm::config)
-      .service(fs::Files::new("/static", "static/"))
   });
 
   server = if let Some(l) = listenfd.take_tcp_listener(0)? {
