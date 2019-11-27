@@ -22,3 +22,7 @@ handlers:
   - url: /crates
     expiration: 1d
     static_dir: /crates
+
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 5
