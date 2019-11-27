@@ -139,7 +139,7 @@ fn github_watch_handler(
   (params, query): (web::Path<GithubParams>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = BadgeError> {
   let variables = Variables {
-    owner: String::from(&params.name),
+    owner: String::from(&params.owner),
     name: String::from(&params.name),
   };
 
@@ -172,7 +172,7 @@ fn github_fork_handler(
   (params, query): (web::Path<GithubParams>, web::Query<QueryInfo>),
 ) -> impl Future<Item = HttpResponse, Error = BadgeError> {
   let variables = Variables {
-    owner: String::from(&params.name),
+    owner: String::from(&params.owner),
     name: String::from(&params.name),
   };
 
