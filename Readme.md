@@ -97,7 +97,7 @@ PATH:
 USAGE:
     GET LICENSE   : http://merit-badge.appspot.com/github/{owner}/{name}/lic
     GET START #   : http://merit-badge.appspot.com/github/{owner}/{name}/stars
-    GET WATCHES # : http://merit-badge.appspot.com/github/{owner}/{name}/watches
+    GET WATCHERS # : http://merit-badge.appspot.com/github/{owner}/{name}/watchers
     GET FORKS #   : http://merit-badge.appspot.com/github/{owner}/{name}/forks
 
 PATH:
@@ -110,7 +110,7 @@ PATH:
 | --------------------------------------------------- | ----------------- |
 | http://merit-badge.appspot.com/github/rust-lang/rust/lic     | ![github_lic]     |
 | http://merit-badge.appspot.com/github/rust-lang/rust/stars   | ![github_stars]   |
-| http://merit-badge.appspot.com/github/rust-lang/rust/watches | ![github_watches] |
+| http://merit-badge.appspot.com/github/rust-lang/rust/watchers | ![github_watchers] |
 | http://merit-badge.appspot.com/github/rust-lang/rust/forks   | ![github_forks]   |
 
 ### CLI
@@ -156,5 +156,5 @@ OPTIONS:
 [crates_hist]: http://merit-badge.appspot.com/crates/actix-web/hist
 [github_lic]: http://merit-badge.appspot.com/github/rust-lang/rust/lic
 [github_stars]: http://merit-badge.appspot.com/github/rust-lang/rust/stars
-[github_watches]: http://merit-badge.appspot.com/github/rust-lang/rust/watches
+[github_watchers]: http://merit-badge.appspot.com/github/rust-lang/rust/watchers
 [github_forks]: http://merit-badge.appspot.com/github/rust-lang/rust/forks

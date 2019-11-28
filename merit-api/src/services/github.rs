@@ -16,7 +16,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     web::scope("/github/{owner}/{name}")
       .route("/lic", web::get().to_async(github_lic_handler))
       .route("/stars", web::get().to_async(github_stars_handler))
-      .route("/watches", web::get().to_async(github_watch_handler))
+      .route("/watchers", web::get().to_async(github_watch_handler))
       .route("/forks", web::get().to_async(github_fork_handler))
       .route("/release/{tag_name}", web::get().to_async(not_impl)),
   );
