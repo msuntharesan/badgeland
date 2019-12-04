@@ -248,25 +248,21 @@ struct Content {
 impl Content {
   fn with_data(data: &Vec<i64>, height: u32) -> Option<Self> {
     let width = height * 5;
-    let chart_height = (height - 2) as f32;
+    let chart_height = height as f32;
     let max = *data.iter().max()?;
-    let mut min = *data.iter().min()?;
-    if min > 0 {
-      min = 0
-    };
-    let s = chart_height / (max - min) as f32;
+    let y_offset = chart_height / (max) as f32;
+    let x_offset = width as f32 / (data.len() as f32 - 1.0);
 
-    let offset = width as f32 / (data.len() as f32 - 1.0);
+    let points = data
+      .iter()
+      .enumerate()
+      .map(|(i, p)| (i as f32 * x_offset, chart_height - y_offset * *p as f32))
+      .collect::<Vec<(f32, f32)>>();
 
     let mut d = String::new();
-    let first = data.first()?;
-    d.push_str(&format!("M0 {}", chart_height - (s * (first - min) as f32)));
-    for (i, p) in data.iter().enumerate() {
-      d.push_str(&format!(
-        "L{} {}",
-        i as f32 * offset,
-        chart_height - (s * (p - min) as f32)
-      ));
+    d.push_str(&format!("M0 {}", points.first()?.1));
+    for (i, p) in points {
+      d.push_str(&format!("L{} {}", i, p));
     }
     Some(Content {
       content: d,

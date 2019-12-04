@@ -28,3 +28,6 @@ members = [
   "humanize",
   "merit-api",
 ]
+
+[profile.release]
+opt-level = 'z'  # Optimize for size.
