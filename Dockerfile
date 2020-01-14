@@ -5,11 +5,15 @@
 FROM ekidd/rust-musl-builder:nightly-2019-11-06-openssl11 as cargo-build
 
 WORKDIR /usr/src/
-COPY . .
 
 # Fix permissions on source code.
 RUN sudo chown -R rust:rust /home/rust \
     && sudo chown -R rust:rust /usr/src
+
+COPY . .
+
+RUN mkdir .cargo \
+    && cargo vendor > .cargo/config
 
 RUN rustup target add x86_64-unknown-linux-musl
 
