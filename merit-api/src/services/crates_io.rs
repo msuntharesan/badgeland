@@ -2,13 +2,13 @@ use crate::utils::{
   error::{BadgeError, BadgeErrorBuilder},
   merit_query::{create_badge, QueryInfo},
 };
-use actix_web::{http::StatusCode, web, HttpResponse};
+use actix_web::{http::StatusCode, web, HttpResponse, Responder};
 use chrono::prelude::*;
-use futures::Future;
+use futures::TryFutureExt;
 use humanize::*;
 use itertools::Itertools;
 use merit::Icon;
-use reqwest::r#async as req;
+use reqwest as req;
 use serde_derive::Deserialize;
 use serde_json::Value;
 use std::{error::Error as StdError, str};
@@ -16,11 +16,11 @@ use std::{error::Error as StdError, str};
 pub fn config(cfg: &mut web::ServiceConfig) {
   cfg.data(req::Client::new()).service(
     web::scope("/crates/{package}")
-      .route("/lic", web::get().to_async(crate_license_handler))
-      .route("/dl", web::get().to_async(crate_dl_handler))
-      .route("/hist", web::get().to_async(cargo_hist_handler))
-      .route("/", web::get().to_async(crate_v_handler))
-      .route("", web::get().to_async(crate_v_handler)),
+      .route("/lic", web::get().to(crate_license_handler))
+      .route("/dl", web::get().to(crate_dl_handler))
+      .route("/hist", web::get().to(cargo_hist_handler))
+      .route("/", web::get().to(crate_v_handler))
+      .route("", web::get().to(crate_v_handler)),
   );
 }
 
@@ -56,15 +56,13 @@ impl CrateParams {
   }
 }
 
-fn get_crate(
-  client: &req::Client,
-  path_str: &str,
-) -> impl Future<Item = Value, Error = BadgeError> {
+async fn get_crate(client: &req::Client, path_str: &str) -> Result<Value, BadgeError> {
   client
     .get(path_str)
     .header("accept", "application/json")
     .send()
-    .and_then(|mut resp: req::Response| resp.json::<Value>())
+    .and_then(|resp: req::Response| resp.json::<Value>())
+    .await
     .map_err(|err: reqwest::Error| {
       BadgeErrorBuilder::new()
         .description(err.description())
@@ -75,38 +73,41 @@ fn get_crate(
     })
 }
 
-fn crate_v_handler(
+async fn crate_v_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<CrateParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = BadgeError> {
-  let path = params.to_path(CRATES_API_PATH, None);
-  get_crate(&client, &path).and_then(move |json: Value| {
-    json
-      .pointer("/crate/max_version")
-      .and_then(|v: &Value| v.as_str().map(String::from))
-      .ok_or(
-        BadgeErrorBuilder::new()
-          .status(StatusCode::NOT_FOUND)
-          .description(format!("Cannot find property 'version' in {:?}", json))
-          .service("crates.io")
-          .build(),
-      )
-      .and_then(|ver| {
-        let ver = format!("v{}", ver);
-        let badge = create_badge("crates.io", &ver, Some("#e67233"), &query);
-
-        let svg = badge.to_string();
-        Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
-      })
-  })
-}
-
-fn crate_license_handler(
-  client: web::Data<req::Client>,
-  (params, query): (web::Path<CrateParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = BadgeError> {
+) -> impl Responder {
   let path = params.to_path(CRATES_API_PATH, None);
   get_crate(&client, &path)
+    .await
+    .and_then(move |json: Value| {
+      json
+        .pointer("/crate/max_version")
+        .and_then(|v: &Value| v.as_str().map(String::from))
+        .ok_or(
+          BadgeErrorBuilder::new()
+            .status(StatusCode::NOT_FOUND)
+            .description(format!("Cannot find property 'version' in {:?}", json))
+            .service("crates.io")
+            .build(),
+        )
+        .and_then(|ver| {
+          let ver = format!("v{}", ver);
+          let badge = create_badge("crates.io", &ver, Some("#e67233"), &query);
+
+          let svg = badge.to_string();
+          Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
+        })
+    })
+}
+
+async fn crate_license_handler(
+  client: web::Data<req::Client>,
+  (params, query): (web::Path<CrateParams>, web::Query<QueryInfo>),
+) -> impl Responder {
+  let path = params.to_path(CRATES_API_PATH, None);
+  get_crate(&client, &path)
+    .await
     .and_then(|json: Value| {
       json
         .pointer("/versions")
@@ -154,10 +155,10 @@ fn crate_license_handler(
     })
 }
 
-fn crate_dl_handler(
+async fn crate_dl_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<CrateParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = BadgeError> {
+) -> impl Responder {
   let path = params.to_path(CRATES_API_PATH, None);
 
   let opts = HumanizeOptions::builder()
@@ -166,36 +167,39 @@ fn crate_dl_handler(
     .build()
     .unwrap();
 
-  get_crate(&client, &path).and_then(move |json: Value| {
-    json
-      .pointer("/crate/downloads")
-      .and_then(|v: &Value| v.as_i64().clone())
-      .ok_or(
-        BadgeErrorBuilder::new()
-          .status(StatusCode::NOT_FOUND)
-          .description(format!("Cannot find property 'downloads' in {:?}", json))
-          .service("crates.io")
-          .build(),
-      )
-      .and_then(|dls: i64| {
-        let dls = dls.humanize(opts).unwrap();
-        let mut badge = create_badge("all-time", &dls, Some("#e67233"), &query);
+  get_crate(&client, &path)
+    .await
+    .and_then(move |json: Value| {
+      json
+        .pointer("/crate/downloads")
+        .and_then(|v: &Value| v.as_i64().clone())
+        .ok_or(
+          BadgeErrorBuilder::new()
+            .status(StatusCode::NOT_FOUND)
+            .description(format!("Cannot find property 'downloads' in {:?}", json))
+            .service("crates.io")
+            .build(),
+        )
+        .and_then(|dls: i64| {
+          let dls = dls.humanize(opts).unwrap();
+          let mut badge = create_badge("all-time", &dls, Some("#e67233"), &query);
 
-        let icon = Icon::new("download");
-        badge.icon(icon.build());
+          let icon = Icon::new("download");
+          badge.icon(icon.build());
 
-        let svg = badge.to_string();
-        Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
-      })
-  })
+          let svg = badge.to_string();
+          Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg))
+        })
+    })
 }
 
-fn cargo_hist_handler(
+async fn cargo_hist_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<CrateParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = BadgeError> {
+) -> impl Responder {
   let path = params.to_path(CRATES_API_PATH, Some("downloads"));
   get_crate(&client, &path)
+    .await
     .and_then(|value: Value| -> Result<Vec<Value>, BadgeError> {
       value
         .get("version_downloads")

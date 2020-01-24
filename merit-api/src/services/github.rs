@@ -2,11 +2,11 @@ use crate::utils::{
   error::{BadgeError, BadgeErrorBuilder},
   merit_query::{create_badge, QueryInfo},
 };
-use actix_web::{http::StatusCode, web, HttpResponse};
-use futures::Future;
+use actix_web::{http::StatusCode, web, HttpResponse, Responder};
+use futures::TryFutureExt;
 use humanize::*;
 use merit::Icon;
-use reqwest::r#async as req;
+use reqwest as req;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{env, error::Error as StdErr, str};
@@ -14,11 +14,11 @@ use std::{env, error::Error as StdErr, str};
 pub fn config(cfg: &mut web::ServiceConfig) {
   cfg.data(req::Client::new()).service(
     web::scope("/github/{owner}/{name}")
-      .route("/lic", web::get().to_async(github_lic_handler))
-      .route("/stars", web::get().to_async(github_stars_handler))
-      .route("/watchers", web::get().to_async(github_watch_handler))
-      .route("/forks", web::get().to_async(github_fork_handler))
-      .route("/release/{tag_name}", web::get().to_async(not_impl)),
+      .route("/lic", web::get().to(github_lic_handler))
+      .route("/stars", web::get().to(github_stars_handler))
+      .route("/watchers", web::get().to(github_watch_handler))
+      .route("/forks", web::get().to(github_fork_handler))
+      .route("/release/{tag_name}", web::get().to(not_impl)),
   );
 }
 
@@ -50,11 +50,11 @@ struct GithubParams {
 
 static GITHUB_GQL_ENDPOINT: &'static str = "https://api.github.com/graphql";
 
-fn make_req<'a>(
+async fn make_req<'a>(
   client: &req::Client,
   variables: Variables,
   operation_name: &'a str,
-) -> impl Future<Item = Value, Error = BadgeError> {
+) -> Result<Value, BadgeError> {
   let query = QueryBody {
     variables,
     query: QUERY,
@@ -65,7 +65,8 @@ fn make_req<'a>(
     .bearer_auth(env::var("GH_ACCESS_TOKEN").unwrap())
     .json(&query)
     .send()
-    .and_then(|mut resp: req::Response| resp.json::<Value>())
+    .and_then(|resp: req::Response| resp.json::<Value>())
+    .await
     .map_err(|err: reqwest::Error| {
       BadgeErrorBuilder::new()
         .description(err.description())
@@ -76,15 +77,16 @@ fn make_req<'a>(
     })
 }
 
-fn github_lic_handler(
+async fn github_lic_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<GithubParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = BadgeError> {
+) -> impl Responder {
   let variables = Variables {
     owner: String::from(&params.owner),
     name: String::from(&params.name),
   };
   make_req(&client, variables, "GithubLicense")
+    .await
     .and_then(|rd: Value| {
       let lic_str = rd
         .pointer("/data/repository/licenseInfo/spixId")
@@ -101,10 +103,10 @@ fn github_lic_handler(
     })
 }
 
-fn github_stars_handler(
+async fn github_stars_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<GithubParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = BadgeError> {
+) -> impl Responder {
   let variables = Variables {
     owner: String::from(&params.owner),
     name: String::from(&params.name),
@@ -117,6 +119,7 @@ fn github_stars_handler(
     .unwrap();
 
   make_req(&client, variables, "GithubStarCount")
+    .await
     .and_then(|rd: Value| {
       let star_count = rd
         .pointer("/data/repository/stargazers/totalCount")
@@ -134,10 +137,10 @@ fn github_stars_handler(
     })
 }
 
-fn github_watch_handler(
+async fn github_watch_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<GithubParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = BadgeError> {
+) -> impl Responder {
   let variables = Variables {
     owner: String::from(&params.owner),
     name: String::from(&params.name),
@@ -150,6 +153,7 @@ fn github_watch_handler(
     .unwrap();
 
   make_req(&client, variables, "GithubWatchCount")
+    .await
     .and_then(|rd: Value| {
       let watchers = rd
         .pointer("/data/repository/watchers/totalCount")
@@ -167,10 +171,10 @@ fn github_watch_handler(
     })
 }
 
-fn github_fork_handler(
+async fn github_fork_handler(
   client: web::Data<req::Client>,
   (params, query): (web::Path<GithubParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = BadgeError> {
+) -> impl Responder {
   let variables = Variables {
     owner: String::from(&params.owner),
     name: String::from(&params.name),
@@ -183,6 +187,7 @@ fn github_fork_handler(
     .unwrap();
 
   make_req(&client, variables, "GithubForkCount")
+    .await
     .and_then(|rd: Value| {
       let forks = rd
         .pointer("/data/repository/forkCount")
@@ -201,11 +206,14 @@ fn github_fork_handler(
     })
 }
 
-fn not_impl() -> impl Future<Item = (), Error = BadgeError> {
-  futures::done(Err(
-    BadgeErrorBuilder::new()
-      .service("github")
-      .status(StatusCode::NOT_IMPLEMENTED)
-      .build(),
-  ))
+async fn not_impl() -> impl Responder {
+  let err_badge = BadgeErrorBuilder::new()
+    .service("github")
+    .status(StatusCode::NOT_IMPLEMENTED)
+    .build()
+    .err_badge();
+
+  HttpResponse::NotImplemented()
+    .content_type("image/svg+xml")
+    .body(err_badge)
 }

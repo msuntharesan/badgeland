@@ -2,15 +2,15 @@
 
 #[macro_use]
 extern crate actix_web;
+extern crate flamer;
 
 mod badge_routes;
 mod services;
 mod utils;
 
 use actix_web::{
-  dev,
   http::{header, StatusCode},
-  middleware, web, App, HttpResponse, HttpServer, Result,
+  middleware, web, App, HttpResponse, HttpServer, Responder,
 };
 use dotenv::dotenv;
 use env_logger::Env;
@@ -19,44 +19,34 @@ use merit::*;
 use std::{env, io};
 
 #[get("/")]
-fn index() -> Result<HttpResponse> {
-  Ok(
-    HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
-      .header(header::LOCATION, "https://github.com/msuntharesan/merit")
-      .finish(),
-  )
+async fn index() -> impl Responder {
+  HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
+    .header(header::LOCATION, "https://github.com/msuntharesan/merit")
+    .finish()
 }
 
 #[get("/favicon.ico")]
-fn favicon() -> Result<HttpResponse> {
-  Ok(
-    HttpResponse::Ok()
-      .content_type("image/x-icon")
-      .body(dev::Body::from_slice(include_bytes!(
-        "../static/favicon.ico"
-      ))),
-  )
+async fn favicon() -> impl Responder {
+  let icon: &'static [u8] = include_bytes!("../static/favicon.ico");
+  HttpResponse::Ok().content_type("image/x-icon").body(icon)
 }
 
-fn default_404() -> Result<HttpResponse> {
+async fn default_404() -> impl Responder {
   let mut badge = Badge::new("Error");
   badge.text("404").color("grey");
 
-  Ok(
-    HttpResponse::NotFound()
-      .content_type("image/svg+xml")
-      .body(badge.to_string()),
-  )
+  HttpResponse::NotFound()
+    .content_type("image/svg+xml")
+    .body(badge.to_string())
 }
 
-fn main() -> io::Result<()> {
+#[actix_rt::main]
+async fn main() -> io::Result<()> {
   dotenv().ok();
   let env = Env::new().filter("LOG_LEVEL");
   env_logger::init_from_env(env);
 
   let mut listenfd = ListenFd::from_env();
-
-  let sys = actix_rt::System::new("badge");
 
   let mut server = HttpServer::new(move || {
     App::new()
@@ -83,6 +73,5 @@ fn main() -> io::Result<()> {
     println!("Listening on {}", addr);
     server.bind(addr)?
   };
-  server.start();
-  sys.run()
+  server.run().await
 }

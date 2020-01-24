@@ -9,6 +9,27 @@ pub struct BadgeError {
   service: Option<String>,
 }
 
+impl BadgeError {
+  pub fn err_badge(&self) -> String {
+    let mut err_badge = Badge::new("Error");
+
+    match &self.service {
+      Some(icon) if icon_exists(&icon) => {
+        let icon = Icon::new(&icon).build().unwrap();
+        err_badge.icon(Some(icon));
+      }
+      Some(service) => {
+        err_badge = Badge::new(&service);
+      }
+      _ => {}
+    }
+    err_badge.color("red");
+    let text = u16::from(self.status).to_string();
+    err_badge.text(&text);
+    err_badge.to_string()
+  }
+}
+
 pub struct BadgeErrorBuilder {
   status: Option<StatusCode>,
   description: String,
@@ -61,27 +82,11 @@ impl BadgeErrorBuilder {
 }
 
 impl ResponseError for BadgeError {
-  fn render_response(&self) -> HttpResponse {
-    let mut err_badge = Badge::new("Error");
-
-    match &self.service {
-      Some(icon) if icon_exists(&icon) => {
-        let icon = Icon::new(&icon).build().unwrap();
-        err_badge.icon(Some(icon));
-      }
-      Some(service) => {
-        err_badge = Badge::new(&service);
-      }
-      _ => {}
-    }
-    err_badge.color("red");
-    let text = u16::from(self.status).to_string();
-    err_badge.text(&text);
-
+  fn error_response(&self) -> HttpResponse {
     HttpResponse::InternalServerError()
       .status(self.status)
       .content_type("image/svg+xml")
-      .body(err_badge.to_string())
+      .body(self.err_badge())
   }
 }
 
