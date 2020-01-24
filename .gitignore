@@ -65,3 +65,5 @@ node_modules
 bench
 .history
 app-server
+
+vendor

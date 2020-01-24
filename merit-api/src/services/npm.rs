@@ -2,38 +2,38 @@ use crate::utils::{
   error::{BadgeError, BadgeErrorBuilder},
   merit_query::{create_badge, BadgeSize, QueryInfo},
 };
-use actix_web::{http::StatusCode, web, HttpResponse};
+use actix_web::{http::StatusCode, web, HttpResponse, Responder};
 use chrono::prelude::*;
 use chrono::Duration;
-use futures::Future;
+use futures::future::TryFutureExt;
 use humanize::*;
 use itertools::Itertools;
 use merit::{Badge, Icon, Size, Styles};
-use reqwest::r#async as req;
+use reqwest;
 use serde_derive::Deserialize;
 use serde_json::Value;
 use std::{error::Error as StdError, str};
 
 pub fn config(cfg: &mut web::ServiceConfig) {
   cfg
-    .data(req::Client::new())
+    .data(reqwest::Client::new())
     .service(
       web::scope("/npm/@{scope}/{package}")
-        .route("/lic", web::get().to_async(npm_license_handler))
-        .route("/dl/{period}", web::get().to_async(npm_dl_numbers))
-        .route("/hist/{period}", web::get().to_async(npm_historical_chart))
-        .route("/{tag}", web::get().to_async(npm_v_handler))
-        .route("/", web::get().to_async(npm_v_handler))
-        .route("", web::get().to_async(npm_v_handler)),
+        .route("/lic", web::get().to(npm_license_handler))
+        .route("/dl/{period}", web::get().to(npm_dl_numbers))
+        .route("/hist/{period}", web::get().to(npm_historical_chart))
+        .route("/{tag}", web::get().to(npm_v_handler))
+        .route("/", web::get().to(npm_v_handler))
+        .route("", web::get().to(npm_v_handler)),
     )
     .service(
       web::scope("/npm/{package}")
-        .route("/lic", web::get().to_async(npm_license_handler))
-        .route("/dl/{period}", web::get().to_async(npm_dl_numbers))
-        .route("/hist/{period}", web::get().to_async(npm_historical_chart))
-        .route("/{tag}", web::get().to_async(npm_v_handler))
-        .route("/", web::get().to_async(npm_v_handler))
-        .route("", web::get().to_async(npm_v_handler)),
+        .route("/lic", web::get().to(npm_license_handler))
+        .route("/dl/{period}", web::get().to(npm_dl_numbers))
+        .route("/hist/{period}", web::get().to(npm_historical_chart))
+        .route("/{tag}", web::get().to(npm_v_handler))
+        .route("/", web::get().to(npm_v_handler))
+        .route("", web::get().to(npm_v_handler)),
     );
 }
 
@@ -89,7 +89,6 @@ impl NPMParams {
       ),
     }
   }
-  
   fn to_dl_point(&self, api_path: &str) -> String {
     let mut path_str = format!("{}point/", api_path);
     match &self.period {
@@ -135,12 +134,13 @@ impl NPMParams {
   }
 }
 
-fn npm_get(client: &req::Client, path_str: &str) -> impl Future<Item = Value, Error = BadgeError> {
+async fn npm_get(client: &reqwest::Client, path_str: &str) -> Result<Value, BadgeError> {
   client
     .get(path_str)
     .header("accept", "application/json")
     .send()
-    .and_then(|mut resp: req::Response| resp.json::<Value>())
+    .and_then(|resp: reqwest::Response| resp.json::<Value>())
+    .await
     .map_err(|err: reqwest::Error| {
       BadgeErrorBuilder::new()
         .description(err.description())
@@ -151,13 +151,14 @@ fn npm_get(client: &req::Client, path_str: &str) -> impl Future<Item = Value, Er
     })
 }
 
-fn npm_license_handler(
-  client: web::Data<req::Client>,
+async fn npm_license_handler(
+  client: web::Data<reqwest::Client>,
   (params, query): (web::Path<NPMParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = BadgeError> {
+) -> impl Responder {
   let path = params.to_path(UNPKG_API_PATH);
 
   npm_get(&client, &path)
+    .await
     .and_then(|value: Value| {
       value
         .get("license")
@@ -178,10 +179,10 @@ fn npm_license_handler(
     })
 }
 
-fn npm_dl_numbers(
-  client: web::Data<req::Client>,
+async fn npm_dl_numbers(
+  client: web::Data<reqwest::Client>,
   (params, query): (web::Path<NPMParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = BadgeError> {
+) -> impl Responder {
   let path = params.to_dl_point(&DOWNLOAD_COUNT_PATH);
 
   let opt = HumanizeOptions::builder()
@@ -191,6 +192,7 @@ fn npm_dl_numbers(
     .unwrap();
 
   npm_get(&client, &path)
+    .await
     .and_then(|value: Value| {
       value
         .get("downloads")
@@ -227,13 +229,14 @@ fn npm_dl_numbers(
     })
 }
 
-fn npm_historical_chart(
-  client: web::Data<req::Client>,
+async fn npm_historical_chart(
+  client: web::Data<reqwest::Client>,
   (params, query): (web::Path<NPMParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = BadgeError> {
+) -> impl Responder {
   let path = &params.to_dl_range(DOWNLOAD_COUNT_PATH);
   println!("{}", path);
   npm_get(&client, &path)
+    .await
     .and_then(|value: Value| -> Result<Vec<Value>, BadgeError> {
       value
         .get("downloads")
@@ -313,13 +316,14 @@ fn npm_historical_chart(
     })
 }
 
-fn npm_v_handler(
-  client: web::Data<req::Client>,
+async fn npm_v_handler(
+  client: web::Data<reqwest::Client>,
   (params, query): (web::Path<NPMParams>, web::Query<QueryInfo>),
-) -> impl Future<Item = HttpResponse, Error = BadgeError> {
+) -> impl Responder {
   let path = params.to_path(UNPKG_API_PATH);
 
   npm_get(&client, &path)
+    .await
     .and_then(|value: Value| {
       value
         .get("version")
