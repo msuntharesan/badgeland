@@ -50,7 +50,7 @@ async fn main() -> io::Result<()> {
 
   let mut server = HttpServer::new(move || {
     App::new()
-      .wrap(middleware::Logger::default())
+      .wrap(middleware::Logger::new("%a %r %s %b %{Referer}i %{User-Agent}i %D"))
       .wrap(middleware::NormalizePath)
       .wrap(
         middleware::DefaultHeaders::new()
