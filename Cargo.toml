@@ -1,10 +1,12 @@
 [package]
 name = "merit"
-version = "0.1.0"
+version = "0.1.1"
 description = "Fast badge generator for any purpose"
 license = "MIT"
 authors = ["Suntharesan Mohan <suntharesan.mohan@gmail.com>"]
 edition = "2018"
+readme = "Readme.md"
+repository = "https://github.com/msuntharesan/merit"
 publish = true
 
 [lib]
