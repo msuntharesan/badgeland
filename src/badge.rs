@@ -1,7 +1,7 @@
 use super::{get_color, icons::Icon};
 use maud::{html, PreEscaped};
 use rusttype::{point, Font, FontCollection, Scale};
-use std::fmt;
+use std::{fmt, str::FromStr};
 use unicode_normalization::UnicodeNormalization;
 
 #[derive(Debug, PartialEq)]
@@ -10,11 +10,34 @@ pub enum Styles {
   Classic,
 }
 
+impl FromStr for Styles {
+  type Err = String;
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    match s.to_lowercase().as_ref() {
+      "flat" | "f" => Ok(Styles::Flat),
+      "classic" | "c" => Ok(Styles::Classic),
+      _ => Err(format!("'{}' is not a valid value for Styles", s)),
+    }
+  }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum Size {
   Large,
   Medium,
   Small,
+}
+
+impl FromStr for Size {
+  type Err = String;
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    match s.to_lowercase().as_ref() {
+      "large" | "l" => Ok(Size::Large),
+      "medium" | "m" => Ok(Size::Medium),
+      "small" | "s" => Ok(Size::Small),
+      _ => Err(format!("'{}' is not a valid value for Size", s)),
+    }
+  }
 }
 
 #[derive(Debug)]

@@ -17,14 +17,13 @@ name = "merit"
 
 [dependencies]
 cssparser = "0.27"
-clap = "2.33"
 derive_builder = "0.9"
 hashbrown = "0.7"
 lazy_static = "1.4"
 maud = "0.21"
+pico-args = "0.3"
 rusttype = "0.8"
 scraper = "0.11"
-structopt = "0.3"
 unicode-normalization = "0.1"
 
 [workspace]
