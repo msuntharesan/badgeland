@@ -3,9 +3,9 @@
 //! Create badges with text, icons and sparkline chart
 //!
 //! # Web
-//! 
+//!
 //! See <https://github.com/msuntharesan/merit#web>
-//! 
+//!
 //! # Cli
 //!
 //! Install using `cargo install merit`
@@ -48,16 +48,17 @@
 //! This produce a svg badge: ![](https://merit-badge.appspot.com/badge/Subject/Text)
 //!```rust
 //! use merit::{Badge};
-//! 
+//!
 //! fn badge_with_data() {
-//!   let mut badge = Badge::new("Subject");
-//!   badge.data(vec![12, 34, 23,56,45]);
+//!   let mut badge = Badge::new("Subject").data(vec![12, 34, 23,56,45]);
 //!   println!("{}", badge.to_string());
 //! }
 //! ```
 //! This produce a svg badge: ![](http://merit-badge.appspot.com/badge/testing/12,34,23,56,45)
 //!
 
+#![allow(incomplete_features)]
+#![feature(const_generics)]
 #![feature(proc_macro_hygiene)]
 
 use cssparser::{Color, Parser, ParserInput, ToCss};
@@ -99,13 +100,7 @@ mod tests {
 
   #[test]
   fn get_color_pass() {
-    let colors = vec![
-      "red",
-      "#ff0000",
-      "ff0000",
-      "rgb(255, 0, 0)",
-      "rgba(255, 0, 0, 1)",
-    ];
+    let colors = vec!["red", "#ff0000", "ff0000", "rgb(255, 0, 0)", "rgba(255, 0, 0, 1)"];
 
     let expected = Some(String::from("rgb(255, 0, 0)"));
 
