@@ -1,6 +1,7 @@
 use super::get_color;
 use derive_builder::*;
 use lazy_static::*;
+use maud::{html, PreEscaped, Render};
 use scraper::{Html, Selector};
 use std::{collections::HashMap, str};
 
@@ -24,7 +25,6 @@ lazy_static! {
         symbols.insert(id, sym);
       }
     }
-
     symbols
   };
 }
@@ -54,22 +54,27 @@ impl<'a> Icon<'a> {
   }
 }
 
+impl<'a> Render for Icon<'a> {
+  fn render(&self) -> maud::Markup {
+    html! {
+      defs {
+        (PreEscaped(self.symbol.to_string()))
+      }
+    }
+  }
+}
+
 impl<'a> IconBuilder<'a> {
   pub fn build(&self) -> Option<Icon<'a>> {
-    let IconBuilder {
-      name,
-      color,
-      symbol: _,
-    } = &self;
+    let IconBuilder { name, color, symbol: _ } = &self;
 
     let name = name.unwrap();
     let color = color.as_ref().and_then(|c| get_color(&c)).unwrap();
 
-    SYMBOLS.get(name).map(String::from).map(|symbol| Icon {
-      name,
-      color,
-      symbol,
-    })
+    SYMBOLS
+      .get(name)
+      .map(String::from)
+      .map(|symbol| Icon { name, color, symbol })
   }
 }
 
