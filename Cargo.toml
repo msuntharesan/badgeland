@@ -9,6 +9,8 @@ readme = "Readme.md"
 repository = "https://github.com/msuntharesan/merit"
 publish = true
 
+build = "./build_scripts/build.rs"
+
 [lib]
 name = "merit"
 
@@ -17,14 +19,16 @@ name = "merit"
 
 [dependencies]
 cssparser = "0.27"
-derive_builder = "0.9"
-hashbrown = "0.8"
-lazy_static = "1.4"
 maud = "0.22"
+phf = "0.8"
 pico-args = "0.3"
 rusttype = "0.9"
 scraper = "0.12"
 unicode-normalization = "0.1"
+
+[build-dependencies]
+phf_codegen = "0.8"
+scraper = "0.12"
 
 [workspace]
 members = [

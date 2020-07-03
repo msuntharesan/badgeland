@@ -68,7 +68,7 @@ mod badge;
 mod icons;
 
 pub use badge::{Badge, Size, Styles};
-pub use icons::{icon_exists, Icon, IconBuilder};
+pub use icons::{icon_exists, Icon};
 
 pub(self) fn get_color(color: &str) -> Option<String> {
   let mut input = ParserInput::new(color);

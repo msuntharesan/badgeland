@@ -1,55 +1,45 @@
 use super::get_color;
-use derive_builder::*;
-use lazy_static::*;
 use maud::{html, PreEscaped, Render};
-use scraper::{Html, Selector};
-use std::{collections::HashMap, str};
+use std::{convert, str};
+
+include!(concat!(env!("OUT_DIR"), "/icons_map.rs"));
 
 static DEFAULT_COLOUR: &str = "#fff";
 
-lazy_static! {
-  static ref SYMBOLS: HashMap<String, String> = {
-    let mut symbols: HashMap<String, String> = HashMap::new();
-    let sources = [
-      include_str!("./resx/icons/brands.svg"),
-      include_str!("./resx/icons/solid.svg"),
-    ];
-
-    let selector = Selector::parse("symbol").unwrap();
-
-    for src in sources.iter() {
-      let doc = Html::parse_fragment(src);
-      for el in doc.select(&selector) {
-        let id = el.value().attr("id").unwrap().to_owned();
-        let sym = el.html();
-        symbols.insert(id, sym);
-      }
-    }
-    symbols
-  };
-}
-
 pub fn icon_exists(icon_name: &str) -> bool {
-  SYMBOLS.contains_key(icon_name)
+  SYMBOLS.get(icon_name).is_some()
 }
 
-#[derive(Debug, PartialEq, Eq, Builder)]
-#[builder(build_fn(skip), setter(prefix = "set"))]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Icon<'a> {
-  #[builder(private)]
   pub name: &'a str,
-  #[builder(setter(into))]
   pub color: String,
-  #[builder(setter(skip))]
   pub symbol: String,
 }
 
 impl<'a> Icon<'a> {
-  pub fn new(name: &'a str) -> IconBuilder {
-    IconBuilder {
-      name: Some(name),
-      color: Some(DEFAULT_COLOUR.into()),
-      ..IconBuilder::default()
+  pub fn new(name: &'a str) -> Self {
+    Icon {
+      name,
+      color: DEFAULT_COLOUR.into(),
+      symbol: "".into(),
+    }
+  }
+  pub fn color(&mut self, value: impl convert::Into<String>) -> &mut Self {
+    self.color = value.into();
+    self
+  }
+  pub fn build(&self) -> Option<Icon<'a>> {
+    let Icon { name, color, symbol: _ } = self;
+
+    let color = get_color(&color)?;
+    match SYMBOLS.get(*name) {
+      Some(symbol) => Some(Icon {
+        name,
+        color,
+        symbol: String::from(*symbol),
+      }),
+      _ => None,
     }
   }
 }
@@ -61,20 +51,6 @@ impl<'a> Render for Icon<'a> {
         (PreEscaped(self.symbol.to_string()))
       }
     }
-  }
-}
-
-impl<'a> IconBuilder<'a> {
-  pub fn build(&self) -> Option<Icon<'a>> {
-    let IconBuilder { name, color, symbol: _ } = &self;
-
-    let name = name.unwrap();
-    let color = color.as_ref().and_then(|c| get_color(&c)).unwrap();
-
-    SYMBOLS
-      .get(name)
-      .map(String::from)
-      .map(|symbol| Icon { name, color, symbol })
   }
 }
 
@@ -91,7 +67,7 @@ mod tests {
 
   #[test]
   fn get_icon_with_color() {
-    let icon = Icon::new("bluetooth-b").set_color("red").build();
+    let icon = Icon::new("bluetooth-b").color("red").build();
     assert!(icon.is_some());
     assert_eq!(icon.unwrap().color, "rgb(255, 0, 0)".to_string());
   }

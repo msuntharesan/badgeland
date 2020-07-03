@@ -82,7 +82,7 @@ fn main() -> Result<(), Box<dyn Error>> {
   if let Some(icon) = &opt.icon {
     let mut i = Icon::new(icon);
     if let Some(ic) = opt.icon_colour {
-      i.set_color(ic);
+      i.color(ic);
     }
     badge.icon(i.build().unwrap());
   }
