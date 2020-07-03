@@ -16,7 +16,7 @@ fn generate_icon_map() {
 
   let mut map = Map::<&'static str>::new();
 
-  let doc = Html::parse_fragment(include_str!("../src/resx/icons/brands.svg"));
+  let doc = Html::parse_fragment(include_str!("./icons/brands.svg"));
   for el in doc.select(&selector) {
     let id = el.value().attr("id").unwrap();
     let sym = el.html();
@@ -26,7 +26,7 @@ fn generate_icon_map() {
     map.entry(id, &format!(r##"r#"{}"#"##, sym));
   }
 
-  let doc = Html::parse_fragment(include_str!("../src/resx/icons/solid.svg"));
+  let doc = Html::parse_fragment(include_str!("./icons/solid.svg"));
   for el in doc.select(&selector) {
     let id = el.value().attr("id").unwrap();
     let sym = el.html();
