@@ -232,18 +232,24 @@ impl Content for &str {
   }
 }
 
+struct ContentSize {
+  x: u32,
+  y: u32,
+  rw: u32,
+}
+
 impl BadgeContent {
-  fn content_size(&self, width: u32, padding: u32) -> (u32, u32, u32) {
+  fn content_size(&self, width: u32, padding: u32, height: u32) -> ContentSize {
     let w = self.width + width;
     let x = (self.width + padding) / 2 + width;
-    let y = self.height / 2;
+    let y = height / 2;
     let mut rw = w;
     rw += match (self.width, width) {
       (x, _) if x > 0 => padding,
       (x, y) if x == 0 && y > 0 => padding / 3 * 2,
       _ => 0,
     };
-    (x, y, rw)
+    ContentSize { x, y, rw }
   }
 }
 
@@ -261,9 +267,9 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Init }> {
     }
 
     let subject = self.subject.content(font_size);
-    let subject_size = subject.content_size(icon_width, padding);
+    let subject_size = subject.content_size(icon_width, padding, height);
 
-    let width = subject_size.2;
+    let width = subject_size.rw;
 
     let rx = match (&self.style, subject.height) {
       (Styles::Classic, 30) => 6,
@@ -299,7 +305,7 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Init }> {
             rect#subject
               fill=(self.color)
               height=(height)
-              width=(subject_size.2)
+              width=(width)
               {}
           }
           g#text
@@ -312,8 +318,8 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Init }> {
                   dominant-baseline="central"
                   text-anchor="middle"
                   text-length=(subject.width)
-                  x=(subject_size.0)
-                  y=(subject_size.1)
+                  x=(subject_size.x)
+                  y=(subject_size.y)
                   filter="url(#shadow)"
                   { (subject.content) }
               }
@@ -347,12 +353,16 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Text }> {
     }
 
     let subject = self.subject.content(font_size);
-    let subject_size = subject.content_size(icon_width, padding);
+    let subject_size = subject.content_size(icon_width, padding, height);
 
     let content = self.content.get().unwrap().content(height); //content.get().unwrap().content(height);
 
-    let content_size = ((content.width + padding) / 2, height / 2, content.width + padding);
-    let width = subject_size.2 + content_size.2;
+    let content_size = ContentSize {
+      x: (content.width + padding) / 2,
+      y: height / 2,
+      rw: content.width + padding,
+    };
+    let width = subject_size.rw + content_size.rw;
     let rx = match (&self.style, content.height) {
       (Styles::Classic, 30) => 6,
       (Styles::Classic, 40) => 9,
@@ -387,13 +397,13 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Text }> {
             rect#subject
               fill="#555"
               height=(height)
-              width=(subject_size.2)
+              width=(subject_size.rw)
               {}
             rect#content
               fill=(self.color)
               height=(height)
-              width=(content_size.2)
-              x=(subject_size.2)
+              width=(content_size.rw)
+              x=(subject_size.rw)
               {}
           }
           g#text
@@ -406,14 +416,14 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Text }> {
                   dominant-baseline="central"
                   text-anchor="middle"
                   text-length=(subject.width)
-                  x=(subject_size.0)
-                  y=(subject_size.1)
+                  x=(subject_size.x)
+                  y=(subject_size.y)
                   filter="url(#shadow)"
                   { (subject.content) }
               }
               text
-                x=((subject_size.2 + content_size.0))
-                y=(content_size.1)
+                x=((subject_size.rw + content_size.x))
+                y=(content_size.y)
                 text-length=(content.width)
                 text-anchor="middle"
                 dominant-baseline="central"
@@ -451,16 +461,24 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Data }> {
     }
 
     let subject = self.subject.content(font_size);
-    let subject_size = subject.content_size(icon_width, padding);
+    let subject_size = subject.content_size(icon_width, padding, height);
 
     let content = &self.content.get().unwrap().content(height); //content.get().unwrap().content(height);
 
     let content_size = match self.style {
-      Styles::Flat => ((content.width + padding) / 2, content.height / 2, content.width),
-      _ => ((content.width + padding) / 2, content.height / 2, content.width + 5),
+      Styles::Flat => ContentSize {
+        x: (content.width + padding) / 2,
+        y: content.height / 2,
+        rw: content.width,
+      },
+      _ => ContentSize {
+        x: (content.width + padding) / 2,
+        y: content.height / 2,
+        rw: content.width + 5,
+      },
     };
 
-    let width = subject_size.2 + content_size.2;
+    let width = subject_size.rw + content_size.rw;
 
     let rx = match (&self.style, content.height) {
       (Styles::Classic, 30) => 6,
@@ -496,13 +514,13 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Data }> {
             rect#subject
               fill="#555"
               height=(height)
-              width=(subject_size.2)
+              width=(subject_size.rw)
               {}
             rect#content
               fill="#eee"
               height=(height)
-              width=(content_size.2)
-              x=(subject_size.2)
+              width=(content_size.rw)
+              x=(subject_size.x)
               {}
           }
           g#text
@@ -515,14 +533,14 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Data }> {
                   dominant-baseline="central"
                   text-anchor="middle"
                   text-length=(subject.width)
-                  x=(subject_size.0)
-                  y=(subject_size.1)
+                  x=(subject_size.x)
+                  y=(subject_size.y)
                   filter="url(#shadow)"
                   { (subject.content) }
               }
               path
                 fill="none"
-                transform=(format!("translate({}, {})", subject_size.2, 0))
+                transform=(format!("translate({}, {})", subject_size.rw, 0))
                 stroke=(self.color)
                 stroke-width="1px"
                 d=(content.content)
@@ -530,7 +548,7 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Data }> {
               path
                 fill=(self.color)
                 fill-opacity="0.2"
-                transform=(format!("translate({}, {})", subject_size.2, 0))
+                transform=(format!("translate({}, {})", subject_size.rw, 0))
                 stroke="none"
                 stroke-width="0px"
                 d=(format!("{}V{}H0Z", content.content, height))
