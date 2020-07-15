@@ -53,7 +53,6 @@ impl AsRef<HumanizeOptions> for HumanizeOptions {
   }
 }
 
-
 /// Trait that can be implemented for any type.
 pub trait Humanize {
   /// formats a type to human readable string
@@ -205,51 +204,31 @@ mod tests {
     assert_eq!(1060000000.humanize(&opt), Some("1.1B".to_owned()));
     assert_eq!(1810000000.humanize(&opt), Some("1.8B".to_owned()));
 
-    let opt = opt_builder
-      .keep_zero(true)
-      .precision(1usize)
-      .build()
-      .unwrap();
+    let opt = opt_builder.keep_zero(true).precision(1usize).build().unwrap();
 
     assert_eq!(1010000000.humanize(&opt), Some("1.0B".to_owned()));
     assert_eq!(1060000000.humanize(&opt), Some("1.1B".to_owned()));
     assert_eq!(1810000000.humanize(&opt), Some("1.8B".to_owned()));
 
-    let opt = opt_builder
-      .keep_zero(false)
-      .precision(2usize)
-      .build()
-      .unwrap();
+    let opt = opt_builder.keep_zero(false).precision(2usize).build().unwrap();
 
     assert_eq!(1001000000.humanize(&opt), Some("1B".to_owned()));
     assert_eq!(1060000000.humanize(&opt), Some("1.06B".to_owned()));
     assert_eq!(1810000000.humanize(&opt), Some("1.81B".to_owned()));
 
-    let opt = opt_builder
-      .precision(2usize)
-      .keep_zero(true)
-      .build()
-      .unwrap();
+    let opt = opt_builder.precision(2usize).keep_zero(true).build().unwrap();
 
     assert_eq!(1001000000.humanize(&opt), Some("1.00B".to_owned()));
     assert_eq!(1060000000.humanize(&opt), Some("1.06B".to_owned()));
     assert_eq!(1810000000.humanize(&opt), Some("1.81B".to_owned()));
 
-    let opt = opt_builder
-      .keep_zero(false)
-      .precision(3usize)
-      .build()
-      .unwrap();
+    let opt = opt_builder.keep_zero(false).precision(3usize).build().unwrap();
 
     assert_eq!(1000100000.humanize(&opt), Some("1B".to_owned()));
     assert_eq!(1060000000.humanize(&opt), Some("1.060B".to_owned()));
     assert_eq!(1813450000.humanize(&opt), Some("1.813B".to_owned()));
 
-    let opt = opt_builder
-      .keep_zero(true)
-      .precision(3usize)
-      .build()
-      .unwrap();
+    let opt = opt_builder.keep_zero(true).precision(3usize).build().unwrap();
 
     assert_eq!(1000100000.humanize(&opt), Some("1.000B".to_owned()));
     assert_eq!(1060000000.humanize(&opt), Some("1.060B".to_owned()));
@@ -259,20 +238,14 @@ mod tests {
   #[test]
   fn test_decimal_separator() {
     let value = 12345.6789;
-    let opt = HumanizeOptions::builder()
-      .decimal_separator("_")
-      .build()
-      .unwrap();
+    let opt = HumanizeOptions::builder().decimal_separator("_").build().unwrap();
     assert_eq!(value.humanize(&opt), Some("12_35K".to_owned()));
   }
 
   #[test]
   fn test_units() {
     let value = 123450.6789;
-    let opt = HumanizeOptions::builder()
-      .units(vec!["m", "km"])
-      .build()
-      .unwrap();
+    let opt = HumanizeOptions::builder().units(vec!["m", "km"]).build().unwrap();
     assert_eq!(value.humanize(&opt), Some("123.45km".to_owned()));
   }
 }

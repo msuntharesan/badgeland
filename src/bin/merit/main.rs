@@ -1,3 +1,28 @@
+//! # Cli
+//!
+//! Install using `cargo install merit`
+//!
+//! ```sh
+//! USAGE:
+//!     merit [OPTIONS] --subject <subject>
+//!
+//! FLAGS:
+//!     -h, --help       Prints help information
+//!     -V, --version    Prints version information
+//!
+//! OPTIONS:
+//!     --color <color>                6 or 8 digit hex color or a valid css color name
+//!     --data <data>
+//!     --icon <icon>                  Icon cany be any Brand or Solid icons from fontawesome
+//!     --icon-colour <icon-colour>    6 or 8 digit hex color or a valid css color name
+//!     --out <out>
+//!     --size <size>                   [possible values: Large, Medium, Small]
+//!     --style <style>                 [possible values: Flat, Classic]
+//!     --subject <subject>
+//!     --text <text>
+//! ```
+//!
+
 use merit::{icon_exists, Badge, BadgeData, Icon, Size, Styles};
 use pico_args::Arguments;
 use std::{error::Error, ffi::OsStr, fs::File, io::prelude::*, path::PathBuf};
