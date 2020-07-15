@@ -6,30 +6,6 @@
 //!
 //! See <https://github.com/msuntharesan/merit#web>
 //!
-//! # Cli
-//!
-//! Install using `cargo install merit`
-//!
-//! ```
-//! USAGE:
-//!     merit [OPTIONS] --subject <subject>
-//!
-//! FLAGS:
-//!     -h, --help       Prints help information
-//!     -V, --version    Prints version information
-//!
-//! OPTIONS:
-//!     --color <color>                6 or 8 digit hex color or a valid css color name
-//!     --data <data>
-//!     --icon <icon>                  Icon cany be any Brand or Solid icons from fontawesome
-//!     --icon-colour <icon-colour>    6 or 8 digit hex color or a valid css color name
-//!     --out <out>
-//!     --size <size>                   [possible values: Large, Medium, Small]
-//!     --style <style>                 [possible values: Flat, Classic]
-//!     --subject <subject>
-//!     --text <text>
-//! ```
-//!
 //! # Quick start
 //!
 //! Add `merit` to your `Cargo.toml` as as a dependency.
@@ -40,8 +16,7 @@
 //! use merit::{Badge};
 //!
 //! fn badge() {
-//!   let mut badge = Badge::new("Subject");
-//!   badge.text("Text");
+//!   let mut badge = Badge::new("Subject").text("Text");
 //!   println!("{}", badge.to_string());
 //! }
 //! ```
@@ -68,7 +43,13 @@ mod badge;
 mod icons;
 
 pub use badge::{Badge, Size, Styles};
-pub use icons::{icon_exists, Icon};
+pub use icons::{icon_exists, icon_keys, Icon};
+
+pub(crate) const DEFAULT_WHITE: &str = "#fff";
+pub(crate) const DEFAULT_BLUE: &'static str = "#0366d6";
+pub(crate) const DEFAULT_GRAY: &'static str = "#f6f8fa";
+pub(crate) const DEFAULT_GRAY_DARK: &'static str = "#24292e";
+
 
 pub(self) fn get_color(color: &str) -> Option<String> {
   let mut input = ParserInput::new(color);
@@ -90,6 +71,12 @@ impl FromStr for BadgeData {
       .map(|s| s.trim().parse::<i64>())
       .collect::<Result<Vec<_>, Self::Err>>()
       .map(|values| BadgeData(values))
+  }
+}
+
+impl From<Vec<i64>> for BadgeData {
+  fn from(values: Vec<i64>) -> Self {
+    BadgeData(values)
   }
 }
 

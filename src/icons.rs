@@ -1,13 +1,16 @@
-use super::get_color;
+use super::{get_color, DEFAULT_WHITE};
 use maud::{html, PreEscaped, Render};
 use std::{convert, str};
 
 include!(concat!(env!("OUT_DIR"), "/icons_map.rs"));
 
-static DEFAULT_COLOUR: &str = "#fff";
 
 pub fn icon_exists(icon_name: &str) -> bool {
   SYMBOLS.get(icon_name).is_some()
+}
+
+pub fn icon_keys() -> Vec<String> {
+  SYMBOLS.keys().map(|k| String::from(*k)).collect::<Vec<_>>()
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -21,7 +24,7 @@ impl<'a> Icon<'a> {
   pub fn new(name: &'a str) -> Self {
     Icon {
       name,
-      color: DEFAULT_COLOUR.into(),
+      color: DEFAULT_WHITE.into(),
       symbol: "".into(),
     }
   }
@@ -56,7 +59,7 @@ impl<'a> Render for Icon<'a> {
 
 #[cfg(test)]
 mod tests {
-  use super::Icon;
+  use super::{Icon, icon_keys};
 
   #[test]
   fn get_icon_symbol() {
@@ -70,5 +73,9 @@ mod tests {
     let icon = Icon::new("bluetooth-b").color("red").build();
     assert!(icon.is_some());
     assert_eq!(icon.unwrap().color, "rgb(255, 0, 0)".to_string());
+  }
+  #[test]
+  fn get_icon_keys() {
+      assert!(icon_keys().len() > 0);
   }
 }

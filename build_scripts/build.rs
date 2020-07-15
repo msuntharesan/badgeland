@@ -38,7 +38,7 @@ fn generate_icon_map() {
 
   writeln!(
     &mut file,
-    "static SYMBOLS: phf::Map<&'static str, &'static str> = \n{};\n",
+    "const SYMBOLS: phf::Map<&'static str, &'static str> = \n{};\n",
     map.build()
   )
   .expect("Failed to build icon map");

@@ -1,6 +1,6 @@
 mod content;
 
-use super::{get_color, icons::Icon};
+use super::{get_color, icons::Icon, DEFAULT_BLUE, DEFAULT_GRAY, DEFAULT_GRAY_DARK, DEFAULT_WHITE};
 use content::{Content, ContentSize};
 use fmt::Display;
 use maud::html;
@@ -87,6 +87,7 @@ impl<'a> GetBadgeType for BadgeType<'a, { BadgeTypeState::Text }> {
     }
   }
 }
+
 #[derive(Debug)]
 pub struct Badge<'a, const S: BadgeTypeState> {
   pub subject: &'a str,
@@ -101,7 +102,7 @@ impl<'a> Badge<'a, { BadgeTypeState::Init }> {
   pub fn new(subject: &'a str) -> Self {
     Badge {
       subject,
-      color: "#08C".into(),
+      color: DEFAULT_BLUE.into(),
       style: Styles::Classic,
       icon: None,
       height: 20,
@@ -192,19 +193,19 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Init }> {
           defs {
             @if &self.style == &Styles::Classic {
               linearGradient id="a" x2="0" y2="100%" {
-                stop offset="0" stop-color="#EEE" stop-opacity="0.1" {}
+                stop offset="0" stop-color=(DEFAULT_GRAY) stop-opacity="0.1" {}
                 stop offset="1" stop-opacity="0.1" {}
               }
             }
             mask id="m" {
-              rect fill="#fff" height=(height) rx=(rx) width=(width) {}
+              rect fill=(DEFAULT_WHITE) height=(height) rx=(rx) width=(width) {}
             }
             filter id="shadow" {
-              feDropShadow dx="-0.8" dy="-0.8" stdDeviation="0" flood-color="#000" flood-opacity="0.4" {}
+              feDropShadow dx="-0.8" dy="-0.8" stdDeviation="0" flood-color=(DEFAULT_GRAY_DARK) flood-opacity="0.4" {}
             }
           }
           g#bg mask=@if self.style == Styles::Classic { "url(#m)" } {
-            rect fill=@if self.style == Styles::Flat { "#eee" } @else { "url(#a)" } height=(height) width=(width) {}
+            rect fill=@if self.style == Styles::Flat { (DEFAULT_GRAY) } @else { "url(#a)" } height=(height) width=(width) {}
             rect#subject
               fill=(self.color)
               height=(height)
@@ -212,7 +213,7 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Init }> {
               {}
           }
           g#text
-            fill="#fff"
+            fill=(DEFAULT_WHITE)
             font-family="Verdana,sans-serif"
             font-size=(font_size)
             transform="translate(0, 0)" {
@@ -281,21 +282,21 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Text }> {
           defs {
             @if &self.style == &Styles::Classic {
               linearGradient id="a" x2="0" y2="100%" {
-                stop offset="0" stop-color="#EEE" stop-opacity="0.1" {}
+                stop offset="0" stop-color=(DEFAULT_GRAY) stop-opacity="0.1" {}
                 stop offset="1" stop-opacity="0.1" {}
               }
             }
             mask id="m" {
-              rect fill="#fff" height=(height) rx=(rx) width=(width) {}
+              rect fill=(DEFAULT_WHITE) height=(height) rx=(rx) width=(width) {}
             }
             filter id="shadow" {
-              feDropShadow dx="-0.8" dy="-0.8" stdDeviation="0" flood-color="#000" flood-opacity="0.4" {}
+              feDropShadow dx="-0.8" dy="-0.8" stdDeviation="0" flood-color=(DEFAULT_GRAY_DARK) flood-opacity="0.4" {}
             }
           }
           g#bg mask=@if self.style == Styles::Classic { "url(#m)" } {
-            rect fill=@if self.style == Styles::Flat { "#eee" } @else { "url(#a)" } height=(height) width=(width) {}
+            rect fill=@if self.style == Styles::Flat { (DEFAULT_GRAY) } @else { "url(#a)" } height=(height) width=(width) {}
             rect#subject
-              fill="#555"
+              fill=(DEFAULT_GRAY_DARK)
               height=(height)
               width=(subject_size.rw)
               {}
@@ -307,7 +308,7 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Text }> {
               {}
           }
           g#text
-            fill="#fff"
+            fill=(DEFAULT_WHITE)
             font-family="Verdana,sans-serif"
             font-size=(font_size)
             transform="translate(0, 0)" {
@@ -398,33 +399,33 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Data }> {
           defs {
             @if &self.style == &Styles::Classic {
               linearGradient id="a" x2="0" y2="100%" {
-                stop offset="0" stop-color="#EEE" stop-opacity="0.1" {}
+                stop offset="0" stop-color=(DEFAULT_GRAY) stop-opacity="0.1" {}
                 stop offset="1" stop-opacity="0.1" {}
               }
             }
             mask id="m" {
-              rect fill="#fff" height=(height) rx=(rx) width=(width) {}
+              rect fill=(DEFAULT_WHITE) height=(height) rx=(rx) width=(width) {}
             }
             filter id="shadow" {
-              feDropShadow dx="-0.8" dy="-0.8" stdDeviation="0" flood-color="#000" flood-opacity="0.4" {}
+              feDropShadow dx="-0.8" dy="-0.8" stdDeviation="0" flood-color=(DEFAULT_GRAY_DARK) flood-opacity="0.4" {}
             }
           }
           g#bg mask=@if self.style == Styles::Classic { "url(#m)" } {
-            rect fill=@if self.style == Styles::Flat { "#eee" } @else { "url(#a)" } height=(height) width=(width) {}
+            rect fill=@if self.style == Styles::Flat { (DEFAULT_GRAY) } @else { "url(#a)" } height=(height) width=(width) {}
             rect#subject
-              fill="#555"
+              fill=(DEFAULT_GRAY_DARK)
               height=(height)
               width=(subject_size.rw)
               {}
             rect#content
-              fill="#eee"
+              fill=(DEFAULT_GRAY)
               height=(height)
               width=(content_size.rw)
               x=(subject_size.rw)
               {}
           }
           g#text
-            fill="#fff"
+            fill=(DEFAULT_WHITE)
             font-family="Verdana,sans-serif"
             font-size=(font_size)
             transform="translate(0, 0)" {
@@ -474,12 +475,11 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Data }> {
 
 #[cfg(test)]
 mod tests {
-  use super::{get_color, Badge, Content, Size, Styles};
+  use super::{get_color, Badge, Content, Size, Styles, DEFAULT_BLUE};
   use scraper::{Html, Selector};
 
   use crate::Icon;
 
-  const DEF_COLOR: &str = "#08C";
   #[test]
   fn default_badge_has_classic_style() {
     let badge = Badge::new("just text");
@@ -512,8 +512,8 @@ mod tests {
   #[test]
   fn default_badge_has_333_as_background_color() {
     let mut badge = Badge::new("just text");
-    badge.color(DEF_COLOR);
-    let def_color = get_color(DEF_COLOR).unwrap();
+    badge.color(DEFAULT_BLUE);
+    let def_color = get_color(DEFAULT_BLUE).unwrap();
     let badge_svg = badge.to_string();
     let doc = Html::parse_fragment(&badge_svg);
     let rect_sel = Selector::parse("g#bg > rect#subject").unwrap();
