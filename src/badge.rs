@@ -253,7 +253,7 @@ impl BadgeContent {
   }
 }
 
-static MULTIPLIER: f32 = 0.65;
+const MULTIPLIER: f32 = 0.65;
 
 impl<'a> Display for Badge<'a, { BadgeTypeState::Init }> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -355,13 +355,10 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Text }> {
     let subject = self.subject.content(font_size);
     let subject_size = subject.content_size(icon_width, padding, height);
 
-    let content = self.content.get().unwrap().content(height); //content.get().unwrap().content(height);
+    let content = self.content.get().unwrap().content(font_size); //content.get().unwrap().content(height);
 
-    let content_size = ContentSize {
-      x: (content.width + padding) / 2,
-      y: height / 2,
-      rw: content.width + padding,
-    };
+    let content_size = content.content_size(0, padding, height);
+
     let width = subject_size.rw + content_size.rw;
     let rx = match (&self.style, content.height) {
       (Styles::Classic, 30) => 6,
@@ -520,7 +517,7 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Data }> {
               fill="#eee"
               height=(height)
               width=(content_size.rw)
-              x=(subject_size.x)
+              x=(subject_size.rw)
               {}
           }
           g#text
@@ -579,7 +576,7 @@ mod tests {
 
   use crate::Icon;
 
-  const DEF_COLOUR: &str = "#08C";
+  const DEF_COLOR: &str = "#08C";
   #[test]
   fn default_badge_has_classic_style() {
     let badge = Badge::new("just text");
@@ -610,10 +607,10 @@ mod tests {
     assert_eq!(text.text().collect::<String>(), String::from("just subject"));
   }
   #[test]
-  fn default_badge_has_333_as_background_colour() {
+  fn default_badge_has_333_as_background_color() {
     let mut badge = Badge::new("just text");
-    badge.color(DEF_COLOUR);
-    let def_color = get_color(DEF_COLOUR).unwrap();
+    badge.color(DEF_COLOR);
+    let def_color = get_color(DEF_COLOR).unwrap();
     let badge_svg = badge.to_string();
     let doc = Html::parse_fragment(&badge_svg);
     let rect_sel = Selector::parse("g#bg > rect#subject").unwrap();
