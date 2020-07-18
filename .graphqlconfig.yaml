@@ -1,9 +1,0 @@
-projects:
-  badger:
-    schemaPath: badge-web/src/resx/github_schema.graphql
-    extensions:
-      endpoints:
-        github:
-          url: 'https://api.github.com/graphql'
-          headers:
-            Authorization: 'BEARER ${env:GH_ACCESS_TOKEN}'
