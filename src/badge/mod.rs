@@ -6,10 +6,26 @@ use fmt::Display;
 use maud::html;
 use std::{fmt, str::FromStr};
 
-#[derive(Debug, PartialEq)]
+#[cfg(feature = "serde_de")]
+use serde::{de, Deserialize, Deserializer, Serialize};
+
+#[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "serde_de", derive(Serialize))]
 pub enum Styles {
   Flat,
   Classic,
+}
+
+#[cfg(feature = "serde_de")]
+impl<'de> Deserialize<'de> for Styles {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+  where
+    D: Deserializer<'de>,
+  {
+    let s = String::deserialize(deserializer)?;
+
+    Styles::from_str(s.as_str()).map_err(|e| de::Error::custom(e))
+  }
 }
 
 impl FromStr for Styles {
@@ -23,11 +39,24 @@ impl FromStr for Styles {
   }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "serde_de", derive(Serialize))]
 pub enum Size {
   Large,
   Medium,
   Small,
+}
+
+#[cfg(feature = "serde_de")]
+impl<'de> Deserialize<'de> for Size {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+  where
+    D: Deserializer<'de>,
+  {
+    let s = String::deserialize(deserializer)?;
+
+    Size::from_str(s.as_str()).map_err(|e| de::Error::custom(e))
+  }
 }
 
 impl FromStr for Size {
@@ -175,12 +204,7 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Init }> {
 
     let width = subject_size.rw;
 
-    let rx = match (&self.style, subject.height) {
-      (Styles::Classic, 30) => 6,
-      (Styles::Classic, 40) => 9,
-      (Styles::Classic, _) => 3,
-      (_, _) => 0,
-    };
+    let rx = subject.rx(&self.style);
 
     let markup = html! {
       svg
@@ -264,12 +288,7 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Text }> {
     let content_size = content.content_size(0, padding, height);
 
     let width = subject_size.rw + content_size.rw;
-    let rx = match (&self.style, content.height) {
-      (Styles::Classic, 30) => 6,
-      (Styles::Classic, 40) => 9,
-      (Styles::Classic, _) => 3,
-      (_, _) => 0,
-    };
+    let rx = content.rx(&self.style);
 
     let markup = html! {
       svg
@@ -381,12 +400,7 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Data }> {
 
     let width = subject_size.rw + content_size.rw;
 
-    let rx = match (&self.style, content.height) {
-      (Styles::Classic, 30) => 6,
-      (Styles::Classic, 40) => 9,
-      (Styles::Classic, _) => 3,
-      (_, _) => 0,
-    };
+    let rx = content.rx(&self.style);
 
     let markup = html! {
       svg
@@ -398,9 +412,9 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Data }> {
           @if let Some(icon) = &self.icon { (icon) }
           defs {
             @if &self.style == &Styles::Classic {
-              linearGradient id="a" x2="0" y2="100%" {
-                stop offset="0" stop-color=(DEFAULT_GRAY) stop-opacity="0.1" {}
-                stop offset="1" stop-opacity="0.1" {}
+              linearGradient id="a" x2="0" y2="75%" {
+                stop offset="0" stop-color="#eee" stop-opacity="0.1" {}
+                stop offset="1" stop-opacity="0.3" {}
               }
             }
             mask id="m" {

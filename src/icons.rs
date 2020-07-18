@@ -4,7 +4,6 @@ use std::{convert, str};
 
 include!(concat!(env!("OUT_DIR"), "/icons_map.rs"));
 
-
 pub fn icon_exists(icon_name: &str) -> bool {
   SYMBOLS.get(icon_name).is_some()
 }
@@ -59,7 +58,7 @@ impl<'a> Render for Icon<'a> {
 
 #[cfg(test)]
 mod tests {
-  use super::{Icon, icon_keys};
+  use super::{icon_keys, Icon};
 
   #[test]
   fn get_icon_symbol() {
@@ -76,6 +75,6 @@ mod tests {
   }
   #[test]
   fn get_icon_keys() {
-      assert!(icon_keys().len() > 0);
+    assert!(icon_keys().len() > 0);
   }
 }

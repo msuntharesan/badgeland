@@ -1,3 +1,4 @@
+use super::Styles;
 use rusttype::{point, Font, Scale};
 use unicode_normalization::UnicodeNormalization;
 
@@ -96,5 +97,13 @@ impl BadgeContent {
       _ => 0,
     };
     ContentSize { x, y, rw }
+  }
+  pub(super) fn rx(&self, style: &Styles) -> usize {
+    match (style, self.height) {
+      (Styles::Classic, 40) => 9,
+      (Styles::Classic, 30) => 6,
+      (Styles::Classic, _) => 3,
+      (_, _) => 0,
+    }
   }
 }

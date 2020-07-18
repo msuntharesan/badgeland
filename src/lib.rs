@@ -39,6 +39,9 @@
 use cssparser::{Color, Parser, ParserInput, ToCss};
 use std::{num::ParseIntError, str::FromStr};
 
+#[cfg(feature = "serde_de")]
+use serde::{Deserialize, Serialize};
+
 mod badge;
 mod icons;
 
@@ -49,7 +52,6 @@ pub(crate) const DEFAULT_WHITE: &str = "#fff";
 pub(crate) const DEFAULT_BLUE: &'static str = "#0366d6";
 pub(crate) const DEFAULT_GRAY: &'static str = "#f6f8fa";
 pub(crate) const DEFAULT_GRAY_DARK: &'static str = "#24292e";
-
 
 pub(self) fn get_color(color: &str) -> Option<String> {
   let mut input = ParserInput::new(color);
@@ -62,6 +64,7 @@ pub(self) fn get_color(color: &str) -> Option<String> {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde_de", derive(Serialize, Deserialize))]
 pub struct BadgeData(pub Vec<i64>);
 
 impl FromStr for BadgeData {
