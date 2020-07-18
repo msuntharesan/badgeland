@@ -1,111 +1,72 @@
 use actix_web::{http::StatusCode, HttpResponse, ResponseError};
-use merit::{icon_exists, Badge, Icon};
-use std::fmt;
+use awc::error::{JsonPayloadError, SendRequestError};
+use merit::{Badge, Icon};
+use thiserror::Error;
 
-pub struct BadgeError {
-  status: StatusCode,
-  description: String,
-  url: Option<String>,
-  service: Option<String>,
+#[derive(Debug, Error)]
+pub enum BadgeError {
+  #[error("HTTP Error: URL: {url:?} | Status Code: {status:#?} | Reason: {description:}")]
+  Http {
+    status: StatusCode,
+    description: String,
+    url: Option<String>,
+  },
+  #[error("Client Error: {0}")]
+  Client(#[from] SendRequestError),
+  #[error("Json Error: {0}")]
+  ClientJsonError(#[from] JsonPayloadError),
+}
+
+impl Default for BadgeError {
+  fn default() -> Self {
+    BadgeError::Http {
+      status: StatusCode::FORBIDDEN,
+      description: "Forbidden".to_string(),
+      url: None,
+    }
+  }
 }
 
 impl BadgeError {
   pub fn err_badge(&self) -> String {
-    let mut err_badge = Badge::new("Error");
+    let icon = Icon::new("exclamation-circle").build().unwrap();
+    let mut badge = Badge::new("Error");
+    badge.icon(icon);
+    badge.color("red");
 
-    match &self.service {
-      Some(icon) if icon_exists(&icon) => {
-        let icon = Icon::new(&icon).build().unwrap();
-        err_badge.icon(Some(icon));
-      }
-      Some(service) => {
-        err_badge = Badge::new(&service);
-      }
-      _ => {}
-    }
-    err_badge.color("red");
-    let text = u16::from(self.status).to_string();
-    err_badge.text(&text);
-    err_badge.to_string()
-  }
-}
-
-pub struct BadgeErrorBuilder {
-  status: Option<StatusCode>,
-  description: String,
-  url: Option<String>,
-  service: Option<String>,
-}
-
-impl BadgeErrorBuilder {
-  pub fn new() -> Self {
-    BadgeErrorBuilder {
-      status: Some(StatusCode::INTERNAL_SERVER_ERROR),
-      description: "unknown err".into(),
-      url: None,
-      service: None,
-    }
-  }
-  pub fn description<T>(&mut self, description: T) -> &mut Self
-  where
-    T: Into<String>,
-  {
-    self.description = description.into();
-    self
-  }
-  pub fn status(&mut self, status: StatusCode) -> &mut Self {
-    self.status = Some(status);
-    self
-  }
-  pub fn url<T>(&mut self, url: Option<T>) -> &mut Self
-  where
-    T: Into<String>,
-  {
-    self.url = url.map(|u| u.into());
-    self
-  }
-  pub fn service<T>(&mut self, service: T) -> &mut Self
-  where
-    T: Into<String>,
-  {
-    self.service = Some(service.into());
-    self
-  }
-  pub fn build(&self) -> BadgeError {
-    BadgeError {
-      description: self.description.to_owned(),
-      status: self.status.unwrap(),
-      url: self.url.to_owned(),
-      service: self.service.to_owned(),
-    }
+    let text = match self {
+      BadgeError::Http {
+        status,
+        description: _,
+        url: _,
+      } => status.as_u16().to_string(),
+      BadgeError::Client(e) => match e {
+        SendRequestError::Http(http_err) => http_err.status_code().as_u16().to_string(),
+        _ => StatusCode::INTERNAL_SERVER_ERROR.as_u16().to_string(),
+      },
+      _ => StatusCode::INTERNAL_SERVER_ERROR.as_u16().to_string(),
+    };
+    badge.text(&text).to_string()
   }
 }
 
 impl ResponseError for BadgeError {
   fn error_response(&self) -> HttpResponse {
-    HttpResponse::InternalServerError()
-      .status(self.status)
-      .content_type("image/svg+xml")
-      .body(self.err_badge())
-  }
-}
+    let mut resp = HttpResponse::InternalServerError();
+    println!("{:?}", self);
+    resp.content_type("image/svg+xml");
 
-impl fmt::Display for BadgeError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(
-      f,
-      "URL: {:?} | Status Code: {:#?} | Reason: {}",
-      self.url, self.status, self.description
-    )
-  }
-}
-
-impl fmt::Debug for BadgeError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(
-      f,
-      "URL: {:?} Status Code: {:#?} Reason: {}",
-      self.url, self.status, self.description
-    )
+    match self {
+      BadgeError::Http {
+        status,
+        description: _,
+        url: _,
+      } => resp.status(*status).body(self.err_badge()),
+      BadgeError::Client(e) => match e {
+        SendRequestError::Http(http_err) => resp.status(http_err.status_code()).body(self.err_badge()),
+        _ => resp.status(StatusCode::INTERNAL_SERVER_ERROR).body(self.err_badge()),
+      },
+      _ => resp.status(StatusCode::INTERNAL_SERVER_ERROR).body(self.err_badge()),
+    }
   }
 }
