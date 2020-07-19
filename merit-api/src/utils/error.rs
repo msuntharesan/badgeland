@@ -1,6 +1,7 @@
 use actix_web::{http::StatusCode, HttpResponse, ResponseError};
 use awc::error::{JsonPayloadError, SendRequestError};
 use merit::{Badge, Icon};
+use std::convert::TryFrom;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -29,10 +30,10 @@ impl Default for BadgeError {
 
 impl BadgeError {
   pub fn err_badge(&self) -> String {
-    let icon = Icon::new("exclamation-circle").build().unwrap();
+    let icon: Icon = Icon::try_from("exclamation-circle").unwrap();
     let mut badge = Badge::new("Error");
     badge.icon(icon);
-    badge.color("red");
+    badge.color("red".parse().unwrap());
 
     let text = match self {
       BadgeError::Http {

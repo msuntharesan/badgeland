@@ -14,7 +14,7 @@ use actix_web::{
 use dotenv::dotenv;
 use env_logger::Env;
 use listenfd::ListenFd;
-use merit::Badge;
+use merit::{Badge, DEFAULT_GRAY};
 use std::{env, io};
 
 #[get("/")]
@@ -32,7 +32,7 @@ async fn favicon() -> impl Responder {
 
 async fn default_404() -> impl Responder {
   let mut badge = Badge::new("Error");
-  badge.color("grey");
+  badge.color(DEFAULT_GRAY.parse().unwrap());
 
   HttpResponse::NotFound()
     .content_type("image/svg+xml")

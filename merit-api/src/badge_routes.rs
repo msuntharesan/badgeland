@@ -1,5 +1,5 @@
 use super::utils::error::BadgeError;
-use super::utils::{QueryInfo, BadgeOptions};
+use super::utils::{BadgeOptions, QueryInfo};
 use actix_web::{
   http::{StatusCode, Uri},
   web, HttpRequest, HttpResponse,
@@ -7,12 +7,12 @@ use actix_web::{
 use awc::Client;
 use merit::{Badge, BadgeData, Icon, Size, Styles};
 use serde::Deserialize;
-use url::form_urlencoded;
+use std::convert::TryFrom;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
+  cfg.service(web::resource("url/{path:.*}").route(web::get().to(url_badge_handler)));
   cfg.service(
     web::scope("/badge")
-      .route("/url/{url:.*}", web::get().to(url_badge_handler))
       .route("/{subject}", web::get().to(badge_handler))
       .route("/{subject}/{text}", web::get().to(badge_handler)),
   );
@@ -22,11 +22,8 @@ async fn url_badge_handler(
   req: HttpRequest,
   (params, query): (web::Path<String>, web::Query<QueryInfo>),
 ) -> Result<HttpResponse, BadgeError> {
-  let parsed = form_urlencoded::parse(&params.as_bytes())
-    .into_owned()
-    .collect::<Vec<_>>();
-
-  let (url, _) = parsed.first().ok_or(BadgeError::default())?;
+  let query: QueryInfo = query.into_inner();
+  let url = params.replacen("/", "//", 1);
 
   let url = url.parse::<Uri>().map_err(|e| BadgeError::Http {
     status: StatusCode::BAD_REQUEST,
@@ -42,39 +39,29 @@ async fn url_badge_handler(
     .await
     .map_err(BadgeError::from)?;
   println!("{:?}", b.status());
+
   let data: BadgeOptions = b.json().await?;
 
   let mut badge = Badge::new(&data.subject);
 
-  match (&data.color, &query.color) {
-    (None, Some(c)) => {
+  match (data.color, query.color) {
+    (_, Some(c)) => {
       badge.color(c);
     }
-    (Some(c), None) => {
+    (Some(c), _) => {
       badge.color(c);
     }
     _ => {}
   }
 
-  let mut icon = match (&data.icon, &query.icon) {
-    (_, Some(i)) => Some(Icon::new(i)),
-    (Some(i), _) => Some(Icon::new(i)),
+  let icon = match (&data.icon, &query.icon) {
+    (_, Some(i)) => Icon::try_from(i.as_str()).ok(),
+    (Some(i), _) => Icon::try_from(i.as_str()).ok(),
     _ => None,
   };
 
-  if let Some(i) = &mut icon {
-    match (&data.icon_color, &query.icon_color) {
-      (None, Some(c)) => {
-        i.color(c);
-      }
-      (Some(c), None) => {
-        i.color(c);
-      }
-      _ => {}
-    }
-    if let Some(i) = i.build() {
-      badge.icon(i);
-    }
+  if let Some(i) = icon {
+    badge.icon(i);
   }
 
   let size = match (data.size, query.size) {
@@ -107,27 +94,28 @@ struct BadgeInfo {
 }
 
 fn badge_handler((params, query): (web::Path<BadgeInfo>, web::Query<QueryInfo>)) -> HttpResponse {
+  let query = query.into_inner();
   let mut req_badge = Badge::new(&params.subject);
-  if let Some(c) = &query.color {
+  if let Some(c) = query.color {
     req_badge.color(c);
   }
 
-  if let Some(s) = &query.style {
-    req_badge.style(*s);
+  if let Some(s) = query.style {
+    req_badge.style(s);
   }
 
   if let Some(i) = &query.icon {
-    let mut icon = Icon::new(i);
-    if let Some(ic) = &query.icon_color {
-      icon.color(ic);
-    }
-    if let Some(i) = icon.build() {
+    let icon = Icon::try_from(i.as_str());
+    if let Ok(i) = icon {
       req_badge.icon(i);
+    }
+    if let Some(ic) = query.icon_color {
+      req_badge.icon_color(ic);
     }
   }
 
-  if let Some(bs) = &query.size {
-    req_badge.size(*bs);
+  if let Some(bs) = query.size {
+    req_badge.size(bs);
   }
 
   let badge_svg = if let Some(text) = &params.text {
