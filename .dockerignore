@@ -2,6 +2,7 @@
 *
 
 # But not these files
+!build_scripts
 !humanize
 !merit-api
 !src

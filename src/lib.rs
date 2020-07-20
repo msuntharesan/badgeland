@@ -36,8 +36,11 @@
 #![feature(const_generics)]
 #![feature(proc_macro_hygiene)]
 
-use cssparser::{Color, Parser, ParserInput, ToCss};
-use std::{num::ParseIntError, str::FromStr};
+use cssparser::{Color as CssColor, Parser, ParserInput, ToCss};
+use std::{convert::From, fmt::Display, num::ParseIntError, str::FromStr};
+
+#[cfg(feature = "serde_de")]
+use serde::{de, Deserialize, Deserializer, Serialize};
 
 mod badge;
 mod icons;
@@ -45,23 +48,48 @@ mod icons;
 pub use badge::{Badge, Size, Styles};
 pub use icons::{icon_exists, icon_keys, Icon};
 
-pub(crate) const DEFAULT_WHITE: &str = "#fff";
-pub(crate) const DEFAULT_BLUE: &'static str = "#0366d6";
-pub(crate) const DEFAULT_GRAY: &'static str = "#f6f8fa";
-pub(crate) const DEFAULT_GRAY_DARK: &'static str = "#24292e";
+pub const DEFAULT_WHITE: &'static str = "#fff";
+pub const DEFAULT_BLUE: &'static str = "#0366d6";
+pub const DEFAULT_GRAY: &'static str = "#f6f8fa";
+pub const DEFAULT_GRAY_DARK: &'static str = "#24292e";
 
+#[derive(Debug, Eq, PartialEq, Clone)]
+#[cfg_attr(feature = "serde_de", derive(Serialize))]
+pub struct Color(pub String);
 
-pub(self) fn get_color(color: &str) -> Option<String> {
-  let mut input = ParserInput::new(color);
-  let mut parser = Parser::new(&mut input);
+impl FromStr for Color {
+  type Err = String;
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    let mut input = ParserInput::new(s);
+    let mut parser = Parser::new(&mut input);
 
-  Color::parse(&mut parser)
-    .map(|c: Color| c.to_css_string())
-    .or_else(|_| Color::parse_hash(&color.as_bytes()).map(|c: Color| c.to_css_string()))
-    .ok()
+    CssColor::parse(&mut parser)
+      .map(|c: CssColor| Color(c.to_css_string()))
+      .or_else(|_| CssColor::parse_hash(s.as_bytes()).map(|c: CssColor| Color(c.to_css_string())))
+      .map_err(|_| format!("{} is not a valid css color", s))
+  }
+}
+
+impl Display for Color {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self.0)
+  }
+}
+
+#[cfg(feature = "serde_de")]
+impl<'de> Deserialize<'de> for Color {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+  where
+    D: Deserializer<'de>,
+  {
+    let s = String::deserialize(deserializer)?;
+
+    Color::from_str(s.as_str()).map_err(|_| de::Error::custom(format!("{} is not a valid css color", s)))
+  }
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde_de", derive(Serialize, Deserialize))]
 pub struct BadgeData(pub Vec<i64>);
 
 impl FromStr for BadgeData {
@@ -83,16 +111,17 @@ impl From<Vec<i64>> for BadgeData {
 #[cfg(test)]
 mod tests {
 
-  use super::{get_color, BadgeData};
+  use super::{BadgeData, Color};
+  use std::str::FromStr;
 
   #[test]
   fn get_color_pass() {
     let colors = vec!["red", "#ff0000", "ff0000", "rgb(255, 0, 0)", "rgba(255, 0, 0, 1)"];
 
-    let expected = Some(String::from("rgb(255, 0, 0)"));
+    let expected = Ok(Color(String::from("rgb(255, 0, 0)")));
 
     for c in colors {
-      let cx = get_color(c);
+      let cx = Color::from_str(c);
       assert_eq!(
         cx, expected,
         "input = {},  received = {:?}, expected = {:?}",
@@ -112,10 +141,10 @@ mod tests {
     ];
 
     for c in colors {
-      let cx = get_color(c);
+      let cx = Color::from_str(c);
 
       assert!(
-        cx.is_none(),
+        cx.is_err(),
         "input = {},  received = {:?}, expected = {:?}",
         c,
         cx,

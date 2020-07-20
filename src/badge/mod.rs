@@ -1,15 +1,31 @@
 mod content;
 
-use super::{get_color, icons::Icon, DEFAULT_BLUE, DEFAULT_GRAY, DEFAULT_GRAY_DARK, DEFAULT_WHITE};
+use super::{icons::Icon, Color, DEFAULT_BLUE, DEFAULT_GRAY, DEFAULT_GRAY_DARK, DEFAULT_WHITE};
 use content::{Content, ContentSize};
 use fmt::Display;
 use maud::html;
 use std::{fmt, str::FromStr};
 
-#[derive(Debug, PartialEq)]
+#[cfg(feature = "serde_de")]
+use serde::{de, Deserialize, Deserializer, Serialize};
+
+#[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "serde_de", derive(Serialize))]
 pub enum Styles {
   Flat,
   Classic,
+}
+
+#[cfg(feature = "serde_de")]
+impl<'de> Deserialize<'de> for Styles {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+  where
+    D: Deserializer<'de>,
+  {
+    let s = String::deserialize(deserializer)?;
+
+    Styles::from_str(s.as_str()).map_err(|e| de::Error::custom(e))
+  }
 }
 
 impl FromStr for Styles {
@@ -23,11 +39,24 @@ impl FromStr for Styles {
   }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "serde_de", derive(Serialize))]
 pub enum Size {
   Large,
   Medium,
   Small,
+}
+
+#[cfg(feature = "serde_de")]
+impl<'de> Deserialize<'de> for Size {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+  where
+    D: Deserializer<'de>,
+  {
+    let s = String::deserialize(deserializer)?;
+
+    Size::from_str(s.as_str()).map_err(|e| de::Error::custom(e))
+  }
 }
 
 impl FromStr for Size {
@@ -91,9 +120,10 @@ impl<'a> GetBadgeType for BadgeType<'a, { BadgeTypeState::Text }> {
 #[derive(Debug)]
 pub struct Badge<'a, const S: BadgeTypeState> {
   pub subject: &'a str,
-  pub color: String,
+  pub color: Color,
   pub style: Styles,
   pub icon: Option<Icon<'a>>,
+  pub icon_color: Color,
   pub height: u32,
   pub content: BadgeType<'a, S>,
 }
@@ -102,18 +132,17 @@ impl<'a> Badge<'a, { BadgeTypeState::Init }> {
   pub fn new(subject: &'a str) -> Self {
     Badge {
       subject,
-      color: DEFAULT_BLUE.into(),
+      color: DEFAULT_BLUE.parse().unwrap(),
       style: Styles::Classic,
       icon: None,
+      icon_color: DEFAULT_WHITE.parse().unwrap(),
       height: 20,
       content: BadgeType::Init,
     }
   }
 
-  pub fn color(&mut self, color: &'a str) -> &mut Self {
-    if let Some(c) = get_color(color) {
-      self.color = c;
-    }
+  pub fn color(&mut self, color: Color) -> &mut Self {
+    self.color = color;
     self
   }
 
@@ -134,12 +163,19 @@ impl<'a> Badge<'a, { BadgeTypeState::Init }> {
     self.style = style;
     self
   }
+  pub fn icon_color(&mut self, c: Color) -> &mut Self {
+    if let Some(_) = &self.icon {
+      self.icon_color = c;
+    }
+    self
+  }
   pub fn text(self, text: &'a str) -> Badge<'a, { BadgeTypeState::Text }> {
     Badge {
       subject: self.subject,
       color: self.color,
       style: self.style,
       icon: self.icon,
+      icon_color: self.icon_color,
       height: self.height,
       content: BadgeType::Text(text),
     }
@@ -151,6 +187,7 @@ impl<'a> Badge<'a, { BadgeTypeState::Init }> {
       color: self.color,
       style: self.style,
       icon: self.icon,
+      icon_color: self.icon_color,
       height: self.height,
       content: BadgeType::Data(data),
     }
@@ -175,12 +212,7 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Init }> {
 
     let width = subject_size.rw;
 
-    let rx = match (&self.style, subject.height) {
-      (Styles::Classic, 30) => 6,
-      (Styles::Classic, 40) => 9,
-      (Styles::Classic, _) => 3,
-      (_, _) => 0,
-    };
+    let rx = subject.rx(&self.style);
 
     let markup = html! {
       svg
@@ -207,7 +239,7 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Init }> {
           g#bg mask=@if self.style == Styles::Classic { "url(#m)" } {
             rect fill=@if self.style == Styles::Flat { (DEFAULT_GRAY) } @else { "url(#a)" } height=(height) width=(width) {}
             rect#subject
-              fill=(self.color)
+              fill=(self.color.to_string())
               height=(height)
               width=(width)
               {}
@@ -236,7 +268,7 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Init }> {
               y=(((height  as f32) / 2.0 - (icon_width as f32 / 2.0)))
               width=(icon_width)
               height=(icon_width)
-              fill=(icon.color)
+              fill=(self.icon_color.to_string())
               {}
           }
       }
@@ -264,12 +296,7 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Text }> {
     let content_size = content.content_size(0, padding, height);
 
     let width = subject_size.rw + content_size.rw;
-    let rx = match (&self.style, content.height) {
-      (Styles::Classic, 30) => 6,
-      (Styles::Classic, 40) => 9,
-      (Styles::Classic, _) => 3,
-      (_, _) => 0,
-    };
+    let rx = content.rx(&self.style);
 
     let markup = html! {
       svg
@@ -301,7 +328,7 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Text }> {
               width=(subject_size.rw)
               {}
             rect#content
-              fill=(self.color)
+              fill=(self.color.to_string())
               height=(height)
               width=(content_size.rw)
               x=(subject_size.rw)
@@ -339,7 +366,7 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Text }> {
               y=(((height  as f32) / 2.0 - (icon_width as f32 / 2.0)))
               width=(icon_width)
               height=(icon_width)
-              fill=(icon.color)
+              fill=(self.icon_color.to_string())
               {}
           }
       }
@@ -381,12 +408,7 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Data }> {
 
     let width = subject_size.rw + content_size.rw;
 
-    let rx = match (&self.style, content.height) {
-      (Styles::Classic, 30) => 6,
-      (Styles::Classic, 40) => 9,
-      (Styles::Classic, _) => 3,
-      (_, _) => 0,
-    };
+    let rx = content.rx(&self.style);
 
     let markup = html! {
       svg
@@ -398,9 +420,9 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Data }> {
           @if let Some(icon) = &self.icon { (icon) }
           defs {
             @if &self.style == &Styles::Classic {
-              linearGradient id="a" x2="0" y2="100%" {
-                stop offset="0" stop-color=(DEFAULT_GRAY) stop-opacity="0.1" {}
-                stop offset="1" stop-opacity="0.1" {}
+              linearGradient id="a" x2="0" y2="75%" {
+                stop offset="0" stop-color="#eee" stop-opacity="0.1" {}
+                stop offset="1" stop-opacity="0.3" {}
               }
             }
             mask id="m" {
@@ -442,12 +464,12 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Data }> {
               path
                 fill="none"
                 transform=(format!("translate({}, {})", subject_size.rw, 0))
-                stroke=(self.color)
+                stroke=(self.color.to_string())
                 stroke-width="1px"
                 d=(content.content)
                 {}
               path
-                fill=(self.color)
+                fill=(self.color.to_string())
                 fill-opacity="0.2"
                 transform=(format!("translate({}, {})", subject_size.rw, 0))
                 stroke="none"
@@ -463,7 +485,7 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Data }> {
               y=(((height  as f32) / 2.0 - (icon_width as f32 / 2.0)))
               width=(icon_width)
               height=(icon_width)
-              fill=(icon.color)
+              fill=(self.icon_color.to_string())
               {}
           }
       }
@@ -475,10 +497,11 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Data }> {
 
 #[cfg(test)]
 mod tests {
-  use super::{get_color, Badge, Content, Size, Styles, DEFAULT_BLUE};
+  use super::{Badge, Color, Content, Size, Styles, DEFAULT_BLUE};
   use scraper::{Html, Selector};
 
   use crate::Icon;
+  use std::convert::TryFrom;
 
   #[test]
   fn default_badge_has_classic_style() {
@@ -512,20 +535,18 @@ mod tests {
   #[test]
   fn default_badge_has_333_as_background_color() {
     let mut badge = Badge::new("just text");
-    badge.color(DEFAULT_BLUE);
-    let def_color = get_color(DEFAULT_BLUE).unwrap();
+    badge.color(DEFAULT_BLUE.parse::<Color>().unwrap());
+    let def_color: Color = DEFAULT_BLUE.parse().unwrap();
     let badge_svg = badge.to_string();
     let doc = Html::parse_fragment(&badge_svg);
     let rect_sel = Selector::parse("g#bg > rect#subject").unwrap();
     let rect = doc.select(&rect_sel).next().unwrap();
-    assert_eq!(rect.value().attr("fill").unwrap(), &def_color);
+    assert_eq!(rect.value().attr("fill").unwrap(), &def_color.to_string());
   }
 
   #[test]
   fn badge_with_text() {
     let badge = Badge::new("with subject").text("badge text");
-    // let content = &badge.content;
-    // assert_eq!(content.get(), Some("badge text"));
     let doc = Html::parse_fragment(&badge.to_string());
     let subject_sel = Selector::parse("g#text > text:last-child").unwrap();
     let subject = doc.select(&subject_sel).next().unwrap();
@@ -534,7 +555,7 @@ mod tests {
 
   #[test]
   fn badge_with_icon() {
-    let icon = Icon::new("git").build().unwrap();
+    let icon = Icon::try_from("git").unwrap();
     let mut badge = Badge::new("with icon");
     &badge.icon(icon);
 

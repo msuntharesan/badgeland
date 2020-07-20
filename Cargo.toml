@@ -11,24 +11,24 @@ publish = true
 
 build = "./build_scripts/build.rs"
 
-[lib]
-name = "merit"
-
-[[bin]]
-name = "merit"
-
 [dependencies]
+argh = "0.1"
 cssparser = "0.27"
 maud = "0.22"
 phf = "0.8"
-pico-args = "0.3"
 rusttype = "0.9"
-scraper = "0.12"
+serde = { version = "1.0", features = ["derive"], optional = true }
 unicode-normalization = "0.1"
+
+[dev-dependencies]
+scraper = "0.12"
 
 [build-dependencies]
 phf_codegen = "0.8"
 scraper = "0.12"
+
+[features]
+serde_de = ["serde"]
 
 [workspace]
 members = [
@@ -38,3 +38,5 @@ members = [
 
 [profile.release]
 opt-level = 'z'  # Optimize for size.
+lto = true  # LTO instructs the linker to optimize at the link stage.
+codegen-units = 1

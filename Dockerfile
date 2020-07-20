@@ -2,7 +2,7 @@
 # Cargo Build Stage
 # ------------------------------------------------------------------------------
 
-FROM ekidd/rust-musl-builder:nightly-2019-11-06-openssl11 as cargo-build
+FROM ekidd/rust-musl-builder:nightly-2020-07-12 as cargo-build
 
 WORKDIR /usr/src/
 
@@ -27,10 +27,7 @@ RUN OPENSSL_STATIC=true \
 
 FROM alpine:latest
 
-ARG GH_ACCESS_TOKEN
-
-ENV GH_ACCESS_TOKEN=${GH_ACCESS_TOKEN} \
-    PORT=8080 \
+ENV PORT=8080 \
     LOG_LEVEL="actix_web=info"
 
 WORKDIR /home/merit/bin/
