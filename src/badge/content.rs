@@ -1,25 +1,24 @@
-use super::Styles;
-use rusttype::{point, Font, Scale};
+use ab_glyph::{Font, FontRef, PxScale, ScaleFont};
 use unicode_normalization::UnicodeNormalization;
 
-fn get_font() -> Font<'static> {
+fn get_font() -> FontRef<'static> {
   let font_data: &[u8] = include_bytes!("../resx/Verdana.ttf");
-  Font::try_from_bytes(font_data).expect("Error constructing Font")
+  FontRef::try_from_slice(font_data).expect("Error constructing Font")
 }
 
 #[derive(Debug, Default)]
 pub(super) struct BadgeContent {
   pub(super) content: String,
-  pub(super) width: u32,
-  pub(super) height: u32,
+  pub(super) width: usize,
+  pub(super) height: usize,
 }
 
 pub(super) trait Content {
-  fn content(&self, height: u32) -> BadgeContent;
+  fn content(&self, height: usize) -> BadgeContent;
 }
 
 impl<'a> Content for Vec<i64> {
-  fn content(&self, height: u32) -> BadgeContent {
+  fn content(&self, height: usize) -> BadgeContent {
     let width = if self.len() > 0 { height * 5 } else { 0 };
     let chart_height = height as f32;
     let max = *self.iter().max().unwrap_or(&0);
@@ -41,54 +40,55 @@ impl<'a> Content for Vec<i64> {
     BadgeContent {
       content: d,
       width,
-      height: chart_height as u32,
+      height: chart_height as usize,
     }
   }
 }
 
 impl Content for &str {
-  fn content(&self, height: u32) -> BadgeContent {
+  fn content(&self, height: usize) -> BadgeContent {
     let font = get_font();
 
-    let scale = Scale::uniform(height as f32);
-    let v_metrics = font.v_metrics(scale);
+    let scale = PxScale::from(height as f32);
+    let scaled_font = font.as_scaled(scale);
 
     let normalized = self.trim().nfc().collect::<String>();
-    let glyphs: Vec<_> = font.layout(&normalized, scale, point(0., 0.)).collect();
 
-    let glyphs_height = (v_metrics.ascent + v_metrics.descent.abs()).round() as u32;
-    let width = {
-      let width = glyphs
-        .last()
-        .map(|g| {
-          if let Some(bbox) = g.pixel_bounding_box() {
-            bbox.min.x as f32 + g.unpositioned().h_metrics().advance_width
-          } else {
-            0.0
-          }
-        })
-        .unwrap_or(0.)
-        .ceil();
-      width as u32 + ((self.len().checked_sub(1).unwrap_or(0)) * 2) as u32
-    };
+    let glyphs_height = scaled_font.height().ceil() as usize;
+    let width = normalized
+      .chars()
+      .scan(None, |prev_glyph, c| {
+        let mut x = 0.0;
+        let glyph = scaled_font.scaled_glyph(c);
+
+        if let Some(last) = prev_glyph.take() {
+          x += scaled_font.kern(last, glyph.id);
+        }
+
+        x += scaled_font.h_advance(glyph.id);
+        *prev_glyph = Some(glyph.id);
+        Some(x)
+      })
+      .fold(0.0, |acc, x| acc + x);
+
     BadgeContent {
       content: self.to_string(),
-      width,
+      width: width as usize,
       height: glyphs_height,
     }
   }
 }
 
 pub(super) struct ContentSize {
-  pub(super) x: u32,
-  pub(super) y: u32,
-  pub(super) rw: u32,
+  pub(super) x: usize,
+  pub(super) y: usize,
+  pub(super) rw: usize,
 }
 
 impl BadgeContent {
-  pub(super) fn content_size(&self, width: u32, padding: u32, height: u32) -> ContentSize {
-    let w = self.width + width;
-    let x = (self.width + padding) / 2 + width;
+  pub(super) fn content_size(&self, width: usize, padding: usize, height: usize, x_offset: usize) -> ContentSize {
+    let w = self.width + width + x_offset;
+    let x = (self.width + padding) / 2 + width + x_offset;
     let y = height / 2;
     let mut rw = w;
     rw += match (self.width, width) {
@@ -98,12 +98,16 @@ impl BadgeContent {
     };
     ContentSize { x, y, rw }
   }
-  pub(super) fn rx(&self, style: &Styles) -> usize {
-    match (style, self.height) {
-      (Styles::Classic, 40) => 9,
-      (Styles::Classic, 30) => 6,
-      (Styles::Classic, _) => 3,
-      (_, _) => 0,
-    }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::Content;
+
+  #[test]
+  fn content_str_width() {
+    let s = "Hello";
+    let bc = s.content(20);
+    assert!(bc.width > 0);
   }
 }

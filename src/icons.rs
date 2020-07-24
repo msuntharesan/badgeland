@@ -11,7 +11,7 @@ pub fn icon_keys() -> Vec<String> {
   SYMBOLS.keys().map(|k| String::from(*k)).collect::<Vec<_>>()
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Icon<'a> {
   pub name: &'a str,
   pub symbol: &'a str,

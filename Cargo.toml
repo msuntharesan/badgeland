@@ -11,16 +11,21 @@ publish = true
 
 build = "./build_scripts/build.rs"
 
+[[bench]]
+name = "badge_benchmark"
+harness = false
+
 [dependencies]
+ab_glyph = "0.2"
 argh = "0.1"
 cssparser = "0.27"
 maud = "0.22"
 phf = "0.8"
-rusttype = "0.9"
 serde = { version = "1.0", features = ["derive"], optional = true }
 unicode-normalization = "0.1"
 
 [dev-dependencies]
+criterion = "0.3"
 scraper = "0.12"
 
 [build-dependencies]
