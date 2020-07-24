@@ -3,9 +3,9 @@
 
 # But not these files
 !build_scripts
+!benches
 !humanize
 !merit-api
 !src
-!static
 !Cargo.toml
 !Cargo.lock
