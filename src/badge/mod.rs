@@ -78,43 +78,11 @@ pub enum BadgeTypeState {
   Text,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum BadgeType<'a, const S: BadgeTypeState> {
   Init,
   Data(Vec<i64>),
   Text(&'a str),
-}
-
-trait GetBadgeType {
-  type BadgeContent;
-  fn get(&self) -> Option<Self::BadgeContent>;
-}
-
-impl<'a> GetBadgeType for BadgeType<'a, { BadgeTypeState::Init }> {
-  type BadgeContent = ();
-  fn get(&self) -> Option<Self::BadgeContent> {
-    None
-  }
-}
-
-impl<'a> GetBadgeType for BadgeType<'a, { BadgeTypeState::Data }> {
-  type BadgeContent = Vec<i64>;
-  fn get(&self) -> Option<Self::BadgeContent> {
-    match self {
-      BadgeType::Data(d) => Some(d.to_owned()),
-      _ => None,
-    }
-  }
-}
-
-impl<'a> GetBadgeType for BadgeType<'a, { BadgeTypeState::Text }> {
-  type BadgeContent = &'a str;
-  fn get(&self) -> Option<Self::BadgeContent> {
-    match self {
-      BadgeType::Text(t) => Some(*t),
-      _ => None,
-    }
-  }
 }
 
 #[derive(Debug)]
@@ -124,7 +92,7 @@ pub struct Badge<'a, const S: BadgeTypeState> {
   pub style: Styles,
   pub icon: Option<Icon<'a>>,
   pub icon_color: Color,
-  pub height: u32,
+  pub height: usize,
   pub content: BadgeType<'a, S>,
 }
 
@@ -151,7 +119,7 @@ impl<'a> Badge<'a, { BadgeTypeState::Init }> {
     self
   }
   pub fn size(&mut self, size: Size) -> &mut Self {
-    let height: u32 = match size {
+    let height: usize = match size {
       Size::Small => 20,
       Size::Medium => 30,
       Size::Large => 40,
@@ -169,246 +137,92 @@ impl<'a> Badge<'a, { BadgeTypeState::Init }> {
     }
     self
   }
-  pub fn text(self, text: &'a str) -> Badge<'a, { BadgeTypeState::Text }> {
+  pub fn text(&mut self, text: &'a str) -> Badge<'a, { BadgeTypeState::Text }> {
     Badge {
       subject: self.subject,
-      color: self.color,
+      color: self.color.clone(),
       style: self.style,
-      icon: self.icon,
-      icon_color: self.icon_color,
+      icon: self.icon.clone(),
+      icon_color: self.icon_color.clone(),
       height: self.height,
       content: BadgeType::Text(text),
     }
   }
 
-  pub fn data(self, data: Vec<i64>) -> Badge<'a, { BadgeTypeState::Data }> {
+  pub fn data(&mut self, data: Vec<i64>) -> Badge<'a, { BadgeTypeState::Data }> {
     Badge {
       subject: self.subject,
-      color: self.color,
+      color: self.color.clone(),
       style: self.style,
-      icon: self.icon,
-      icon_color: self.icon_color,
+      icon: self.icon.clone(),
+      icon_color: self.icon_color.clone(),
       height: self.height,
       content: BadgeType::Data(data),
     }
   }
-}
-
-const MULTIPLIER: f32 = 0.65;
-
-impl<'a> Display for Badge<'a, { BadgeTypeState::Init }> {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    let height = self.height;
-    let font_size = (height as f32 * MULTIPLIER).ceil() as u32;
-    let padding: u32 = (height as f32 * 0.75) as u32;
-
-    let mut icon_width = 0;
-    if let Some(_) = self.icon {
-      icon_width = ((height as f32) * MULTIPLIER) as u32;
+  pub fn subject(&mut self) -> Badge<'a, { BadgeTypeState::Init }> {
+    Badge {
+      subject: self.subject,
+      color: self.color.clone(),
+      style: self.style,
+      icon: self.icon.clone(),
+      icon_color: self.icon_color.clone(),
+      height: self.height,
+      content: BadgeType::Init,
     }
-
-    let subject = self.subject.content(font_size);
-    let subject_size = subject.content_size(icon_width, padding, height);
-
-    let width = subject_size.rw;
-
-    let rx = subject.rx(&self.style);
-
-    let markup = html! {
-      svg
-        height=(height)
-        viewBox={"0 0 " (width) " " (height)}
-        width=(width)
-        xmlns="http://www.w3.org/2000/svg"
-        xmlns:xlink="http://www.w3.org/1999/xlink" {
-          @if let Some(icon) = &self.icon { (icon) }
-          defs {
-            @if &self.style == &Styles::Classic {
-              linearGradient id="a" x2="0" y2="100%" {
-                stop offset="0" stop-color=(DEFAULT_GRAY) stop-opacity="0.1" {}
-                stop offset="1" stop-opacity="0.1" {}
-              }
-            }
-            mask id="m" {
-              rect fill=(DEFAULT_WHITE) height=(height) rx=(rx) width=(width) {}
-            }
-            filter id="shadow" {
-              feDropShadow dx="-0.8" dy="-0.8" stdDeviation="0" flood-color=(DEFAULT_GRAY_DARK) flood-opacity="0.4" {}
-            }
-          }
-          g#bg mask=@if self.style == Styles::Classic { "url(#m)" } {
-            rect fill=@if self.style == Styles::Flat { (DEFAULT_GRAY) } @else { "url(#a)" } height=(height) width=(width) {}
-            rect#subject
-              fill=(self.color.to_string())
-              height=(height)
-              width=(width)
-              {}
-          }
-          g#text
-            fill=(DEFAULT_WHITE)
-            font-family="Verdana,sans-serif"
-            font-size=(font_size)
-            transform="translate(0, 0)" {
-              @if subject.content.len() > 0 {
-                text
-                  dominant-baseline="central"
-                  text-anchor="middle"
-                  text-length=(subject.width)
-                  x=(subject_size.x)
-                  y=(subject_size.y)
-                  filter="url(#shadow)"
-                  { (subject.content) }
-              }
-          }
-          @if let Some(icon) = &self.icon {
-            use
-              filter="url(#shadow)"
-              xlink:href={"#" (icon.name)}
-              x=((padding/3))
-              y=(((height  as f32) / 2.0 - (icon_width as f32 / 2.0)))
-              width=(icon_width)
-              height=(icon_width)
-              fill=(self.icon_color.to_string())
-              {}
-          }
-      }
-    };
-    write!(f, "{}", markup.into_string())
   }
 }
 
-impl<'a> Display for Badge<'a, { BadgeTypeState::Text }> {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    let height = self.height;
-    let font_size = (height as f32 * MULTIPLIER).ceil() as u32;
-    let padding: u32 = (height as f32 * 0.75) as u32;
+const SVG_FONT_MULTIPLIER: f32 = 0.65;
+const FONT_CALC_MULTIPLIER: f32 = 0.8;
+// const PADDING_MULTIPLIER: f32 = 0.5;
 
-    let mut icon_width = 0;
-    if let Some(_) = self.icon {
-      icon_width = ((height as f32) * MULTIPLIER) as u32;
-    }
-
-    let subject = self.subject.content(font_size);
-    let subject_size = subject.content_size(icon_width, padding, height);
-
-    let content = self.content.get().unwrap().content(font_size); //content.get().unwrap().content(height);
-
-    let content_size = content.content_size(0, padding, height);
-
-    let width = subject_size.rw + content_size.rw;
-    let rx = content.rx(&self.style);
-
-    let markup = html! {
-      svg
-        height=(height)
-        viewBox={"0 0 " (width) " " (height)}
-        width=(width)
-        xmlns="http://www.w3.org/2000/svg"
-        xmlns:xlink="http://www.w3.org/1999/xlink" {
-          @if let Some(icon) = &self.icon { (icon) }
-          defs {
-            @if &self.style == &Styles::Classic {
-              linearGradient id="a" x2="0" y2="100%" {
-                stop offset="0" stop-color=(DEFAULT_GRAY) stop-opacity="0.1" {}
-                stop offset="1" stop-opacity="0.1" {}
-              }
-            }
-            mask id="m" {
-              rect fill=(DEFAULT_WHITE) height=(height) rx=(rx) width=(width) {}
-            }
-            filter id="shadow" {
-              feDropShadow dx="-0.8" dy="-0.8" stdDeviation="0" flood-color=(DEFAULT_GRAY_DARK) flood-opacity="0.4" {}
-            }
-          }
-          g#bg mask=@if self.style == Styles::Classic { "url(#m)" } {
-            rect fill=@if self.style == Styles::Flat { (DEFAULT_GRAY) } @else { "url(#a)" } height=(height) width=(width) {}
-            rect#subject
-              fill=(DEFAULT_GRAY_DARK)
-              height=(height)
-              width=(subject_size.rw)
-              {}
-            rect#content
-              fill=(self.color.to_string())
-              height=(height)
-              width=(content_size.rw)
-              x=(subject_size.rw)
-              {}
-          }
-          g#text
-            fill=(DEFAULT_WHITE)
-            font-family="Verdana,sans-serif"
-            font-size=(font_size)
-            transform="translate(0, 0)" {
-              @if subject.content.len() > 0 {
-                text
-                  dominant-baseline="central"
-                  text-anchor="middle"
-                  text-length=(subject.width)
-                  x=(subject_size.x)
-                  y=(subject_size.y)
-                  filter="url(#shadow)"
-                  { (subject.content) }
-              }
-              text
-                x=((subject_size.rw + content_size.x))
-                y=(content_size.y)
-                text-length=(content.width)
-                text-anchor="middle"
-                dominant-baseline="central"
-                filter="url(#shadow)"
-                { (content.content) }
-          }
-          @if let Some(icon) = &self.icon {
-            use
-              filter="url(#shadow)"
-              xlink:href={"#" (icon.name)}
-              x=((padding/3))
-              y=(((height  as f32) / 2.0 - (icon_width as f32 / 2.0)))
-              width=(icon_width)
-              height=(icon_width)
-              fill=(self.icon_color.to_string())
-              {}
-          }
-      }
-    };
-
-    write!(f, "{}", markup.into_string())
-  }
-}
-
-impl<'a> Display for Badge<'a, { BadgeTypeState::Data }> {
+impl<'a, const T: BadgeTypeState> Display for Badge<'a, { T }> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     let height = self.height;
 
-    let font_size = (height as f32 * MULTIPLIER).ceil() as u32;
-    let padding: u32 = (height as f32 * 0.75) as u32;
+    let font_size = (height as f32 * SVG_FONT_MULTIPLIER).ceil() as usize;
+    let calc_font_size = (height as f32 * FONT_CALC_MULTIPLIER).ceil() as usize;
+    let padding = height / 2; //(height as f32 * PADDING_MULTIPLIER) as usize;
 
     let mut icon_width = 0;
+    let mut x_offset = 0;
     if let Some(_) = self.icon {
-      icon_width = ((height as f32) * MULTIPLIER) as u32;
+      icon_width = ((height as f32) * SVG_FONT_MULTIPLIER) as usize;
+      x_offset = 5;
     }
 
-    let subject = self.subject.content(font_size);
-    let subject_size = subject.content_size(icon_width, padding, height);
+    let subject = self.subject.content(calc_font_size);
+    let subject_size = subject.content_size(icon_width, padding, height, x_offset);
 
-    let content = &self.content.get().unwrap().content(height); //content.get().unwrap().content(height);
+    let content = match &self.content {
+      BadgeType::Data(d) => Some((d.content(height), BadgeTypeState::Data)),
+      BadgeType::Text(t) => Some((t.content(calc_font_size), BadgeTypeState::Text)),
+      _ => None,
+    };
 
-    let content_size = match self.style {
-      Styles::Flat => ContentSize {
-        x: (content.width + padding) / 2,
-        y: content.height / 2,
-        rw: content.width,
+    let content_size = match (&content, &self.style) {
+      (Some((c, s)), Styles::Flat) if s == &BadgeTypeState::Data => ContentSize {
+        x: (c.width + padding) / 2,
+        y: c.height / 2,
+        rw: c.width,
       },
-      _ => ContentSize {
-        x: (content.width + padding) / 2,
-        y: content.height / 2,
-        rw: content.width + 5,
+      (Some((c, s)), _) if s == &BadgeTypeState::Data => ContentSize {
+        x: (c.width + padding) / 2,
+        y: c.height / 2,
+        rw: c.width + 5,
       },
+      (Some((c, _)), _) => c.content_size(0, padding, height, 0),
+      (_, _) => ContentSize { x: 0, y: 0, rw: 0 },
     };
 
     let width = subject_size.rw + content_size.rw;
 
-    let rx = content.rx(&self.style);
+    let rx = match self.height {
+      30 => 6,
+      40 => 9,
+      _ => 3,
+    };
 
     let markup = html! {
       svg
@@ -435,12 +249,15 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Data }> {
           g#bg mask=@if self.style == Styles::Classic { "url(#m)" } {
             rect fill=@if self.style == Styles::Flat { (DEFAULT_GRAY) } @else { "url(#a)" } height=(height) width=(width) {}
             rect#subject
-              fill=(DEFAULT_GRAY_DARK)
+              fill=@if content.is_some() { (DEFAULT_GRAY_DARK) } @else { (self.color.to_string()) }
               height=(height)
               width=(subject_size.rw)
               {}
             rect#content
-              fill=(DEFAULT_GRAY)
+              fill=@match &content{
+                Some((_, s)) if s == &BadgeTypeState::Data => { (DEFAULT_GRAY) },
+                _ => (self.color.to_string())
+              }
               height=(height)
               width=(content_size.rw)
               x=(subject_size.rw)
@@ -455,33 +272,46 @@ impl<'a> Display for Badge<'a, { BadgeTypeState::Data }> {
                 text
                   dominant-baseline="central"
                   text-anchor="middle"
-                  text-length=(subject.width)
                   x=(subject_size.x)
                   y=(subject_size.y)
                   filter="url(#shadow)"
                   { (subject.content) }
               }
-              path
-                fill="none"
-                transform=(format!("translate({}, {})", subject_size.rw, 0))
-                stroke=(self.color.to_string())
-                stroke-width="1px"
-                d=(content.content)
-                {}
-              path
-                fill=(self.color.to_string())
-                fill-opacity="0.2"
-                transform=(format!("translate({}, {})", subject_size.rw, 0))
-                stroke="none"
-                stroke-width="0px"
-                d=(format!("{}V{}H0Z", content.content, height))
-                {}
+              @match &content {
+                Some((c, s)) if s == &BadgeTypeState::Data => {
+                  path
+                    fill="none"
+                    transform=(format!("translate({}, {})", subject_size.rw, 0))
+                    stroke=(self.color.to_string())
+                    stroke-width="1px"
+                    d=(c.content)
+                    {}
+                  path
+                    fill=(self.color.to_string())
+                    fill-opacity="0.2"
+                    transform=(format!("translate({}, {})", subject_size.rw, 0))
+                    stroke="none"
+                    stroke-width="0px"
+                    d=(format!("{}V{}H0Z", c.content, height))
+                    {}
+                }
+                Some((c, _)) => {
+                  text
+                    x=((subject_size.rw + content_size.x))
+                    y=(content_size.y)
+                    text-anchor="middle"
+                    dominant-baseline="central"
+                    filter="url(#shadow)"
+                    { (c.content) }
+                }
+                _ => {}
+              }
           }
           @if let Some(icon) = &self.icon {
             use
               filter="url(#shadow)"
               xlink:href={"#" (icon.name)}
-              x=((padding/3))
+              x=(x_offset)
               y=(((height  as f32) / 2.0 - (icon_width as f32 / 2.0)))
               width=(icon_width)
               height=(icon_width)
