@@ -31,9 +31,8 @@ impl Default for BadgeError {
 impl BadgeError {
   pub fn err_badge(&self) -> String {
     let icon: Icon = Icon::try_from("exclamation-circle").unwrap();
-    let mut badge = Badge::new("Error");
-    badge.icon(icon);
-    badge.color("red".parse().unwrap());
+    let mut badge = Badge::new();
+    badge.subject("Error").icon(icon).color("red".parse().unwrap());
 
     let text = match self {
       BadgeError::Http {

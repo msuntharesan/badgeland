@@ -31,8 +31,8 @@ async fn favicon() -> impl Responder {
 }
 
 async fn default_404() -> impl Responder {
-  let mut badge = Badge::new("Error");
-  badge.color(DEFAULT_GRAY.parse().unwrap());
+  let mut badge = Badge::new();
+  badge.subject("Error").color(DEFAULT_GRAY.parse().unwrap());
 
   HttpResponse::NotFound()
     .content_type("image/svg+xml")

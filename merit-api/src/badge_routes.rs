@@ -42,7 +42,8 @@ async fn url_badge_handler(
 
   let data: BadgeOptions = b.json().await?;
 
-  let mut badge = Badge::new(&data.subject);
+  let mut badge = Badge::new();
+  badge.subject(&data.subject);
 
   match (data.color, query.color) {
     (_, Some(c)) => {
@@ -95,7 +96,8 @@ struct BadgeInfo {
 
 fn badge_handler((params, query): (web::Path<BadgeInfo>, web::Query<QueryInfo>)) -> HttpResponse {
   let query = query.into_inner();
-  let mut req_badge = Badge::new(&params.subject);
+  let mut req_badge = Badge::new();
+  req_badge.subject(&params.subject);
   if let Some(c) = query.color {
     req_badge.color(c);
   }
