@@ -1,6 +1,6 @@
 [package]
 name = "merit"
-version = "0.4.0"
+version = "0.5.0"
 description = "Fast badge generator for any purpose"
 license = "MIT"
 authors = ["Suntharesan Mohan <suntharesan.mohan@gmail.com>"]
