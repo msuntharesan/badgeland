@@ -87,7 +87,7 @@ pub enum BadgeType<'a, const S: BadgeTypeState> {
 
 #[derive(Debug)]
 pub struct Badge<'a, const S: BadgeTypeState> {
-  pub subject: &'a str,
+  pub subject: Option<&'a str>,
   pub color: Color,
   pub style: Styles,
   pub icon: Option<Icon<'a>>,
@@ -97,9 +97,9 @@ pub struct Badge<'a, const S: BadgeTypeState> {
 }
 
 impl<'a> Badge<'a, { BadgeTypeState::Init }> {
-  pub fn new(subject: &'a str) -> Self {
+  pub fn new() -> Self {
     Badge {
-      subject,
+      subject: None,
       color: DEFAULT_BLUE.parse().unwrap(),
       style: Styles::Classic,
       icon: None,
@@ -107,6 +107,11 @@ impl<'a> Badge<'a, { BadgeTypeState::Init }> {
       height: 20,
       content: BadgeType::Init,
     }
+  }
+
+  pub fn subject(&mut self, subject: &'a str) -> &mut Self {
+    self.subject = Some(subject);
+    self
   }
 
   pub fn color(&mut self, color: Color) -> &mut Self {
@@ -160,22 +165,10 @@ impl<'a> Badge<'a, { BadgeTypeState::Init }> {
       content: BadgeType::Data(data),
     }
   }
-  pub fn subject(&mut self) -> Badge<'a, { BadgeTypeState::Init }> {
-    Badge {
-      subject: self.subject,
-      color: self.color.clone(),
-      style: self.style,
-      icon: self.icon.clone(),
-      icon_color: self.icon_color.clone(),
-      height: self.height,
-      content: BadgeType::Init,
-    }
-  }
 }
 
 const SVG_FONT_MULTIPLIER: f32 = 0.65;
 const FONT_CALC_MULTIPLIER: f32 = 0.8;
-// const PADDING_MULTIPLIER: f32 = 0.5;
 
 impl<'a, const T: BadgeTypeState> Display for Badge<'a, { T }> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -192,8 +185,16 @@ impl<'a, const T: BadgeTypeState> Display for Badge<'a, { T }> {
       x_offset = 5;
     }
 
-    let subject = self.subject.content(calc_font_size);
-    let subject_size = subject.content_size(icon_width, padding, height, x_offset);
+    let subject = self.subject.as_ref().map(|s| s.content(calc_font_size));
+    let subject_size: ContentSize = match &subject {
+      Some(s) => s.content_size(icon_width, padding, height, x_offset),
+      None if self.icon.is_some() => ContentSize {
+        rw: icon_width + x_offset * 2,
+        x: x_offset,
+        y: height,
+      },
+      _ => ContentSize::default(),
+    };
 
     let content = match &self.content {
       BadgeType::Data(d) => Some((d.content(height), BadgeTypeState::Data)),
@@ -213,7 +214,7 @@ impl<'a, const T: BadgeTypeState> Display for Badge<'a, { T }> {
         rw: c.width + 5,
       },
       (Some((c, _)), _) => c.content_size(0, padding, height, 0),
-      (_, _) => ContentSize { x: 0, y: 0, rw: 0 },
+      (_, _) => ContentSize::default(),
     };
 
     let width = subject_size.rw + content_size.rw;
@@ -248,11 +249,13 @@ impl<'a, const T: BadgeTypeState> Display for Badge<'a, { T }> {
           }
           g#bg mask=@if self.style == Styles::Classic { "url(#m)" } {
             rect fill=@if self.style == Styles::Flat { (DEFAULT_GRAY) } @else { "url(#a)" } height=(height) width=(width) {}
-            rect#subject
-              fill=@if content.is_some() { (DEFAULT_GRAY_DARK) } @else { (self.color.to_string()) }
-              height=(height)
-              width=(subject_size.rw)
-              {}
+            @if subject.is_some() || self.icon.is_some() {
+              rect#subject
+                fill=@if content.is_some() { (DEFAULT_GRAY_DARK) } @else { (self.color.to_string()) }
+                height=(height)
+                width=(subject_size.rw)
+                {}
+            }
             rect#content
               fill=@match &content{
                 Some((_, s)) if s == &BadgeTypeState::Data => { (DEFAULT_GRAY) },
@@ -268,14 +271,14 @@ impl<'a, const T: BadgeTypeState> Display for Badge<'a, { T }> {
             font-family="Verdana,sans-serif"
             font-size=(font_size)
             transform="translate(0, 0)" {
-              @if subject.content.len() > 0 {
+              @if let Some(s) = subject {
                 text
                   dominant-baseline="central"
                   text-anchor="middle"
                   x=(subject_size.x)
                   y=(subject_size.y)
                   filter="url(#shadow)"
-                  { (subject.content) }
+                  { (s.content) }
               }
               @match &content {
                 Some((c, s)) if s == &BadgeTypeState::Data => {
@@ -327,7 +330,7 @@ impl<'a, const T: BadgeTypeState> Display for Badge<'a, { T }> {
 
 #[cfg(test)]
 mod tests {
-  use super::{Badge, Color, Content, Size, Styles, DEFAULT_BLUE};
+  use super::{Badge, Color, Size, Styles, DEFAULT_BLUE};
   use scraper::{Html, Selector};
 
   use crate::Icon;
@@ -335,7 +338,8 @@ mod tests {
 
   #[test]
   fn default_badge_has_classic_style() {
-    let badge = Badge::new("just text");
+    let mut badge = Badge::new();
+    &badge.subject("just text");
     let badge_svg = badge.to_string();
     let doc = Html::parse_fragment(&badge_svg);
     assert_eq!(badge.style, Styles::Classic, "style not Classic");
@@ -344,7 +348,8 @@ mod tests {
   }
   #[test]
   fn default_badge_has_20px_height() {
-    let badge = Badge::new("just text");
+    let mut badge = Badge::new();
+    &badge.subject("just text");
     let badge_svg = badge.to_string();
     let doc = Html::parse_fragment(&badge_svg);
     let selector = Selector::parse("svg").unwrap();
@@ -353,7 +358,8 @@ mod tests {
   }
   #[test]
   fn default_badge_only_has_subject() {
-    let badge = Badge::new("just subject");
+    let mut badge = Badge::new();
+    &badge.subject("just subject");
     let badge_svg = badge.to_string();
     let doc = Html::parse_fragment(&badge_svg);
     let text_sel = Selector::parse("g#text > text").unwrap();
@@ -364,7 +370,8 @@ mod tests {
   }
   #[test]
   fn default_badge_has_333_as_background_color() {
-    let mut badge = Badge::new("just text");
+    let mut badge = Badge::new();
+    &badge.subject("just text");
     badge.color(DEFAULT_BLUE.parse::<Color>().unwrap());
     let def_color: Color = DEFAULT_BLUE.parse().unwrap();
     let badge_svg = badge.to_string();
@@ -376,7 +383,7 @@ mod tests {
 
   #[test]
   fn badge_with_text() {
-    let badge = Badge::new("with subject").text("badge text");
+    let badge = Badge::new().subject("with subject").text("badge text");
     let doc = Html::parse_fragment(&badge.to_string());
     let subject_sel = Selector::parse("g#text > text:last-child").unwrap();
     let subject = doc.select(&subject_sel).next().unwrap();
@@ -386,8 +393,8 @@ mod tests {
   #[test]
   fn badge_with_icon() {
     let icon = Icon::try_from("git").unwrap();
-    let mut badge = Badge::new("with icon");
-    &badge.icon(icon);
+    let mut badge = Badge::new();
+    &badge.subject("with icon").icon(icon);
 
     let icon = &badge.icon;
     assert!(icon.is_some());
@@ -399,8 +406,8 @@ mod tests {
   }
   #[test]
   fn badge_has_medium_icon() {
-    let mut badge = Badge::new("with icon");
-    badge.size(Size::Medium);
+    let mut badge = Badge::new();
+    &badge.subject("with icon").size(Size::Medium);
     let doc = Html::parse_fragment(&badge.to_string());
     let svg_sel = Selector::parse("svg").unwrap();
     let svg = doc.select(&svg_sel).next().unwrap();
@@ -408,8 +415,8 @@ mod tests {
   }
   #[test]
   fn badge_has_large_icon() {
-    let mut badge = Badge::new("with icon");
-    badge.size(Size::Large);
+    let mut badge = Badge::new();
+    &badge.subject("with icon").size(Size::Large);
     let doc = Html::parse_fragment(&badge.to_string());
     let svg_sel = Selector::parse("svg").unwrap();
     let svg = doc.select(&svg_sel).next().unwrap();
@@ -418,37 +425,12 @@ mod tests {
 
   #[test]
   fn badge_with_data() {
-    let badge = Badge::new("Some data").data(vec![1, 2, 3, 4, 5]);
+    let badge = Badge::new().subject("Some data").data(vec![1, 2, 3, 4, 5]);
 
     let doc = Html::parse_fragment(&badge.to_string());
     println!("{:?}", &badge.to_string());
     let line_sel = Selector::parse("path").unwrap();
     let svg = doc.select(&line_sel).next().unwrap();
     assert!(svg.value().attr("d").is_some());
-  }
-
-  #[test]
-  fn content_text_has_width() {
-    let text = "".content(20);
-    assert_eq!(text.width, 0);
-    let text = "npm".content(20);
-    assert_eq!(text.width, 43);
-    let text = "long text".content(20);
-    assert_eq!(text.width, 90);
-  }
-
-  #[test]
-  fn content_data_has_width() {
-    let d1 = vec![].content(20);
-    assert_eq!(d1.width, 0);
-    let d2 = vec![2, 4, 3, 2].content(20);
-    assert_eq!(d2.width, 100);
-  }
-
-  #[test]
-  fn content_data_is_same() {
-    let d1 = vec![2, 4, 3, 2].content(20);
-    let d2 = &vec![2, 4, 3, 2].content(20);
-    assert_eq!(d1.content, d2.content);
   }
 }

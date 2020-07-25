@@ -16,7 +16,7 @@
 //! use merit::{Badge};
 //!
 //! fn badge() {
-//!   let mut badge = Badge::new("Subject").text("Text");
+//!   let mut badge = Badge::new().subject("Subject").text("Text");
 //!   println!("{}", badge.to_string());
 //! }
 //! ```
@@ -25,7 +25,7 @@
 //! use merit::{Badge};
 //!
 //! fn badge_with_data() {
-//!   let mut badge = Badge::new("Subject").data(vec![12, 34, 23,56,45]);
+//!   let mut badge = Badge::new().subject("Subject").data(vec![12, 34, 23,56,45]);
 //!   println!("{}", badge.to_string());
 //! }
 //! ```
@@ -88,7 +88,7 @@ impl<'de> Deserialize<'de> for Color {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde_de", derive(Serialize, Deserialize))]
 pub struct BadgeData(pub Vec<i64>);
 

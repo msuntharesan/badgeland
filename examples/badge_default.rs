@@ -1,7 +1,7 @@
 use merit::Badge;
 
 fn main() {
-  let badge = Badge::new("Badge Maker");
+  let badge = Badge::new().text("Badge Maker");
 
   println!("{}", badge);
 }
