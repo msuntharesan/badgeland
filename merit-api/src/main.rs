@@ -6,7 +6,6 @@ extern crate actix_web;
 mod badge_routes;
 mod utils;
 
-use actix_files::Files;
 use actix_web::{
   http::{header, StatusCode},
   middleware, web, App, HttpResponse, HttpServer, Responder,
@@ -31,8 +30,8 @@ async fn favicon() -> impl Responder {
 }
 
 async fn default_404() -> impl Responder {
-  let mut badge = Badge::new("Error");
-  badge.color(DEFAULT_GRAY.parse().unwrap());
+  let mut badge = Badge::new();
+  badge.subject("Error").color(DEFAULT_GRAY.parse().unwrap());
 
   HttpResponse::NotFound()
     .content_type("image/svg+xml")
@@ -56,7 +55,6 @@ async fn main() -> io::Result<()> {
       .service(index)
       .service(favicon)
       .configure(badge_routes::config)
-      .service(Files::new("/", "./merit-web/dist").index_file("index.html"))
   });
 
   server = if let Some(l) = listenfd.take_tcp_listener(0)? {

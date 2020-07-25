@@ -79,6 +79,7 @@ impl Content for &str {
   }
 }
 
+#[derive(Default)]
 pub(super) struct ContentSize {
   pub(super) x: usize,
   pub(super) y: usize,
@@ -109,5 +110,29 @@ mod tests {
     let s = "Hello";
     let bc = s.content(20);
     assert!(bc.width > 0);
+  }
+  #[test]
+  fn content_text_has_width() {
+    let text = "".content(20);
+    assert_eq!(text.width, 0);
+    let text = "npm".content(20);
+    assert_eq!(text.width, 36);
+    let text = "long text".content(20);
+    assert_eq!(text.width, 73);
+  }
+
+  #[test]
+  fn content_data_has_width() {
+    let d1 = vec![].content(20);
+    assert_eq!(d1.width, 0);
+    let d2 = vec![2, 4, 3, 2].content(20);
+    assert_eq!(d2.width, 100);
+  }
+
+  #[test]
+  fn content_data_is_same() {
+    let d1 = vec![2, 4, 3, 2].content(20);
+    let d2 = &vec![2, 4, 3, 2].content(20);
+    assert_eq!(d1.content, d2.content);
   }
 }

@@ -21,61 +21,76 @@
 //! ```
 //!
 
-use argh::FromArgs;
+// use argh::FromArgs;
+use clap::Clap;
 use merit::{icon_exists, Badge, BadgeData, Color, Icon, Size, Styles};
-use std::{convert::TryFrom, error::Error, fs::File, io::prelude::*, path::PathBuf};
+use std::{convert::TryFrom, error::Error, fs::File, io::prelude::*, path::PathBuf, str::FromStr};
 
-#[derive(FromArgs)]
+#[derive(Debug, PartialEq)]
+enum Content {
+  Text(String),
+  Data(BadgeData),
+}
+
+impl FromStr for Content {
+  type Err = String;
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    Ok(BadgeData::from_str(s).map_or(Content::Text(s.to_string()), |d| Content::Data(d)))
+  }
+}
+
 /// Fast badge generator for any purpose
+#[derive(Debug, Clap)]
+#[clap(version)]
 struct Opt {
   /// badge subject
-  #[argh(option, short = 's')]
-  subject: String,
+  #[clap(short, long)]
+  subject: Option<String>,
 
   /// badge style. [possible values: flat | f, classic | c]
-  #[argh(option)]
+  #[clap(long)]
   style: Option<Styles>,
 
   /// badge size. [possible values: large | l, medium | m, small | s]
-  #[argh(option)]
+  #[clap(long)]
   size: Option<Size>,
 
   /// badge color. Must be a valid css color
-  #[argh(option)]
+  #[clap(long)]
   color: Option<Color>,
 
   /// badge icon. icon can be any Brand or Solid icons from fontawesome
-  #[argh(option)]
+  #[clap(long)]
   icon: Option<String>,
 
   /// icon color. Must be a valid css color
-  #[argh(option)]
+  #[clap(long)]
   icon_color: Option<Color>,
 
   /// output svg to file
-  #[argh(option)]
+  #[clap(short, long)]
   out: Option<PathBuf>,
 
-  /// badge text
-  #[argh(option, short = 't')]
-  text: Option<String>,
-
-  /// data for badge chart.
-  #[argh(option)]
-  data: Option<BadgeData>,
+  /// badge content
+  #[clap()]
+  content: Content,
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-  let opt: Opt = argh::from_env();
+  let opt = Opt::parse();
 
   if let Some(icon) = &opt.icon {
     if !icon_exists(icon) {
-      eprintln!("Icon does not exists. Try using a fontawesome icon name");
-      std::process::exit(1);
+      eprintln!("");
+      return Err("Icon does not exists. Try using a fontawesome icon name".into());
     }
   }
-  let mut badge = Badge::new(&opt.subject);
 
+  let mut badge = Badge::new();
+
+  if let Some(sub) = &opt.subject {
+    &badge.subject(sub);
+  }
   if let Some(col) = opt.color {
     badge.color(col);
   }
@@ -96,10 +111,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
   }
 
-  let svg = match (opt.data, opt.text) {
-    (Some(d), _) => badge.data(d.0.into()).to_string(),
-    (_, Some(t)) => badge.text(&t).to_string(),
-    (_, _) => badge.to_string(),
+  let svg = match opt.content {
+    Content::Data(d) => badge.data(d.0.into()).to_string(),
+    Content::Text(t) => badge.text(&t).to_string(),
   };
 
   if let Some(out_file) = opt.out {

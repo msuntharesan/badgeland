@@ -3,7 +3,8 @@ use merit::{Badge, Color, Icon, Size, Styles, DEFAULT_BLUE, DEFAULT_WHITE};
 use std::convert::TryFrom;
 
 pub fn criterion_benchmark(c: &mut Criterion) {
-  let all_text = Badge::new("Hello")
+  let all_text = Badge::new()
+    .subject("Hello")
     .color(Color("#6f42c1".to_string()))
     .style(Styles::Flat)
     .icon(Icon::try_from("github").unwrap())
@@ -11,7 +12,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     .size(Size::Large)
     .text("text content");
 
-  let all_data = Badge::new("Hello")
+  let all_data = Badge::new()
+    .subject("Hello")
     .color(Color("#6f42c1".to_string()))
     .style(Styles::Flat)
     .icon(Icon::try_from("github").unwrap())
@@ -19,59 +21,67 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     .size(Size::Large)
     .data(vec![7, 5, 2, 4, 8, 3, 7]);
 
-  let subject = Badge::new("Hello")
+  let subject = Badge::new()
     .color(DEFAULT_BLUE.parse().unwrap())
     .style(Styles::Classic)
     .icon_color(DEFAULT_WHITE.parse().unwrap())
-    .subject();
+    .text("Hello");
 
-  let with_text = Badge::new("Hello")
+  let with_text = Badge::new()
+    .subject("Hello")
     .color(DEFAULT_BLUE.parse().unwrap())
     .style(Styles::Classic)
     .icon_color(DEFAULT_WHITE.parse().unwrap())
     .text("text content");
 
-  let medium_size = Badge::new("Hello")
+  let medium_size = Badge::new()
+    .subject("Hello")
     .color(DEFAULT_BLUE.parse().unwrap())
     .style(Styles::Classic)
     .icon_color(DEFAULT_WHITE.parse().unwrap())
     .size(Size::Medium)
     .text("text content");
 
-  let large_size = Badge::new("Hello")
+  let large_size = Badge::new()
+    .subject("Hello")
     .color(DEFAULT_BLUE.parse().unwrap())
     .style(Styles::Classic)
     .icon_color(DEFAULT_WHITE.parse().unwrap())
     .size(Size::Large)
     .text("text content");
 
-  let red = Badge::new("Hello")
+  let red = Badge::new()
+    .subject("Hello")
     .color(Color("ff0000".to_string()))
     .style(Styles::Classic)
     .icon_color(DEFAULT_WHITE.parse().unwrap())
     .text("red");
 
-  let icon_brand = Badge::new("Hello")
+  let icon_brand = Badge::new()
+    .subject("Hello")
     .color(DEFAULT_BLUE.parse().unwrap())
     .style(Styles::Classic)
     .icon(Icon::try_from("github").unwrap())
     .icon_color(DEFAULT_WHITE.parse().unwrap())
     .text("brand");
 
-  let icon_solid = Badge::new("Hello")
+  let icon_solid = Badge::new()
+    .subject("Hello")
     .color(DEFAULT_BLUE.parse().unwrap())
     .style(Styles::Classic)
     .icon(Icon::try_from("code").unwrap())
     .icon_color(DEFAULT_WHITE.parse().unwrap())
     .text("solid");
 
-  let data = Badge::new("Hello")
+  let data = Badge::new()
+    .subject("Hello")
     .color(DEFAULT_BLUE.parse().unwrap())
     .style(Styles::Classic)
     .icon_color(DEFAULT_WHITE.parse().unwrap())
     .data(vec![1, 5, 2, 4, 8, 3, 7]);
 
-  let flat = Badge::new("Hello")
+  let flat = Badge::new()
+    .subject("Hello")
     .color(DEFAULT_BLUE.parse().unwrap())
     .style(Styles::Classic)
     .icon_color(DEFAULT_WHITE.parse().unwrap())
