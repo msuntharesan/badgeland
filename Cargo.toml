@@ -42,6 +42,6 @@ members = [
 ]
 
 [profile.release]
-opt-level = 'z'  # Optimize for size.
+opt-level = 3  # Optimize for speed.
 lto = true  # LTO instructs the linker to optimize at the link stage.
 codegen-units = 1

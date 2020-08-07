@@ -7,23 +7,23 @@ fn get_font() -> FontRef<'static> {
 }
 
 #[derive(Debug, Default)]
-pub(super) struct BadgeContent {
-  pub(super) content: String,
-  pub(super) width: usize,
-  pub(super) height: usize,
+pub struct BadgeContent {
+  pub content: String,
+  pub width: usize,
+  pub height: usize,
 }
 
 pub(super) trait Content {
   fn content(&self, height: usize) -> BadgeContent;
 }
 
-impl<'a> Content for Vec<i64> {
+impl<'a> Content for &[i64] {
   fn content(&self, height: usize) -> BadgeContent {
     let width = if self.len() > 0 { height * 5 } else { 0 };
     let chart_height = height as f32;
     let max = *self.iter().max().unwrap_or(&0);
 
-    let y_offset = chart_height / (max) as f32;
+    let y_offset = chart_height / (max as f32);
     let x_offset = width as f32 / (self.len() as f32 - 1.0);
 
     let points = self
@@ -123,16 +123,20 @@ mod tests {
 
   #[test]
   fn content_data_has_width() {
-    let d1 = vec![].content(20);
+    let d1: &[i64] = &[];
+    let d1 = d1.content(20);
     assert_eq!(d1.width, 0);
-    let d2 = vec![2, 4, 3, 2].content(20);
+    let d2: &[i64] = &[2, 4, 3, 2];
+    let d2 = d2.content(20);
     assert_eq!(d2.width, 100);
   }
 
   #[test]
   fn content_data_is_same() {
-    let d1 = vec![2, 4, 3, 2].content(20);
-    let d2 = &vec![2, 4, 3, 2].content(20);
+    let d1: &[i64] = &[2, 4, 3, 2];
+    let d1 = d1.content(20);
+    let d2: &[i64] = &[2, 4, 3, 2];
+    let d2 = d2.content(20);
     assert_eq!(d1.content, d2.content);
   }
 }

@@ -32,8 +32,6 @@
 //! This produce a svg badge: ![](http://merit-badge.appspot.com/badge/testing/12,34,23,56,45)
 //!
 
-#![allow(incomplete_features)]
-#![feature(const_generics)]
 #![feature(proc_macro_hygiene)]
 
 use cssparser::{Color as CssColor, Parser, ParserInput, ToCss};
@@ -88,7 +86,7 @@ impl<'de> Deserialize<'de> for Color {
   }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde_de", derive(Serialize, Deserialize))]
 pub struct BadgeData(pub Vec<i64>);
 

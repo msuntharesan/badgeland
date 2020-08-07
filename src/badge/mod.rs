@@ -1,7 +1,7 @@
 mod content;
 
 use super::{icons::Icon, Color, DEFAULT_BLUE, DEFAULT_GRAY, DEFAULT_GRAY_DARK, DEFAULT_WHITE};
-use content::{Content, ContentSize};
+use content::{BadgeContent, Content, ContentSize};
 use fmt::Display;
 use maud::html;
 use std::{fmt, str::FromStr};
@@ -71,32 +71,64 @@ impl FromStr for Size {
   }
 }
 
-#[derive(PartialEq, Eq)]
-pub enum BadgeTypeState {
-  Init,
-  Data,
-  Text,
-}
+#[derive(Debug)]
+pub struct BadgeTypeInit;
+#[derive(Debug)]
+pub struct BadgeTypeData(Vec<i64>);
+#[derive(Debug)]
+pub struct BadgeTypeText<'a>(&'a str);
 
-#[derive(Debug, Clone)]
-pub enum BadgeType<'a, const S: BadgeTypeState> {
-  Init,
-  Data(Vec<i64>),
-  Text(&'a str),
+pub trait BadgeType<'a> {
+  fn content(&self, height: usize) -> BadgeContentTypes;
 }
 
 #[derive(Debug)]
-pub struct Badge<'a, const S: BadgeTypeState> {
-  pub subject: Option<&'a str>,
-  pub color: Color,
-  pub style: Styles,
-  pub icon: Option<Icon<'a>>,
-  pub icon_color: Color,
-  pub height: usize,
-  pub content: BadgeType<'a, S>,
+pub enum BadgeContentTypes {
+  None,
+  Text(BadgeContent),
+  Data(BadgeContent),
 }
 
-impl<'a> Badge<'a, { BadgeTypeState::Init }> {
+impl BadgeContentTypes {
+  fn is_some(&self) -> bool {
+    match self {
+      BadgeContentTypes::None => false,
+      _ => true,
+    }
+  }
+}
+
+impl BadgeType<'_> for BadgeTypeInit {
+  fn content(&self, _: usize) -> BadgeContentTypes {
+    BadgeContentTypes::None
+  }
+}
+
+impl BadgeType<'_> for BadgeTypeData {
+  fn content(&self, height: usize) -> BadgeContentTypes {
+    let slice = &self.0[..];
+    BadgeContentTypes::Data(slice.content(height))
+  }
+}
+
+impl<'a> BadgeType<'a> for BadgeTypeText<'a> {
+  fn content(&self, height: usize) -> BadgeContentTypes {
+    BadgeContentTypes::Text(self.0.content(height))
+  }
+}
+
+#[derive(Debug)]
+pub struct Badge<'a, S: BadgeType<'a>> {
+  subject: Option<&'a str>,
+  color: Color,
+  style: Styles,
+  icon: Option<Icon<'a>>,
+  icon_color: Color,
+  height: usize,
+  content: S,
+}
+
+impl<'a> Badge<'a, BadgeTypeInit> {
   pub fn new() -> Self {
     Badge {
       subject: None,
@@ -105,7 +137,7 @@ impl<'a> Badge<'a, { BadgeTypeState::Init }> {
       icon: None,
       icon_color: DEFAULT_WHITE.parse().unwrap(),
       height: 20,
-      content: BadgeType::Init,
+      content: BadgeTypeInit,
     }
   }
 
@@ -142,7 +174,8 @@ impl<'a> Badge<'a, { BadgeTypeState::Init }> {
     }
     self
   }
-  pub fn text(&mut self, text: &'a str) -> Badge<'a, { BadgeTypeState::Text }> {
+
+  pub fn text(&mut self, text: &'a str) -> Badge<'a, BadgeTypeText<'a>> {
     Badge {
       subject: self.subject,
       color: self.color.clone(),
@@ -150,11 +183,11 @@ impl<'a> Badge<'a, { BadgeTypeState::Init }> {
       icon: self.icon.clone(),
       icon_color: self.icon_color.clone(),
       height: self.height,
-      content: BadgeType::Text(text),
+      content: BadgeTypeText(text),
     }
   }
 
-  pub fn data(&mut self, data: Vec<i64>) -> Badge<'a, { BadgeTypeState::Data }> {
+  pub fn data(&mut self, data: Vec<i64>) -> Badge<'a, BadgeTypeData> {
     Badge {
       subject: self.subject,
       color: self.color.clone(),
@@ -162,7 +195,7 @@ impl<'a> Badge<'a, { BadgeTypeState::Init }> {
       icon: self.icon.clone(),
       icon_color: self.icon_color.clone(),
       height: self.height,
-      content: BadgeType::Data(data),
+      content: BadgeTypeData(data),
     }
   }
 }
@@ -170,7 +203,7 @@ impl<'a> Badge<'a, { BadgeTypeState::Init }> {
 const SVG_FONT_MULTIPLIER: f32 = 0.65;
 const FONT_CALC_MULTIPLIER: f32 = 0.8;
 
-impl<'a, const T: BadgeTypeState> Display for Badge<'a, { T }> {
+impl<'a, T: BadgeType<'a>> Display for Badge<'a, T> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     let height = self.height;
 
@@ -196,25 +229,21 @@ impl<'a, const T: BadgeTypeState> Display for Badge<'a, { T }> {
       _ => ContentSize::default(),
     };
 
-    let content = match &self.content {
-      BadgeType::Data(d) => Some((d.content(height), BadgeTypeState::Data)),
-      BadgeType::Text(t) => Some((t.content(calc_font_size), BadgeTypeState::Text)),
-      _ => None,
-    };
+    let content = self.content.content(height);
 
-    let content_size = match (&content, &self.style) {
-      (Some((c, s)), Styles::Flat) if s == &BadgeTypeState::Data => ContentSize {
+    let content_size = match &content {
+      BadgeContentTypes::Data(c) if self.style == Styles::Flat => ContentSize {
         x: (c.width + padding) / 2,
         y: c.height / 2,
         rw: c.width,
       },
-      (Some((c, s)), _) if s == &BadgeTypeState::Data => ContentSize {
+      BadgeContentTypes::Data(c) => ContentSize {
         x: (c.width + padding) / 2,
         y: c.height / 2,
         rw: c.width + 5,
       },
-      (Some((c, _)), _) => c.content_size(0, padding, height, 0),
-      (_, _) => ContentSize::default(),
+      BadgeContentTypes::Text(c) => c.content_size(0, padding, height, 0),
+      _ => ContentSize::default(),
     };
 
     let width = subject_size.rw + content_size.rw;
@@ -258,7 +287,7 @@ impl<'a, const T: BadgeTypeState> Display for Badge<'a, { T }> {
             }
             rect#content
               fill=@match &content{
-                Some((_, s)) if s == &BadgeTypeState::Data => { (DEFAULT_GRAY) },
+                BadgeContentTypes::Data(_) => { (DEFAULT_GRAY) }
                 _ => (self.color.to_string())
               }
               height=(height)
@@ -281,7 +310,7 @@ impl<'a, const T: BadgeTypeState> Display for Badge<'a, { T }> {
                   { (s.content) }
               }
               @match &content {
-                Some((c, s)) if s == &BadgeTypeState::Data => {
+                BadgeContentTypes::Data(c) => {
                   path
                     fill="none"
                     transform=(format!("translate({}, {})", subject_size.rw, 0))
@@ -298,7 +327,7 @@ impl<'a, const T: BadgeTypeState> Display for Badge<'a, { T }> {
                     d=(format!("{}V{}H0Z", c.content, height))
                     {}
                 }
-                Some((c, _)) => {
+                BadgeContentTypes::Text(c) => {
                   text
                     x=((subject_size.rw + content_size.x))
                     y=(content_size.y)
