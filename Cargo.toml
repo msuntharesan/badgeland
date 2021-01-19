@@ -11,14 +11,11 @@ publish = true
 
 build = "./build_scripts/build.rs"
 
-[[bench]]
-name = "badge_benchmark"
-harness = false
 
 [dependencies]
 ab_glyph = "0.2"
-clap = { version = "3.0.0-beta.1", features = ["derive", "suggestions", "color"] }
-cssparser = "0.27"
+clap = { version = "3.0.0-beta.2", features = ["derive", "suggestions", "color"], optional = true }
+cssparser = "0.28"
 maud = "0.22"
 phf = "0.8"
 serde = { version = "1.0", features = ["derive"], optional = true }
@@ -34,14 +31,30 @@ scraper = "0.12"
 
 [features]
 serde_de = ["serde"]
+cli = ["clap"]
+
+[[bin]]
+name = "cargo-badge"
+required-features = ["cli"]
+
+[[bench]]
+name = "badge_benchmark"
+harness = false
 
 [workspace]
 members = [
   "humanize",
   "merit-api",
+  "merit-web",
 ]
 
 [profile.release]
+opt-level = 3  # Optimize for speed.
+lto = true  # LTO instructs the linker to optimize at the link stage.
+codegen-units = 1
+Incremental = true
+
+[profile.bench]
 opt-level = 3  # Optimize for speed.
 lto = true  # LTO instructs the linker to optimize at the link stage.
 codegen-units = 1

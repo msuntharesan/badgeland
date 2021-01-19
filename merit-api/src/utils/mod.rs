@@ -1,11 +1,12 @@
 pub mod error;
 
-use merit::{Size, Styles, BadgeData, Color};
+use merit::{BadgeData, Color, Size, Styles};
 use serde::Deserialize;
 use std::str;
 
 #[derive(Deserialize, Debug)]
 pub struct QueryInfo {
+  pub source: Option<String>,
   pub color: Option<Color>,
   pub icon: Option<String>,
   pub icon_color: Option<Color>,

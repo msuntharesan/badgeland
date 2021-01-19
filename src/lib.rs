@@ -16,8 +16,9 @@
 //! use merit::{Badge};
 //!
 //! fn badge() {
-//!   let mut badge = Badge::new().subject("Subject").text("Text");
-//!   println!("{}", badge.to_string());
+//!   let mut badge = Badge::new();
+//!   badge.subject("Subject");
+//!   println!("{}", badge.text("Text").to_string());
 //! }
 //! ```
 //! This produce a svg badge: ![](https://merit-badge.appspot.com/badge/Subject/Text)
@@ -25,8 +26,9 @@
 //! use merit::{Badge};
 //!
 //! fn badge_with_data() {
-//!   let mut badge = Badge::new().subject("Subject").data(vec![12, 34, 23,56,45]);
-//!   println!("{}", badge.to_string());
+//!   let mut badge = Badge::new();
+//!   badge.subject("Subject");
+//!   println!("{}", badge.data(&[12., 34., 23., 56., 45.]).to_string());
 //! }
 //! ```
 //! This produce a svg badge: ![](http://merit-badge.appspot.com/badge/testing/12,34,23,56,45)
@@ -35,7 +37,7 @@
 #![feature(proc_macro_hygiene)]
 
 use cssparser::{Color as CssColor, Parser, ParserInput, ToCss};
-use std::{convert::From, fmt::Display, num::ParseIntError, str::FromStr};
+use std::{convert::From, num::ParseFloatError, str::FromStr};
 
 #[cfg(feature = "serde_de")]
 use serde::{de, Deserialize, Deserializer, Serialize};
@@ -61,16 +63,16 @@ impl FromStr for Color {
     let mut input = ParserInput::new(s);
     let mut parser = Parser::new(&mut input);
 
-    CssColor::parse(&mut parser)
-      .map(|c: CssColor| Color(c.to_css_string()))
-      .or_else(|_| CssColor::parse_hash(s.as_bytes()).map(|c: CssColor| Color(c.to_css_string())))
-      .map_err(|_| format!("{} is not a valid css color", s))
+    match (CssColor::parse(&mut parser), CssColor::parse_hash(s.as_bytes())) {
+      (Ok(c), _) | (_, Ok(c)) => Ok(Color(c.to_css_string())),
+      _ => Err(format!("{} is not a valid css color", s)),
+    }
   }
 }
 
-impl Display for Color {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", self.0)
+impl Default for Color {
+  fn default() -> Self {
+    Color::from_str("#000").unwrap()
   }
 }
 
@@ -82,26 +84,26 @@ impl<'de> Deserialize<'de> for Color {
   {
     let s = String::deserialize(deserializer)?;
 
-    Color::from_str(s.as_str()).map_err(|_| de::Error::custom(format!("{} is not a valid css color", s)))
+    Color::from_str(&s).map_err(de::Error::custom)
   }
 }
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde_de", derive(Serialize, Deserialize))]
-pub struct BadgeData(pub Vec<i64>);
+pub struct BadgeData(pub Vec<f32>);
 
 impl FromStr for BadgeData {
-  type Err = ParseIntError;
+  type Err = ParseFloatError;
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     s.split(",")
-      .map(|s| s.trim().parse::<i64>())
+      .map(|s| s.trim().parse::<f32>())
       .collect::<Result<Vec<_>, Self::Err>>()
       .map(|values| BadgeData(values))
   }
 }
 
-impl From<Vec<i64>> for BadgeData {
-  fn from(values: Vec<i64>) -> Self {
+impl From<Vec<f32>> for BadgeData {
+  fn from(values: Vec<f32>) -> Self {
     BadgeData(values)
   }
 }
@@ -122,7 +124,7 @@ mod tests {
       let cx = Color::from_str(c);
       assert_eq!(
         cx, expected,
-        "input = {},  received = {:?}, expected = {:?}",
+        "input = {}, received = {:?}, expected = {:?}",
         c, cx, expected
       );
     }
@@ -141,13 +143,7 @@ mod tests {
     for c in colors {
       let cx = Color::from_str(c);
 
-      assert!(
-        cx.is_err(),
-        "input = {},  received = {:?}, expected = {:?}",
-        c,
-        cx,
-        None::<String>
-      );
+      assert!(cx.is_err(), "input = {}, received = {:?}", c, cx);
     }
   }
 
@@ -163,6 +159,6 @@ mod tests {
   fn data_from_string_parse_correct() {
     let d = "12,23, 23, 12".parse::<BadgeData>();
     assert!(d.is_ok());
-    assert_eq!(d.unwrap().0, vec![12, 23, 23, 12]);
+    assert_eq!(d.unwrap().0, vec![12., 23., 23., 12.]);
   }
 }

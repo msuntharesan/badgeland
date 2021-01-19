@@ -79,17 +79,14 @@ struct Opt {
 fn main() -> Result<(), Box<dyn Error>> {
   let opt = Opt::parse();
 
-  if let Some(icon) = &opt.icon {
-    if !icon_exists(icon) {
-      eprintln!("");
-      return Err("Icon does not exists. Try using a fontawesome icon name".into());
-    }
+  if matches!(&opt.icon, Some(icon) if !icon_exists(icon)) {
+    return Err("Icon does not exists. Try using a fontawesome icon name".into());
   }
 
   let mut badge = Badge::new();
 
   if let Some(sub) = &opt.subject {
-    &badge.subject(sub);
+    badge.subject(sub);
   }
   if let Some(col) = opt.color {
     badge.color(col);
@@ -112,7 +109,7 @@ fn main() -> Result<(), Box<dyn Error>> {
   }
 
   let svg = match opt.content {
-    Content::Data(d) => badge.data(d.0.into()).to_string(),
+    Content::Data(d) => badge.data(&d.0).to_string(),
     Content::Text(t) => badge.text(&t).to_string(),
   };
 
