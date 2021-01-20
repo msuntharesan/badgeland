@@ -44,7 +44,6 @@ harness = false
 [workspace]
 members = [
   "humanize",
-  "merit-api",
   "merit-web",
 ]
 
