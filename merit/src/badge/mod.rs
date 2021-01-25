@@ -1,6 +1,6 @@
 mod content;
 
-use super::{icons::Icon, Color, DEFAULT_BLUE, DEFAULT_GRAY, DEFAULT_GRAY_DARK, DEFAULT_WHITE};
+use super::{icons::Icon, Color, DEFAULT_BLACK, DEFAULT_BLUE, DEFAULT_GRAY, DEFAULT_GRAY_DARK, DEFAULT_WHITE};
 use content::{content_size, get_text_width, ContentSize, Path};
 use core::f32;
 use maud::html;
@@ -266,27 +266,32 @@ impl<'a, T: BadgeType<'a>> Display for Badge<'a, T> {
 
     let markup = html! {
       svg
-        height=(height)
-        viewBox={(format!("0 0 {} {}", width, height))}
-        width=(width)
+        xmlns:xlink="http://www.w3.org/1999/xlink"
         xmlns="http://www.w3.org/2000/svg"
-        xmlns:xlink="http://www.w3.org/1999/xlink" {
-          @if let Some(icon) = &self.icon { (icon) }
+        viewBox={(format!("0 0 {} {}", width, height))}
+        height=(height)
+        width=(width) {
           defs {
+            @if let Some(icon) = &self.icon { (icon) }
             @if &self.style == &Styles::Classic {
               linearGradient id="a" x2="0" y2="75%" {
                 stop offset="0" stop-color="#eee" stop-opacity="0.1" {}
                 stop offset="1" stop-opacity="0.3" {}
               }
             }
-            mask id="m" {
+            mask id="bg-mask" {
               rect fill=(DEFAULT_WHITE) height=(height) rx=(rx) width=(width) {}
             }
             filter id="shadow" {
-              feDropShadow dx="-0.8" dy="-0.8" stdDeviation="0" flood-color=(DEFAULT_GRAY_DARK) flood-opacity="0.4" {}
+              feDropShadow
+                dx="-0.8"
+                dy="-0.8"
+                stdDeviation="0"
+                flood-color=@if content.is_some() { (DEFAULT_BLACK) } @else { (DEFAULT_GRAY_DARK) }
+                flood-opacity="0.4" {}
             }
           }
-          g#bg mask=@if self.style == Styles::Classic { "url(#m)" } {
+          g#bg mask=@if self.style == Styles::Classic { "url(#bg-mask)" } {
             rect fill=@if self.style == Styles::Flat { (DEFAULT_GRAY) } @else { "url(#a)" } height=(height) width=(width) {}
             @if self.subject.is_some() || self.icon.is_some() {
               rect#subject
@@ -310,11 +315,22 @@ impl<'a, T: BadgeType<'a>> Display for Badge<'a, T> {
             font-family="Verdana,sans-serif"
             font-size=(font_size)
             transform="translate(0, 0)" {
+              @if let Some(icon) = &self.icon {
+                use
+                  filter="url(#shadow)"
+                  xlink:href={"#" (icon.name)}
+                  x=(x_offset)
+                  y=(((height - icon_width) / 2))
+                  width=(icon_width)
+                  height=(icon_width)
+                  fill=(self.icon_color.0)
+                  {}
+              }
               @if let Some(s) = self.subject {
                 text
-                  dominant-baseline="middle"
-                  text-anchor="middle"
-                  x=(subject_size.x)
+                dominant-baseline="middle"
+                text-anchor="middle"
+                x=(subject_size.x)
                   y=(subject_size.y)
                   filter="url(#shadow)"
                   { (s) }
@@ -348,17 +364,6 @@ impl<'a, T: BadgeType<'a>> Display for Badge<'a, T> {
                 }
                 _ => {}
               }
-          }
-          @if let Some(icon) = &self.icon {
-            use
-              filter="url(#shadow)"
-              xlink:href={"#" (icon.name)}
-              x=(x_offset)
-              y=(((height - icon_width) / 2))
-              width=(icon_width)
-              height=(icon_width)
-              fill=(self.icon_color.0)
-              {}
           }
       }
     };

@@ -1,4 +1,4 @@
-use maud::{html, PreEscaped, Render};
+use maud::{Markup, PreEscaped, Render};
 use std::convert::TryFrom;
 
 include!(concat!(env!("OUT_DIR"), "/icons_map.rs"));
@@ -29,12 +29,8 @@ impl<'a> TryFrom<&'a str> for Icon<'a> {
 }
 
 impl<'a> Render for Icon<'a> {
-  fn render(&self) -> maud::Markup {
-    html! {
-      defs {
-        (PreEscaped(self.symbol.to_string()))
-      }
-    }
+  fn render(&self) -> Markup {
+    PreEscaped(self.symbol.to_string())
   }
 }
 

@@ -2,7 +2,7 @@ use ab_glyph::{Font, FontRef, PxScale, ScaleFont};
 use unicode_normalization::UnicodeNormalization;
 
 fn get_font() -> FontRef<'static> {
-  let font_data: &[u8] = include_bytes!("../resx/Verdana.ttf");
+  let font_data: &[u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resx/Verdana.ttf"));
   FontRef::try_from_slice(font_data).expect("Error constructing Font")
 }
 

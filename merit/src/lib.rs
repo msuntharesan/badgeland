@@ -49,6 +49,7 @@ pub use badge::{Badge, Size, Styles};
 pub use icons::{icon_exists, icon_keys, Icon};
 
 pub const DEFAULT_WHITE: &'static str = "#fff";
+pub const DEFAULT_BLACK: &'static str = "#000";
 pub const DEFAULT_BLUE: &'static str = "#0366d6";
 pub const DEFAULT_GRAY: &'static str = "#f6f8fa";
 pub const DEFAULT_GRAY_DARK: &'static str = "#24292e";
