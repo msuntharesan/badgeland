@@ -23,7 +23,7 @@
 
 // use argh::FromArgs;
 use clap::Clap;
-use merit::{icon_exists, Badge, BadgeData, Color, Icon, Size, Styles};
+use merit::{icon_exists, Badge, BadgeData, Color, Icon, Size, Style};
 use std::{convert::TryFrom, error::Error, fs::File, io::prelude::*, path::PathBuf, str::FromStr};
 
 #[derive(Debug, PartialEq)]
@@ -49,7 +49,7 @@ struct Opt {
 
   /// badge style. [possible values: flat | f, classic | c]
   #[clap(long)]
-  style: Option<Styles>,
+  style: Option<Style>,
 
   /// badge size. [possible values: large | l, medium | m, small | s]
   #[clap(long)]

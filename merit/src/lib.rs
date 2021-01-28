@@ -45,7 +45,7 @@ use serde::{de, Deserialize, Deserializer, Serialize};
 mod badge;
 mod icons;
 
-pub use badge::{Badge, Size, Styles};
+pub use badge::{Badge, Size, Style};
 pub use icons::{icon_exists, icon_keys, Icon};
 
 pub const DEFAULT_WHITE: &'static str = "#fff";
@@ -90,7 +90,7 @@ impl<'de> Deserialize<'de> for Color {
 }
 
 #[derive(Debug, PartialEq)]
-#[cfg_attr(feature = "serde_de", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_de", derive(Deserialize))]
 pub struct BadgeData(pub Vec<f32>);
 
 impl FromStr for BadgeData {
@@ -162,4 +162,7 @@ mod tests {
     assert!(d.is_ok());
     assert_eq!(d.unwrap().0, vec![12., 23., 23., 12.]);
   }
+
+  #[test]
+  fn dat_from_json_parse_fails() {}
 }

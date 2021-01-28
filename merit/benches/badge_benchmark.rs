@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use merit::{Badge, Color, Icon, Size, Styles, DEFAULT_BLUE, DEFAULT_WHITE};
+use merit::{Badge, Color, Icon, Size, Style, DEFAULT_BLUE, DEFAULT_WHITE};
 use std::convert::TryFrom;
 
 pub fn criterion_benchmark(c: &mut Criterion) {
@@ -8,7 +8,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
   all_text
     .subject("Hello")
     .color(Color("#6f42c1".to_string()))
-    .style(Styles::Flat)
+    .style(Style::Flat)
     .icon(Icon::try_from("github").unwrap())
     .icon_color(Color("0366d6".to_string()))
     .size(Size::Large);
@@ -19,7 +19,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
   all_data
     .subject("Hello")
     .color(Color("#6f42c1".to_string()))
-    .style(Styles::Flat)
+    .style(Style::Flat)
     .icon(Icon::try_from("github").unwrap())
     .icon_color(Color("#0366d6".to_string()))
     .size(Size::Large);
@@ -28,7 +28,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
   let mut subject = Badge::new();
   subject
     .color(DEFAULT_BLUE.parse().unwrap())
-    .style(Styles::Classic)
+    .style(Style::Classic)
     .icon_color(DEFAULT_WHITE.parse().unwrap());
   let subject = subject.text("Hello");
 
@@ -36,7 +36,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
   with_text
     .subject("Hello")
     .color(DEFAULT_BLUE.parse().unwrap())
-    .style(Styles::Classic)
+    .style(Style::Classic)
     .icon_color(DEFAULT_WHITE.parse().unwrap());
   let with_text = with_text.text("text content");
 
@@ -44,7 +44,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
   medium_size
     .subject("Hello")
     .color(DEFAULT_BLUE.parse().unwrap())
-    .style(Styles::Classic)
+    .style(Style::Classic)
     .icon_color(DEFAULT_WHITE.parse().unwrap())
     .size(Size::Medium);
   let medium_size = medium_size.text("text content");
@@ -53,7 +53,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
   large_size
     .subject("Hello")
     .color(DEFAULT_BLUE.parse().unwrap())
-    .style(Styles::Classic)
+    .style(Style::Classic)
     .icon_color(DEFAULT_WHITE.parse().unwrap())
     .size(Size::Large);
   let large_size = large_size.text("text content");
@@ -62,7 +62,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
   red
     .subject("Hello")
     .color(Color("ff0000".to_string()))
-    .style(Styles::Classic)
+    .style(Style::Classic)
     .icon_color(DEFAULT_WHITE.parse().unwrap());
   let red = red.text("red");
 
@@ -70,7 +70,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
   icon_brand
     .subject("Hello")
     .color(DEFAULT_BLUE.parse().unwrap())
-    .style(Styles::Classic)
+    .style(Style::Classic)
     .icon(Icon::try_from("github").unwrap())
     .icon_color(DEFAULT_WHITE.parse().unwrap());
   let icon_brand = icon_brand.text("brand");
@@ -79,7 +79,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
   icon_solid
     .subject("Hello")
     .color(DEFAULT_BLUE.parse().unwrap())
-    .style(Styles::Classic)
+    .style(Style::Classic)
     .icon(Icon::try_from("code").unwrap())
     .icon_color(DEFAULT_WHITE.parse().unwrap());
   let icon_solid = icon_solid.text("solid");
@@ -88,7 +88,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
   data
     .subject("Hello")
     .color(DEFAULT_BLUE.parse().unwrap())
-    .style(Styles::Classic)
+    .style(Style::Classic)
     .icon_color(DEFAULT_WHITE.parse().unwrap());
   let data = data.data(&[1., 5., 2., 4., 8., 3., 7.]);
 
@@ -96,7 +96,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
   flat
     .subject("Hello")
     .color(DEFAULT_BLUE.parse().unwrap())
-    .style(Styles::Classic)
+    .style(Style::Classic)
     .icon_color(DEFAULT_WHITE.parse().unwrap());
   let flat = flat.text("flat");
 

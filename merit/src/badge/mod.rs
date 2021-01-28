@@ -11,35 +11,35 @@ use serde::{de, Deserialize, Deserializer, Serialize};
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 #[cfg_attr(feature = "serde_de", derive(Serialize))]
-pub enum Styles {
+pub enum Style {
   Classic,
   Flat,
 }
 
-impl Default for Styles {
+impl Default for Style {
   fn default() -> Self {
-    Styles::Classic
+    Style::Classic
   }
 }
 
 #[cfg(feature = "serde_de")]
-impl<'de> Deserialize<'de> for Styles {
+impl<'de> Deserialize<'de> for Style {
   fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
   where
     D: Deserializer<'de>,
   {
     let s = String::deserialize(deserializer)?;
 
-    Styles::from_str(&s).map_err(|e| de::Error::custom(e))
+    Style::from_str(&s).map_err(|e| de::Error::custom(e))
   }
 }
 
-impl FromStr for Styles {
+impl FromStr for Style {
   type Err = String;
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     match s.to_lowercase().as_ref() {
-      "classic" | "c" => Ok(Styles::Classic),
-      "flat" | "f" => Ok(Styles::Flat),
+      "classic" | "c" => Ok(Style::Classic),
+      "flat" | "f" => Ok(Style::Flat),
       _ => Err(format!("'{}' is not a valid value for Styles", s)),
     }
   }
@@ -123,7 +123,7 @@ impl<'a> BadgeType<'a> for BadgeTypeText<'a> {
 pub struct Badge<'a, S: BadgeType<'a>> {
   subject: Option<&'a str>,
   color: Color,
-  style: Styles,
+  style: Style,
   icon: Option<Icon<'a>>,
   icon_color: Color,
   size: Size,
@@ -135,7 +135,7 @@ impl<'a> Badge<'a, BadgeTypeInit> {
     Badge {
       subject: None,
       color: DEFAULT_BLUE.parse().unwrap(),
-      style: Styles::Classic,
+      style: Style::Classic,
       icon: None,
       icon_color: DEFAULT_WHITE.parse().unwrap(),
       size: Size::Small,
@@ -161,7 +161,7 @@ impl<'a> Badge<'a, BadgeTypeInit> {
     self.size = size;
     self
   }
-  pub fn style(&mut self, style: Styles) -> &mut Self {
+  pub fn style(&mut self, style: Style) -> &mut Self {
     self.style = style;
     self
   }
@@ -219,7 +219,10 @@ impl<'a, T: BadgeType<'a>> Display for Badge<'a, T> {
     };
 
     let subject_size: ContentSize = match self.subject {
-      Some(s) => content_size(get_text_width(s, font_size), icon_width, padding, height, x_offset),
+      Some(s) => {
+        let width = get_text_width(s, font_size);
+        content_size(width, icon_width, padding, height, x_offset)
+      }
       None if self.icon.is_some() => ContentSize {
         rw: icon_width + x_offset * 2,
         x: x_offset,
@@ -236,7 +239,7 @@ impl<'a, T: BadgeType<'a>> Display for Badge<'a, T> {
         ContentSize {
           x: (width + padding) / 2,
           y: height / 2,
-          rw: if self.style == Styles::Flat { width } else { width + 5 },
+          rw: if self.style == Style::Flat { width } else { width + 5 },
         }
       }
       BadgeContentTypes::Text(c) => content_size(get_text_width(c, font_size), 0, padding, height, 0),
@@ -273,7 +276,7 @@ impl<'a, T: BadgeType<'a>> Display for Badge<'a, T> {
         width=(width) {
           defs {
             @if let Some(icon) = &self.icon { (icon) }
-            @if &self.style == &Styles::Classic {
+            @if &self.style == &Style::Classic {
               linearGradient id="a" x2="0" y2="75%" {
                 stop offset="0" stop-color="#eee" stop-opacity="0.1" {}
                 stop offset="1" stop-opacity="0.3" {}
@@ -291,8 +294,8 @@ impl<'a, T: BadgeType<'a>> Display for Badge<'a, T> {
                 flood-opacity="0.4" {}
             }
           }
-          g#bg mask=@if self.style == Styles::Classic { "url(#bg-mask)" } {
-            rect fill=@if self.style == Styles::Flat { (DEFAULT_GRAY) } @else { "url(#a)" } height=(height) width=(width) {}
+          g#bg mask=@if self.style == Style::Classic { "url(#bg-mask)" } {
+            rect fill=@if self.style == Style::Flat { (DEFAULT_GRAY) } @else { "url(#a)" } height=(height) width=(width) {}
             @if self.subject.is_some() || self.icon.is_some() {
               rect#subject
                 fill=@if content.is_some() { (DEFAULT_GRAY_DARK) } @else { (self.color.0) }
@@ -374,7 +377,7 @@ impl<'a, T: BadgeType<'a>> Display for Badge<'a, T> {
 
 #[cfg(test)]
 mod tests {
-  use super::{Badge, Color, Size, Styles, DEFAULT_BLUE};
+  use super::{Badge, Color, Size, Style, DEFAULT_BLUE};
   use scraper::{Html, Selector};
 
   use crate::Icon;
@@ -386,7 +389,7 @@ mod tests {
     &badge.subject("just text");
     let badge_svg = badge.to_string();
     let doc = Html::parse_fragment(&badge_svg);
-    assert_eq!(badge.style, Styles::Classic, "style not Classic");
+    assert_eq!(badge.style, Style::Classic, "style not Classic");
     let lg_selector = Selector::parse("linearGradient").unwrap();
     assert!(doc.select(&lg_selector).next().is_some());
   }

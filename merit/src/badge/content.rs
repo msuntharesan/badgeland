@@ -58,9 +58,8 @@ impl<'a> Iterator for Path<'a> {
     if index >= self.values.len() {
       return None;
     }
-    let p = self.values[index];
     let x = index as f32 * self.x_offset;
-    let y = self.chart_height - self.y_offset * p as f32;
+    let y = self.chart_height - self.y_offset * self.values[index] as f32;
     self.index += 1;
     Some((x, y))
   }

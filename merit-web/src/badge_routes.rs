@@ -5,7 +5,7 @@ use actix_web::{
   web, HttpRequest, HttpResponse,
 };
 use awc::Client;
-use merit::{Badge, BadgeData, Icon, Size, Styles};
+use merit::{Badge, BadgeData, Icon, Size, Style};
 use serde::Deserialize;
 use std::convert::TryFrom;
 
@@ -70,7 +70,7 @@ async fn url_badge_handler(req: HttpRequest, query: web::Query<QueryInfo>) -> Re
 
   let style = match (data.style, query.style) {
     (_, Some(s)) | (Some(s), _) => s,
-    _ => Styles::Classic,
+    _ => Style::Classic,
   };
   badge.style(style);
 
