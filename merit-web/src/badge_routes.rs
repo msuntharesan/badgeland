@@ -14,7 +14,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     .service(web::resource("/url").route(web::get().to(url_badge_handler)))
     .service(
       web::scope("/b")
-        .route("/{subject}", web::get().to(badge_handler))
+        .route("/{text}", web::get().to(badge_handler))
         .route("/{subject}/{text}", web::get().to(badge_handler)),
     );
 }
@@ -85,14 +85,16 @@ async fn url_badge_handler(req: HttpRequest, query: web::Query<QueryInfo>) -> Re
 
 #[derive(Deserialize)]
 struct BadgeInfo {
-  text: Option<String>,
-  subject: String,
+  text: String,
+  subject: Option<String>,
 }
 
 fn badge_handler((params, query): (web::Path<BadgeInfo>, web::Query<QueryInfo>)) -> HttpResponse {
   let query = query.into_inner();
   let mut req_badge = Badge::new();
-  req_badge.subject(&params.subject);
+  if let Some(c) = &params.subject {
+    req_badge.subject(c);
+  }
 
   if let Some(c) = query.color {
     req_badge.color(c);
@@ -116,13 +118,10 @@ fn badge_handler((params, query): (web::Path<BadgeInfo>, web::Query<QueryInfo>))
     req_badge.size(bs);
   }
 
-  let badge_svg = if let Some(text) = &params.text {
-    match text.parse::<BadgeData>() {
-      Ok(data) if data.0.len() > 1 => req_badge.data(&data.0).to_string(),
-      _ => req_badge.text(text).to_string(),
-    }
-  } else {
-    req_badge.to_string()
+  let badge_svg = match params.text.parse::<BadgeData>() {
+    Ok(data) if data.0.len() > 1 => req_badge.data(&data.0).to_string(),
+    _ => req_badge.text(&params.text).to_string(),
   };
+
   HttpResponse::Ok().content_type("image/svg+xml").body(badge_svg)
 }
