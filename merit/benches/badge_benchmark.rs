@@ -164,41 +164,6 @@ pub fn criterion_benchmark(c: &mut Criterion) {
       })
     }),
   );
-
-  // c.bench_with_input(BenchmarkId::new("badge", "all_text"), &all_text, |b, badge| {
-  //   b.iter(|| badge.to_string())
-  // });
-
-  // c.bench_with_input(BenchmarkId::new("badge", "all_data"), &all_data, |b, badge| {
-  //   b.iter(|| badge.to_string())
-  // });
-  // c.bench_with_input(BenchmarkId::new("badge", "just_text"), &just_text, |b, badge| {
-  //   b.iter(|| badge.to_string())
-  // });
-  // c.bench_with_input(BenchmarkId::new("badge", "with_text"), &with_text, |b, badge| {
-  //   b.iter(|| badge.to_string())
-  // });
-  // c.bench_with_input(BenchmarkId::new("badge", "medium_size"), &medium_size, |b, badge| {
-  //   b.iter(|| badge.to_string())
-  // });
-  // c.bench_with_input(BenchmarkId::new("badge", "large_size"), &large_size, |b, badge| {
-  //   b.iter(|| badge.to_string())
-  // });
-  // c.bench_with_input(BenchmarkId::new("badge", "red"), &red, |b, badge| {
-  //   b.iter(|| badge.to_string())
-  // });
-  // c.bench_with_input(BenchmarkId::new("badge", "icon_brand"), &icon_brand, |b, badge| {
-  //   b.iter(|| badge.to_string())
-  // });
-  // c.bench_with_input(BenchmarkId::new("badge", "icon_solid"), &icon_solid, |b, badge| {
-  //   b.iter(|| badge.to_string())
-  // });
-  // c.bench_with_input(BenchmarkId::new("badge", "data"), &data, |b, badge| {
-  //   b.iter(|| badge.to_string())
-  // });
-  // c.bench_with_input(BenchmarkId::new("badge", "flat"), &flat, |b, badge| {
-  //   b.iter(|| badge.to_string())
-  // });
 }
 
 criterion_group!(benches, criterion_benchmark);
