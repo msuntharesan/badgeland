@@ -2,7 +2,7 @@
 # Cargo Build Stage
 # ------------------------------------------------------------------------------
 
-FROM rustlang/rust:nightly-alpine as toolchain
+FROM rust:1.49-alpine3.12 as toolchain
 
 RUN adduser -D -h /merit -g "" merit
 
@@ -16,16 +16,17 @@ ENV PATH=/merit/.cargo/bin:$PATH
 WORKDIR /merit
 
 RUN cargo init --lib --vcs none
+RUN cargo new merit --lib --vcs none
 RUN cargo new humanize --lib --vcs none
-RUN cargo new merit-api --lib --vcs none
+RUN cargo new merit-web --lib --vcs none
 
 RUN mkdir .cargo
 RUN cargo vendor > .cargo/config
 
-COPY . .
+ADD . .
 
 RUN OPENSSL_STATIC=true \
-    cargo build --release --target=x86_64-unknown-linux-musl -p merit-api
+    cargo build --release --target=x86_64-unknown-linux-musl -p merit-web
 
 # ------------------------------------------------------------------------------
 # Final Stage
@@ -38,7 +39,7 @@ ENV PORT=8080 \
 
 WORKDIR /home/merit/bin/
 
-COPY --from=toolchain /merit/target/x86_64-unknown-linux-musl/release/merit-api .
+COPY --from=toolchain /merit/target/x86_64-unknown-linux-musl/release/merit-web .
 
 RUN adduser -D -H -g "" merit
 

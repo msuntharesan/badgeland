@@ -1,11 +1,11 @@
 # Ignore everything
 *
 
+merit/target
+
 # But not these files
-!build_scripts
-!benches
 !humanize
-!merit-api
-!src
+!merit
+!merit-web
 !Cargo.toml
 !Cargo.lock
