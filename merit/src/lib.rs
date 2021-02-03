@@ -34,8 +34,6 @@
 //! This produce a svg badge: ![](http://merit-badge.appspot.com/badge/testing/12,34,23,56,45)
 //!
 
-#![feature(proc_macro_hygiene)]
-
 use cssparser::{Color as CssColor, Parser, ParserInput, ToCss};
 use std::{convert::From, num::ParseFloatError, str::FromStr};
 

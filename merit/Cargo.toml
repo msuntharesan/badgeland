@@ -16,7 +16,7 @@ build = "./build_scripts/build.rs"
 ab_glyph = "0.2"
 clap = { version = "3.0.0-beta.2", features = ["derive", "suggestions", "color"], optional = true }
 cssparser = "0.28"
-maud = "0.21"
+maud = "0.22"
 phf = "0.8"
 serde = { version = "1.0", features = ["derive"], optional = true }
 unicode-normalization = "0.1"

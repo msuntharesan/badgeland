@@ -6,25 +6,30 @@ fn get_font() -> FontRef<'static> {
   FontRef::try_from_slice(font_data).expect("Error constructing Font")
 }
 
-pub(crate) fn get_text_width(text: &str, height: f32) -> usize {
-  let font = get_font();
-
-  let scale = PxScale::from(height as f32);
-  let scaled_font = font.as_scaled(scale);
-
-  let normalized = text.trim().nfc().collect::<String>();
-
-  normalized
-    .chars()
-    .map(|c| {
-      let glyph = scaled_font.scaled_glyph(c);
-      let gb = scaled_font.glyph_bounds(&glyph);
-      gb.width() * 1.12
-    })
-    .fold(0.0, |acc, w| acc + w) as usize
+pub(crate) trait TextWidth {
+  fn get_text_width(&self, height: f32) -> usize;
 }
 
-#[derive(Debug, Default)]
+impl<'a> TextWidth for &'a str {
+  fn get_text_width(&self, height: f32) -> usize {
+    let font = get_font();
+
+    let scale = PxScale::from(height as f32);
+    let scaled_font = font.as_scaled(scale);
+
+    let normalized: String = self.trim().nfc().collect();
+    normalized
+      .chars()
+      .map(|c| {
+        let glyph = scaled_font.scaled_glyph(c);
+        let gb = scaled_font.glyph_bounds(&glyph);
+        gb.width() * 1.12
+      })
+      .fold(0.0, |acc, w| acc + w).ceil() as usize
+  }
+}
+
+#[derive(Debug, Default, Clone)]
 pub struct Path<'a> {
   values: &'a [f32],
   chart_height: f32,
@@ -72,42 +77,47 @@ pub(super) struct ContentSize {
   pub(super) rw: usize,
 }
 
-pub(super) fn content_size(
-  width: usize,
-  icon_width: usize,
-  padding: usize,
-  height: usize,
-  x_offset: usize,
-) -> ContentSize {
-  let w = width + icon_width + x_offset;
-  let x = (width + padding) / 2 + icon_width + x_offset;
-  let y = height / 2;
-  let mut rw = w;
-  rw += match (width, icon_width) {
-    (x, _) if x > 0 => padding,
-    (0, y) if y > 0 => padding / 3 * 2,
-    _ => 0,
-  };
-  ContentSize { x, y, rw }
+pub(super) trait BadgeContentSize {
+  fn content_size(&self, height: usize, width: usize, padding: usize, x_offset: usize) -> ContentSize;
+}
+
+impl<'a> BadgeContentSize for &'a [f32] {
+  fn content_size(&self, height: usize, width: usize, padding: usize, _: usize) -> ContentSize {
+    ContentSize {
+      x: (width + padding) / 2,
+      y: height / 2,
+      rw: width,
+    }
+  }
+}
+
+impl<'a> BadgeContentSize for &'a str {
+  fn content_size(&self, height: usize, width: usize, padding: usize, x_offset: usize) -> ContentSize {
+    let w = width + x_offset;
+    let x = (width + padding) / 2 + x_offset;
+    let y = height / 2;
+    let rw = w + padding;
+    ContentSize { x, y, rw }
+  }
 }
 
 #[cfg(test)]
 mod tests {
-  use super::{get_text_width, Path};
+  use super::{Path, TextWidth};
 
   #[test]
   fn content_str_width() {
     let s = "Hello";
-    let bc = get_text_width(s, 20.);
+    let bc = s.get_text_width(20.);
     assert!(bc > 0);
   }
   #[test]
   fn content_text_has_width() {
-    let text = get_text_width("", 20.);
+    let text = "".get_text_width(20.);
     assert_eq!(text, 0);
-    let text = get_text_width("npm", 20.);
+    let text = "npm".get_text_width(20.);
     assert_eq!(text, 46);
-    let text = get_text_width("long text", 20.);
+    let text = "long text".get_text_width(20.);
     assert_eq!(text, 90);
   }
 

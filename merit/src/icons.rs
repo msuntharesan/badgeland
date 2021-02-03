@@ -1,4 +1,3 @@
-use maud::{Markup, PreEscaped, Render};
 use std::convert::TryFrom;
 
 include!(concat!(env!("OUT_DIR"), "/icons_map.rs"));
@@ -25,12 +24,6 @@ impl<'a> TryFrom<&'a str> for Icon<'a> {
       .get(name)
       .map(|symbol| Icon { name, symbol })
       .ok_or("Icon does not exists".into())
-  }
-}
-
-impl<'a> Render for Icon<'a> {
-  fn render(&self) -> Markup {
-    PreEscaped(self.symbol.to_string())
   }
 }
 

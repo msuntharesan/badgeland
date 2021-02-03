@@ -1,10 +1,10 @@
 mod content;
 
 use super::{icons::Icon, Color, DEFAULT_BLACK, DEFAULT_BLUE, DEFAULT_GRAY, DEFAULT_GRAY_DARK, DEFAULT_WHITE};
-use content::{content_size, get_text_width, ContentSize, Path};
+use content::{BadgeContentSize, ContentSize, Path, TextWidth};
 use core::f32;
-use maud::html;
-use std::{fmt::Display, str::FromStr};
+use maud::{PreEscaped, html};
+use std::{fmt, str::FromStr};
 
 #[cfg(feature = "serde_de")]
 use serde::{de, Deserialize, Deserializer, Serialize};
@@ -14,6 +14,18 @@ use serde::{de, Deserialize, Deserializer, Serialize};
 pub enum Style {
   Classic,
   Flat,
+}
+
+impl fmt::Display for Style {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      Style::Flat => write!(f, ""),
+      Style::Classic => write!(
+        f,
+        r##"<linearGradient id="a" x2="0" y2="75%"><stop offset="0" stop-color="#eee" stop-opacity="0.1"></stop><stop offset="1" stop-opacity="0.3"></stop></linearGradient>"##
+      ),
+    }
+  }
 }
 
 impl Default for Style {
@@ -197,32 +209,39 @@ impl<'a> Badge<'a, BadgeTypeInit> {
   }
 }
 
-const SVG_FONT_MULTIPLIER: f32 = 0.65;
-
-impl<'a, T: BadgeType<'a>> Display for Badge<'a, T> {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    let height = match self.size {
+impl<'a, T: BadgeType<'a>> Badge<'a, T> {
+  fn get_height(&self) -> usize {
+    match self.size {
       Size::Small => 20,
       Size::Medium => 30,
       Size::Large => 40,
-    };
+    }
+  }
+
+  fn get_icon_size(&self) -> (usize, usize) {
+    match (&self.icon, self.size) {
+      (Some(_), Size::Large) => (30, 10),
+      (Some(_), Size::Medium) => (20, 8),
+      (Some(_), Size::Small) => (15, 5),
+      _ => (0, 0),
+    }
+  }
+}
+
+const SVG_FONT_MULTIPLIER: f32 = 0.65;
+
+impl<'a, T: BadgeType<'a>> fmt::Display for Badge<'a, T> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let height = self.get_height();
 
     let font_size = height as f32 * SVG_FONT_MULTIPLIER;
 
     let padding = height / 2;
 
-    let (icon_width, x_offset) = match (&self.icon, self.size) {
-      (Some(_), Size::Large) => (30, 10),
-      (Some(_), Size::Medium) => (20, 8),
-      (Some(_), Size::Small) => (15, 5),
-      _ => (0, 0),
-    };
+    let (icon_width, x_offset) = self.get_icon_size();
 
     let subject_size: ContentSize = match self.subject {
-      Some(s) => {
-        let width = get_text_width(s, font_size);
-        content_size(width, icon_width, padding, height, x_offset)
-      }
+      Some(s) => s.content_size(height, s.get_text_width(font_size), padding, x_offset + icon_width),
       None if self.icon.is_some() => ContentSize {
         rw: icon_width + x_offset * 2,
         x: x_offset,
@@ -231,18 +250,11 @@ impl<'a, T: BadgeType<'a>> Display for Badge<'a, T> {
       _ => ContentSize::default(),
     };
 
-    let content = &self.content.content();
+    let content = self.content.content();
 
     let content_size = match content {
-      BadgeContentTypes::Data(_) => {
-        let width = height * 5;
-        ContentSize {
-          x: (width + padding) / 2,
-          y: height / 2,
-          rw: if self.style == Style::Flat { width } else { width + 5 },
-        }
-      }
-      BadgeContentTypes::Text(c) => content_size(get_text_width(c, font_size), 0, padding, height, 0),
+      BadgeContentTypes::Data(d) => d.content_size(height, height * 5, padding, 0),
+      BadgeContentTypes::Text(c) => c.content_size(height, c.get_text_width(font_size), padding, 0),
       _ => ContentSize::default(),
     };
 
@@ -275,13 +287,8 @@ impl<'a, T: BadgeType<'a>> Display for Badge<'a, T> {
         height=(height)
         width=(width) {
           defs {
-            @if let Some(icon) = &self.icon { (icon) }
-            @if &self.style == &Style::Classic {
-              linearGradient id="a" x2="0" y2="75%" {
-                stop offset="0" stop-color="#eee" stop-opacity="0.1" {}
-                stop offset="1" stop-opacity="0.3" {}
-              }
-            }
+            @if let Some(icon) = &self.icon { (PreEscaped(icon.symbol)) }
+            (self.style)
             mask id="bg-mask" {
               rect fill=(DEFAULT_WHITE) height=(height) rx=(rx) width=(width) {}
             }
@@ -452,6 +459,22 @@ mod tests {
     let icon_symbol = doc.select(&icon_sel).next().unwrap();
     assert_eq!(icon_symbol.value().attr("id"), Some("git"));
   }
+
+  #[test]
+  fn badge_with_icon_only() {
+    let icon = Icon::try_from("git").unwrap();
+    let mut badge = Badge::new();
+    &badge.icon(icon);
+
+    let icon = &badge.icon;
+    assert!(icon.is_some());
+
+    let doc = Html::parse_fragment(&badge.to_string());
+    let icon_sel = Selector::parse("symbol").unwrap();
+    let icon_symbol = doc.select(&icon_sel).next().unwrap();
+    assert_eq!(icon_symbol.value().attr("id"), Some("git"));
+  }
+
   #[test]
   fn badge_has_medium_icon() {
     let mut badge = Badge::new();
