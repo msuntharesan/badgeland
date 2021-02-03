@@ -47,4 +47,4 @@ USER merit
 
 EXPOSE ${PORT}
 
-CMD ["./merit-api"]
+CMD ["./merit-web"]

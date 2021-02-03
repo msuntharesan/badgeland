@@ -40,7 +40,6 @@ async fn url_badge_handler(req: HttpRequest, query: web::Query<QueryInfo>) -> Re
     .await
     .map_err(BadgeError::from)?;
 
-  dbg!(&resp);
   let data: BadgeOptions = resp.json().await?;
 
   let mut badge = Badge::new();
