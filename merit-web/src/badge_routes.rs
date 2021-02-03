@@ -11,11 +11,11 @@ use std::convert::TryFrom;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
   cfg
-    .service(web::resource("/url").route(web::get().to(url_badge_handler)))
+    .service(web::resource("/url/").route(web::get().to(url_badge_handler)))
     .service(
-      web::scope("/b")
-        .route("/{text}", web::get().to(badge_handler))
-        .route("/{subject}/{text}", web::get().to(badge_handler)),
+      web::scope("/b/")
+        .route("/{text}/", web::get().to(badge_handler))
+        .route("/{subject}/{text}/", web::get().to(badge_handler)),
     );
 }
 

@@ -1,4 +1,4 @@
-#![feature(rustc_private)]
+// #![feature(rustc_private)]
 
 #[macro_use]
 extern crate actix_web;
@@ -23,7 +23,7 @@ async fn index() -> impl Responder {
     .finish()
 }
 
-#[get("/favicon.ico")]
+#[get("/favicon.ico/")]
 async fn favicon() -> impl Responder {
   let icon: &'static [u8] = include_bytes!("../static/favicon.ico");
   HttpResponse::Ok().content_type("image/x-icon").body(icon)
@@ -46,7 +46,7 @@ async fn main() -> io::Result<()> {
 
   let mut server = HttpServer::new(move || {
     App::new()
-      .wrap(middleware::Logger::new("%a %r %s %b %{Referer}i %{User-Agent}i %D"))
+      .wrap(middleware::Logger::new("%a %r %s %Dms %b %{Referer}i %{User-Agent}i"))
       .wrap(middleware::NormalizePath::default())
       .wrap(middleware::DefaultHeaders::new().header("Cache-Control", format!("public, max-age={}", 60 * 24)))
       .default_service(web::route().to(default_404))

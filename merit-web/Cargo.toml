@@ -6,16 +6,16 @@ edition = "2018"
 publish = false
 
 [dependencies]
-actix-files = "0.6.0-beta.1"
-actix-web = { version = "4.0.0-beta.1", features = ["rustls"] }
-awc = { version = "3.0.0-beta.1", features = ["rustls", "compress"] }
+actix-files = "0.5"
+actix-web = { version = "3.3", features = ["rustls"] }
+awc = { version = "2.0", features = ["rustls", "compress"] }
 merit = { version = "0", path = "../merit", features = ["serde_de"] }
 dotenv = "0.15"
 env_logger = "0.8"
 futures = { version = "=0.3", features = ["compat"] }
 humanize = { version = "0", path = "../humanize" }
 listenfd = "0.3"
-log = "0.4.13"
+log = "0.4"
 markup = "0.11"
 openssl = { version = "0.10", features = ["v110"] }
 serde = { version = "1.0", features = ["derive"] }
