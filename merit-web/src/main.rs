@@ -1,4 +1,4 @@
-#![feature(rustc_private)]
+// #![feature(rustc_private)]
 
 #[macro_use]
 extern crate actix_web;
@@ -13,7 +13,7 @@ use actix_web::{
 use dotenv::dotenv;
 use env_logger::Env;
 use listenfd::ListenFd;
-use merit::{Badge, DEFAULT_GRAY};
+use merit::Badge;
 use std::{env, io};
 
 #[get("/")]
@@ -23,7 +23,7 @@ async fn index() -> impl Responder {
     .finish()
 }
 
-#[get("/favicon.ico")]
+#[get("/favicon.ico/")]
 async fn favicon() -> impl Responder {
   let icon: &'static [u8] = include_bytes!("../static/favicon.ico");
   HttpResponse::Ok().content_type("image/x-icon").body(icon)
@@ -31,25 +31,23 @@ async fn favicon() -> impl Responder {
 
 async fn default_404() -> impl Responder {
   let mut badge = Badge::new();
-  badge.subject("Error").color(DEFAULT_GRAY.parse().unwrap());
+  badge.subject("Error").color("red".parse().unwrap());
 
   HttpResponse::NotFound()
     .content_type("image/svg+xml")
     .body(badge.text("404").to_string())
 }
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> io::Result<()> {
   dotenv().ok();
-  let env = Env::new().filter("LOG_LEVEL");
+  let env = Env::new().filter("RUST_LOG");
   env_logger::init_from_env(env);
-
-  let mut listenfd = ListenFd::from_env();
 
   let mut server = HttpServer::new(move || {
     App::new()
-      .wrap(middleware::Logger::new("%a %r %s %b %{Referer}i %{User-Agent}i %D"))
-      .wrap(middleware::NormalizePath)
+      .wrap(middleware::Logger::new("%a %r %s %Dms %b %{Referer}i %{User-Agent}i"))
+      .wrap(middleware::NormalizePath::default())
       .wrap(middleware::DefaultHeaders::new().header("Cache-Control", format!("public, max-age={}", 60 * 24)))
       .default_service(web::route().to(default_404))
       .service(index)
@@ -57,12 +55,11 @@ async fn main() -> io::Result<()> {
       .configure(badge_routes::config)
   });
 
-  server = if let Some(l) = listenfd.take_tcp_listener(0)? {
-    server.listen(l).unwrap()
+  server = if let Some(l) = ListenFd::from_env().take_tcp_listener(0)? {
+    server.listen(l)?
   } else {
     let port = env::var("PORT").unwrap_or("3000".into());
     let addr = format!("0.0.0.0:{}", port);
-    println!("Listening on {}", addr);
     server.bind(addr)?
   };
   server.run().await

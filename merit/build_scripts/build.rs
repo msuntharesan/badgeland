@@ -17,6 +17,7 @@ fn generate_icon_map() {
   let mut map = Map::<&'static str>::new();
 
   let doc = Html::parse_fragment(include_str!("./icons/brands.svg"));
+
   for el in doc.select(&selector) {
     let id = el.value().attr("id").unwrap();
     let sym = el.html();
@@ -38,7 +39,7 @@ fn generate_icon_map() {
 
   writeln!(
     &mut file,
-    "const SYMBOLS: phf::Map<&'static str, &'static str> = \n{};\n",
+    "const SYMBOLS: phf::Map<&'static str, &'static str> = {};",
     map.build()
   )
   .expect("Failed to build icon map");

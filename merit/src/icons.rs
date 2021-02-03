@@ -1,4 +1,3 @@
-use maud::{html, PreEscaped, Render};
 use std::convert::TryFrom;
 
 include!(concat!(env!("OUT_DIR"), "/icons_map.rs"));
@@ -7,8 +6,8 @@ pub fn icon_exists(icon_name: &str) -> bool {
   SYMBOLS.get(icon_name).is_some()
 }
 
-pub fn icon_keys() -> Vec<String> {
-  SYMBOLS.keys().map(|k| String::from(*k)).collect::<Vec<_>>()
+pub fn icon_keys() -> Vec<&'static str> {
+  SYMBOLS.keys().map(|k| *k).collect()
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -21,26 +20,16 @@ impl<'a> TryFrom<&'a str> for Icon<'a> {
   type Error = Box<dyn std::error::Error>;
 
   fn try_from(name: &'a str) -> Result<Self, Self::Error> {
-    match SYMBOLS.get(name) {
-      Some(symbol) => Ok(Icon { name, symbol }),
-      _ => Err("Icon does not exists".into()),
-    }
-  }
-}
-
-impl<'a> Render for Icon<'a> {
-  fn render(&self) -> maud::Markup {
-    html! {
-      defs {
-        (PreEscaped(self.symbol.to_string()))
-      }
-    }
+    SYMBOLS
+      .get(name)
+      .map(|symbol| Icon { name, symbol })
+      .ok_or("Icon does not exists".into())
   }
 }
 
 #[cfg(test)]
 mod tests {
-  use super::{icon_keys, Icon};
+  use super::{icon_keys, Icon, SYMBOLS};
   use std::convert::TryFrom;
 
   #[test]
@@ -53,5 +42,6 @@ mod tests {
   #[test]
   fn get_icon_keys() {
     assert!(icon_keys().len() > 0);
+    assert!(SYMBOLS.contains_key(icon_keys()[0]))
   }
 }

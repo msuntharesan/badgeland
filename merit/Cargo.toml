@@ -1,0 +1,53 @@
+[package]
+name = "merit"
+version = "0.6.0"
+description = "Fast badge generator for any purpose"
+license = "MIT"
+authors = ["Suntharesan Mohan <suntharesan.mohan@gmail.com>"]
+edition = "2018"
+readme = "Readme.md"
+repository = "https://github.com/msuntharesan/merit"
+publish = true
+
+build = "./build_scripts/build.rs"
+
+
+[dependencies]
+ab_glyph = "0.2"
+clap = { version = "3.0.0-beta.2", features = ["derive", "suggestions", "color"], optional = true }
+cssparser = "0.28"
+maud = "0.22"
+phf = "0.8"
+serde = { version = "1.0", features = ["derive"], optional = true }
+unicode-normalization = "0.1"
+
+[dev-dependencies]
+criterion = "0.3"
+scraper = "0.12"
+
+[build-dependencies]
+phf_codegen = "0.8"
+scraper = "0.12"
+
+[features]
+serde_de = ["serde"]
+cli = ["clap"]
+
+[[bin]]
+name = "cargo-badge"
+required-features = ["cli"]
+
+[[bench]]
+name = "badge_benchmark"
+harness = false
+
+[profile.release]
+opt-level = 3  # Optimize for speed.
+lto = true  # LTO instructs the linker to optimize at the link stage.
+codegen-units = 1
+Incremental = true
+
+[profile.bench]
+opt-level = 3  # Optimize for speed.
+lto = true  # LTO instructs the linker to optimize at the link stage.
+codegen-units = 1
