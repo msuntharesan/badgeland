@@ -19,7 +19,7 @@ Query Params:
 
 |                                |                                                     |                |
 | ------------------------------ | --------------------------------------------------- | :------------- |
-| **Badge with only subject**    | `https://merit-badge.dev/b/subject`                 | ![badge_sub]   |
+| **Badge with only subject**    | `https://merit-badge.dev/b/text`                    | ![badge_sub]   |
 | **Default badge**              | `https://merit-badge.dev/b/subject/text`            | ![badge_def]   |
 | **Badge with medium size**     | `https://merit-badge.dev/b/size/medium?size=medium` | ![badge_md]    |
 | **Badge with large size**      | `https://merit-badge.dev/b/size/large?size=large`   | ![badge_lg]    |
@@ -94,7 +94,7 @@ Runkit example
 | Chart badge             | `https://merit-badge.dev/url?source=https://b5vhr8tsmbj6.runkit.sh/data`       | ![runkit_data]       |
 | Flat badge              | `https://merit-badge.dev/url?source=https://b5vhr8tsmbj6.runkit.sh/flat`       | ![runkit_flat]       |
 
-[badge_sub]: https://merit-badge.dev/b/subject "badge with only subject"
+[badge_sub]: https://merit-badge.dev/b/text "badge with only text"
 [badge_def]: https://merit-badge.dev/b/subject/text "default badge"
 [badge_md]: https://merit-badge.dev/b/subject/text?size=medium "badge with medium size"
 [badge_lg]: https://merit-badge.dev/b/subject/text?size=large "badge with large size"
