@@ -40,14 +40,3 @@ required-features = ["cli"]
 [[bench]]
 name = "badge_benchmark"
 harness = false
-
-[profile.release]
-opt-level = 3  # Optimize for speed.
-lto = true  # LTO instructs the linker to optimize at the link stage.
-codegen-units = 1
-Incremental = true
-
-[profile.bench]
-opt-level = 3  # Optimize for speed.
-lto = true  # LTO instructs the linker to optimize at the link stage.
-codegen-units = 1
