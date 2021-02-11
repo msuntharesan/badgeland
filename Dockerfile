@@ -48,8 +48,9 @@ ENV PORT=8080 \
 
 WORKDIR /home/merit/bin/
 
-COPY --from=toolchain /merit/target/release/merit-web .
 COPY --from=toolchain /etc/passwd /etc/passwd
+COPY --from=toolchain /merit/target/release/merit-web .
+COPY --from=toolchain /merit/merit-web/static/ .
 
 EXPOSE ${PORT}
 
