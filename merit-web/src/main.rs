@@ -6,6 +6,7 @@ extern crate actix_web;
 mod badge_routes;
 mod utils;
 
+use actix_files::Files;
 use actix_web::{
   http::{header, StatusCode},
   middleware, web, App, HttpResponse, HttpServer, Responder,
@@ -21,12 +22,6 @@ async fn index() -> impl Responder {
   HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
     .header(header::LOCATION, "https://github.com/msuntharesan/merit")
     .finish()
-}
-
-#[get("/favicon.ico/")]
-async fn favicon() -> impl Responder {
-  let icon: &'static [u8] = include_bytes!("../static/favicon.ico");
-  HttpResponse::Ok().content_type("image/x-icon").body(icon)
 }
 
 async fn default_404() -> impl Responder {
@@ -51,8 +46,8 @@ async fn main() -> io::Result<()> {
       .wrap(middleware::DefaultHeaders::new().header("Cache-Control", format!("public, max-age={}", 60 * 24)))
       .default_service(web::route().to(default_404))
       .service(index)
-      .service(favicon)
       .configure(badge_routes::config)
+      .service(Files::new("/", format!("{}/static/", env!("CARGO_MANIFEST_DIR"))).prefer_utf8(true))
   });
 
   server = if let Some(l) = ListenFd::from_env().take_tcp_listener(0)? {
