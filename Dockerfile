@@ -6,7 +6,7 @@ FROM rust:1.49-alpine3.12 as toolchain
 
 RUN adduser -D -h /merit -g "" merit
 
-RUN apk add make zlib-dev openssl-dev musl-dev
+RUN apk add make musl-dev
 
 USER merit
 
@@ -34,25 +34,22 @@ RUN cargo vendor > .cargo/config
 
 COPY . .
 
-RUN OPENSSL_STATIC=true \
-    cargo build --release --target=x86_64-unknown-linux-musl -p merit-web
+RUN cargo build --release -p merit-web
 
 # ------------------------------------------------------------------------------
 # Final Stage
 # ------------------------------------------------------------------------------
 
-FROM alpine:3.12
+# FROM alpine:3.12
+FROM scratch
 
 ENV PORT=8080 \
     RUST_LOG="actix_web=info"
 
 WORKDIR /home/merit/bin/
 
-COPY --from=toolchain /merit/target/x86_64-unknown-linux-musl/release/merit-web .
-
-RUN adduser -D -H -g "" merit
-
-USER merit
+COPY --from=toolchain /merit/target/release/merit-web .
+COPY --from=toolchain /etc/passwd /etc/passwd
 
 EXPOSE ${PORT}
 
