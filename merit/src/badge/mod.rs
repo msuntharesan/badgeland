@@ -3,7 +3,7 @@ mod content;
 use super::{icons::Icon, Color, DEFAULT_BLACK, DEFAULT_BLUE, DEFAULT_GRAY, DEFAULT_GRAY_DARK, DEFAULT_WHITE};
 use content::{BadgeContentSize, ContentSize, Path, TextWidth};
 use core::f32;
-use maud::{PreEscaped, html};
+use maud::{html, PreEscaped};
 use std::{fmt, str::FromStr};
 
 #[cfg(feature = "serde_de")]
@@ -16,17 +16,9 @@ pub enum Style {
   Flat,
 }
 
-impl fmt::Display for Style {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match self {
-      Style::Flat => write!(f, ""),
-      Style::Classic => write!(
-        f,
-        r##"<linearGradient id="a" x2="0" y2="75%"><stop offset="0" stop-color="#eee" stop-opacity="0.1"></stop><stop offset="1" stop-opacity="0.3"></stop></linearGradient>"##
-      ),
-    }
-  }
-}
+const CLASSIC_STYLE_GRADIENT: PreEscaped<&'static str> = PreEscaped(
+  r##"<linearGradient id="a" x2="0" y2="75%"><stop offset="0" stop-color="#eee" stop-opacity="0.1"></stop><stop offset="1" stop-opacity="0.3"></stop></linearGradient>"##,
+);
 
 impl Default for Style {
   fn default() -> Self {
@@ -108,24 +100,28 @@ pub enum BadgeContentTypes<'a> {
 }
 
 impl BadgeContentTypes<'_> {
+  #[inline]
   fn is_some(&self) -> bool {
     !matches!(self, BadgeContentTypes::None)
   }
 }
 
 impl BadgeType<'_> for BadgeTypeInit {
+  #[inline]
   fn content(&self) -> BadgeContentTypes {
     BadgeContentTypes::None
   }
 }
 
 impl<'a> BadgeType<'a> for BadgeTypeData<'a> {
+  #[inline]
   fn content(&self) -> BadgeContentTypes {
     BadgeContentTypes::Data(self.0)
   }
 }
 
 impl<'a> BadgeType<'a> for BadgeTypeText<'a> {
+  #[inline]
   fn content(&self) -> BadgeContentTypes {
     BadgeContentTypes::Text(self.0)
   }
@@ -169,14 +165,17 @@ impl<'a> Badge<'a, BadgeTypeInit> {
     self.icon = Some(icon);
     self
   }
+
   pub fn size(&mut self, size: Size) -> &mut Self {
     self.size = size;
     self
   }
+
   pub fn style(&mut self, style: Style) -> &mut Self {
     self.style = style;
     self
   }
+
   pub fn icon_color(&mut self, c: Color) -> &mut Self {
     if let Some(_) = &self.icon {
       self.icon_color = c;
@@ -210,6 +209,7 @@ impl<'a> Badge<'a, BadgeTypeInit> {
 }
 
 impl<'a, T: BadgeType<'a>> Badge<'a, T> {
+  #[inline]
   fn get_height(&self) -> usize {
     match self.size {
       Size::Small => 20,
@@ -218,6 +218,7 @@ impl<'a, T: BadgeType<'a>> Badge<'a, T> {
     }
   }
 
+  #[inline]
   fn get_icon_size(&self) -> (usize, usize) {
     match (&self.icon, self.size) {
       (Some(_), Size::Large) => (30, 10),
@@ -288,7 +289,9 @@ impl<'a, T: BadgeType<'a>> fmt::Display for Badge<'a, T> {
         width=(width) {
           defs {
             @if let Some(icon) = &self.icon { (PreEscaped(icon.symbol)) }
-            (self.style)
+            @if matches!(self.style, Style::Classic) {
+              (CLASSIC_STYLE_GRADIENT)
+            }
             mask id="bg-mask" {
               rect fill=(DEFAULT_WHITE) height=(height) rx=(rx) width=(width) {}
             }

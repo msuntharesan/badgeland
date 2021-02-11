@@ -11,6 +11,7 @@ pub(crate) trait TextWidth {
 }
 
 impl<'a> TextWidth for &'a str {
+  #[inline]
   fn get_text_width(&self, height: f32) -> usize {
     let font = get_font();
 
@@ -25,7 +26,8 @@ impl<'a> TextWidth for &'a str {
         let gb = scaled_font.glyph_bounds(&glyph);
         gb.width() * 1.12
       })
-      .fold(0.0, |acc, w| acc + w).ceil() as usize
+      .fold(0.0, |acc, w| acc + w)
+      .ceil() as usize
   }
 }
 
@@ -64,7 +66,7 @@ impl<'a> Iterator for Path<'a> {
       return None;
     }
     let x = index as f32 * self.x_offset;
-    let y = self.chart_height - self.y_offset * self.values[index] as f32;
+    let y = self.chart_height - self.y_offset * self.values[index];
     self.index += 1;
     Some((x, y))
   }
@@ -82,6 +84,7 @@ pub(super) trait BadgeContentSize {
 }
 
 impl<'a> BadgeContentSize for &'a [f32] {
+  #[inline]
   fn content_size(&self, height: usize, width: usize, padding: usize, _: usize) -> ContentSize {
     ContentSize {
       x: (width + padding) / 2,
@@ -92,6 +95,7 @@ impl<'a> BadgeContentSize for &'a [f32] {
 }
 
 impl<'a> BadgeContentSize for &'a str {
+  #[inline]
   fn content_size(&self, height: usize, width: usize, padding: usize, x_offset: usize) -> ContentSize {
     let w = width + x_offset;
     let x = (width + padding) / 2 + x_offset;
