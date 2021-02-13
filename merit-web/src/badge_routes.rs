@@ -1,17 +1,21 @@
-use super::utils::error::BadgeError;
-use super::utils::{BadgeOptions, QueryInfo};
-use actix_web::{
-  http::{StatusCode, Uri},
-  web, HttpRequest, HttpResponse,
-};
+use super::utils::{error::BadgeError, BadgeOptions, QueryInfo};
+use actix_web::{http, middleware, web, HttpRequest, HttpResponse};
 use awc::Client;
 use merit::{Badge, BadgeData, Icon, Size, Style};
 use serde::Deserialize;
-use std::convert::TryFrom;
+use std::{
+  collections::hash_map::DefaultHasher,
+  convert::TryFrom,
+  hash::{Hash, Hasher},
+  str::from_utf8,
+};
+
+const MAX_AGE: u16 = 60 * 24;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
   cfg.service(url_badge_handler).service(
     web::scope("/b/")
+      .wrap(middleware::DefaultHeaders::new().header("Cache-Control", format!("public, max-age={}", MAX_AGE)))
       .route("/{text}/", web::get().to(badge_handler))
       .route("/{subject}/{text}/", web::get().to(badge_handler)),
   );
@@ -24,9 +28,9 @@ async fn url_badge_handler(req: HttpRequest, query: web::Query<QueryInfo>) -> Re
 
   let url = url
     .ok_or("source query param missing".to_string())
-    .and_then(|u| u.parse::<Uri>().map_err(|e| e.to_string()))
+    .and_then(|u| u.parse::<http::Uri>().map_err(|e| e.to_string()))
     .map_err(|e| BadgeError::Http {
-      status: StatusCode::BAD_REQUEST,
+      status: http::StatusCode::BAD_REQUEST,
       description: e,
       url: Some(req.uri().to_string()),
     })?;
@@ -38,6 +42,15 @@ async fn url_badge_handler(req: HttpRequest, query: web::Query<QueryInfo>) -> Re
     .send()
     .await
     .map_err(BadgeError::from)?;
+
+  let cache_headers = resp
+    .headers()
+    .iter()
+    .filter_map(|(h, v)| match *h {
+      http::header::ETAG | http::header::CACHE_CONTROL => Some((h.to_owned(), v.to_owned())),
+      _ => None,
+    })
+    .collect::<Vec<_>>();
 
   let data: BadgeOptions = resp.json().await?;
 
@@ -78,7 +91,26 @@ async fn url_badge_handler(req: HttpRequest, query: web::Query<QueryInfo>) -> Re
     _ => badge.to_string(),
   };
 
-  Ok(HttpResponse::Ok().content_type("image/svg+xml").body(badge_svg))
+  let mut resp = HttpResponse::Ok();
+
+  if cache_headers.iter().any(|(h, _)| h != http::header::ETAG) {
+    let mut hasher = DefaultHasher::new();
+    badge_svg.hash(&mut hasher);
+    let hash = hasher.finish();
+    resp.header(http::header::ETAG, format!("u:{:x}", hash));
+  }
+
+  if cache_headers.iter().any(|(h, _)| h != http::header::CACHE_CONTROL) {
+    resp.header(http::header::CACHE_CONTROL, format!("public, max-age={}", MAX_AGE));
+  }
+
+  resp.content_type("image/svg+xml");
+
+  for (h, v) in cache_headers.iter() {
+    resp.set_header(h, from_utf8(v.as_bytes()).expect("Failed to read value"));
+  }
+
+  Ok(resp.body(badge_svg))
 }
 
 #[derive(Deserialize)]
@@ -121,5 +153,12 @@ fn badge_handler((params, query): (web::Path<BadgeInfo>, web::Query<QueryInfo>))
     _ => req_badge.text(&params.text).to_string(),
   };
 
-  HttpResponse::Ok().content_type("image/svg+xml").body(badge_svg)
+  let mut hasher = DefaultHasher::new();
+  badge_svg.hash(&mut hasher);
+  let hash = hasher.finish();
+
+  HttpResponse::Ok()
+    .set_header(http::header::ETAG, format!("b:{:x}", hash))
+    .content_type("image/svg+xml")
+    .body(badge_svg)
 }

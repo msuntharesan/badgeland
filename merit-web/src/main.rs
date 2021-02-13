@@ -43,11 +43,14 @@ async fn main() -> io::Result<()> {
     App::new()
       .wrap(middleware::Logger::new("%a %r %s %Dms %b %{Referer}i %{User-Agent}i"))
       .wrap(middleware::NormalizePath::default())
-      .wrap(middleware::DefaultHeaders::new().header("Cache-Control", format!("public, max-age={}", 60 * 24)))
       .default_service(web::route().to(default_404))
       .service(index)
       .configure(badge_routes::config)
-      .service(Files::new("/", format!("{}/static/", env!("CARGO_MANIFEST_DIR"))).prefer_utf8(true))
+      .service(
+        web::scope("/")
+          .wrap(middleware::DefaultHeaders::new().header("Cache-Control", format!("public, max-age={}", 60 * 24 * 100)))
+          .service(Files::new("/", format!("{}/static/", env!("CARGO_MANIFEST_DIR"))).prefer_utf8(true)),
+      )
   });
 
   server = if let Some(l) = ListenFd::from_env().take_tcp_listener(0)? {
