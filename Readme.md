@@ -1,4 +1,4 @@
-# Merit
+# Badgeland
 
 Fast badge generator for any purpose.
 

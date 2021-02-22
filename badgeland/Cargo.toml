@@ -1,5 +1,5 @@
 [package]
-name = "merit"
+name = "badgeland"
 version = "0.7.1"
 description = "Fast badge generator for any purpose"
 license = "MIT"

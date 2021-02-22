@@ -1,4 +1,4 @@
-# Merit
+# Badgeland
 
 ## CLI
 
@@ -6,7 +6,7 @@
 ❯ badge --help
 Usage: badge -s <subject> [--style <style>] [--size <size>] [--color <color>] [--icon <icon>] [--icon-color <icon-color>] [--out <out>] [-t <text>] [--data <data>]
 
-Fast badge generator for any purpose
+Fast badge generator for any purpose.
 
 Options:
   -s, --subject     badge subject

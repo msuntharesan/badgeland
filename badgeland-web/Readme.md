@@ -1,4 +1,4 @@
-# Merit-web
+# Badgeland-web
 
 ```sh
 Usage:

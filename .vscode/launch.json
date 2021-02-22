@@ -7,11 +7,11 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'merit-api'",
+      "name": "Debug executable 'badgeland-web'",
       "cargo": {
-        "args": ["build", "--package=merit-api"],
+        "args": ["build", "--package=badgeland-web"],
         "filter": {
-          "name": "merit-api",
+          "name": "badgeland-web",
           "kind": "bin"
         }
       },
@@ -24,11 +24,11 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in executable 'merit-api'",
+      "name": "Debug unit tests in executable 'badgeland-web'",
       "cargo": {
-        "args": ["test", "--no-run", "--package=merit-api"],
+        "args": ["test", "--no-run", "--package=badgeland-web"],
         "filter": {
-          "name": "merit-api",
+          "name": "badgeland-web",
           "kind": "bin"
         }
       },
@@ -38,11 +38,11 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'merit'",
+      "name": "Debug executable 'badgeland'",
       "cargo": {
-        "args": ["build", "--bin=merit"],
+        "args": ["build", "--bin=badgeland"],
         "filter": {
-          "name": "merit",
+          "name": "badgeland",
           "kind": "bin"
         }
       },
@@ -52,11 +52,11 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in executable 'merit'",
+      "name": "Debug unit tests in executable 'badgeland'",
       "cargo": {
-        "args": ["test", "--no-run", "--bin=merit", "--package=merit"],
+        "args": ["test", "--no-run", "--bin=badgeland", "--package=badgeland"],
         "filter": {
-          "name": "merit",
+          "name": "badgeland",
           "kind": "bin"
         }
       },
