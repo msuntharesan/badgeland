@@ -1,6 +1,6 @@
 use actix_web::{http::StatusCode, HttpResponse, ResponseError};
 use awc::error::{JsonPayloadError, SendRequestError};
-use merit::{Badge, Icon};
+use badgeland::{Badge, Icon};
 use std::convert::TryFrom;
 use thiserror::Error;
 

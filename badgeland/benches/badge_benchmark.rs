@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Benchmark, Criterion};
-use merit::{Badge, Color, Icon, Size, Style, DEFAULT_BLUE, DEFAULT_WHITE};
+use badgeland::{Badge, Color, Icon, Size, Style, DEFAULT_BLUE, DEFAULT_WHITE};
 use std::convert::TryFrom;
 
 pub fn criterion_benchmark(c: &mut Criterion) {

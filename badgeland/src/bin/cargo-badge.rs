@@ -1,6 +1,6 @@
 //! # Cli
 //!
-//! Install using `cargo install merit`
+//! Install using `cargo install badgeland`
 //!
 //! ```sh
 //! Usage: badge -s <subject> [--style <style>] [--size <size>] [--color <color>] [--icon <icon>] [--icon-color <icon-color>] [--out <out>] [-t <text>] [--data <data>]
@@ -23,7 +23,7 @@
 
 // use argh::FromArgs;
 use clap::Clap;
-use merit::{icon_exists, Badge, BadgeData, Color, Icon, Size, Style};
+use badgeland::{icon_exists, Badge, BadgeData, Color, Icon, Size, Style};
 use std::{convert::TryFrom, error::Error, fs::File, io::prelude::*, path::PathBuf, str::FromStr};
 
 #[derive(Debug, PartialEq)]

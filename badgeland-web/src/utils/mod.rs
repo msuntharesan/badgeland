@@ -1,6 +1,6 @@
 pub mod error;
 
-use merit::{BadgeData, Color, Size, Style};
+use badgeland::{BadgeData, Color, Size, Style};
 use serde::Deserialize;
 use std::str;
 
