@@ -14,13 +14,13 @@ use actix_web::{
 use dotenv::dotenv;
 use env_logger::Env;
 use listenfd::ListenFd;
-use merit::Badge;
+use badgeland::Badge;
 use std::{env, io};
 
 #[get("/")]
 async fn index() -> impl Responder {
   HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
-    .header(header::LOCATION, "https://github.com/msuntharesan/merit")
+    .header(header::LOCATION, "https://github.com/msuntharesan/badgeland")
     .finish()
 }
 

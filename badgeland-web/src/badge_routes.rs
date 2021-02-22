@@ -1,7 +1,7 @@
 use super::utils::{error::BadgeError, BadgeOptions, QueryInfo};
 use actix_web::{http, middleware, web, HttpRequest, HttpResponse};
 use awc::Client;
-use merit::{Badge, BadgeData, Icon, Size, Style};
+use badgeland::{Badge, BadgeData, Icon, Size, Style};
 use serde::Deserialize;
 use std::{
   collections::hash_map::DefaultHasher,

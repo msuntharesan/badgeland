@@ -6,7 +6,7 @@ license = "MIT"
 authors = ["Suntharesan Mohan <suntharesan.mohan@gmail.com>"]
 edition = "2018"
 readme = "Readme.md"
-repository = "https://github.com/msuntharesan/merit"
+repository = "https://github.com/msuntharesan/badgeland"
 publish = true
 
 build = "./build_scripts/build.rs"

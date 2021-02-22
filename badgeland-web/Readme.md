@@ -45,8 +45,8 @@ Query Params:
 - **Query Params**
 
 | param        | type                       | required | Description                                               |
-| ------------ | -------------------------- | -------- | --------------------------------------------------------- |
-| `source`     | `url`                      | ✅       | Source for the badge                                      |
+| ------------ | -------------------------- | :------: | --------------------------------------------------------- |
+| `source`     | `url`                      |    ✅    | Source for the badge                                      |
 | `color`      | `string`                   |          | Any valid css color. Supports Color name, RGB and hex     |
 | `icon`       | `string`                   |          | Icon can be any "Brand" or "Solid" icons from fontawesome |
 | `icon_color` | `string`                   |          | Any valid css color. Supports Color name, RGB and hex     |

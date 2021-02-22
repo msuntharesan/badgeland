@@ -1,5 +1,5 @@
 [package]
-name = "merit-web"
+name = "badgeland-web"
 version = "0.2.1"
 authors = ["Suntharesan Mohan <suntharesan.mohan@gmail.com>"]
 edition = "2018"
@@ -9,7 +9,7 @@ publish = false
 actix-files = "0.5"
 actix-web = { version = "3.3", features = ["rustls"] }
 awc = { version = "2.0", features = ["rustls", "compress"] }
-merit = { version = "0", path = "../merit", features = ["serde_de"] }
+badgeland = { version = "0", path = "../badgeland", features = ["serde_de"] }
 dotenv = "0.15"
 env_logger = "0.8"
 futures = { version = "=0.3", features = ["compat"] }

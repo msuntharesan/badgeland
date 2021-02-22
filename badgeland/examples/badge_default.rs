@@ -1,4 +1,4 @@
-use merit::Badge;
+use badgeland::Badge;
 
 fn main() {
   let badge = Badge::new().text("Badge Maker");
