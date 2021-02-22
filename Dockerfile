@@ -4,37 +4,37 @@
 
 FROM rust:1.49-alpine3.12 as toolchain
 
-RUN adduser -D -h /merit -g "" merit
+RUN adduser -D -h /badgeland -g "" badgeland
 
 RUN apk add make musl-dev
 
-USER merit
+USER badgeland
 
-ENV USER=merit
-ENV PATH=/merit/.cargo/bin:$PATH
+ENV USER=badgeland
+ENV PATH=/badgeland/.cargo/bin:$PATH
 
-WORKDIR /merit
+WORKDIR /badgeland
 
 # Create skeleton dir for vendoring dependencies
-RUN cargo init --lib --vcs none \
-    && cargo new merit --lib --vcs none \
-    && mkdir -p merit/src/bin \
-    && touch merit/src/bin/cargo-badge.rs \
-    && cargo new humanize --lib --vcs none \
-    && cargo new merit-web --lib --vcs none
+RUN cargo init --lib --vcs none && \
+    cargo new badgeland --lib --vcs none && \
+    mkdir -p badgeland/src/bin && \
+    touch badgeland/src/bin/cargo-badge.rs && \
+    cargo new humanize --lib --vcs none && \
+    cargo new badgeland-web --lib --vcs none
 
-COPY Cargo.toml Cargo.lock ./
-COPY merit/Cargo.toml ./merit
-COPY humanize/Cargo.toml ./humanize
-COPY merit-web/Cargo.toml ./merit-web
+COPY Cargo.toml Cargo.lock badgeland/Cargo.toml humanize/Cargo.toml badgeland-web/Cargo.toml .
+# COPY badgeland/Cargo.toml ./badgeland
+# COPY humanize/Cargo.toml ./humanize
+# COPY badgeland-web/Cargo.toml ./badgeland-web
 
 # Vendor dependencies
-RUN mkdir .cargo
-RUN cargo vendor > .cargo/config
+RUN mkdir .cargo && \
+    cargo vendor > .cargo/config
 
 COPY . .
 
-RUN cargo build --release -p merit-web
+RUN cargo build --release -p badgeland-web
 
 # ------------------------------------------------------------------------------
 # Final Stage
@@ -46,12 +46,12 @@ FROM scratch
 ENV PORT=8080 \
     RUST_LOG="actix_web=info"
 
-WORKDIR /home/merit/bin/
+WORKDIR /home/badgeland/bin/
 
 COPY --from=toolchain /etc/passwd /etc/passwd
-COPY --from=toolchain /merit/target/release/merit-web .
-COPY --from=toolchain /merit/merit-web/static/ .
+COPY --from=toolchain /badgeland/target/release/badgeland-web .
+COPY --from=toolchain /badgeland/badgeland-web/static/ .
 
 EXPOSE ${PORT}
 
-CMD ["./merit-web"]
+CMD ["./badgeland-web"]

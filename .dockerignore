@@ -1,11 +1,11 @@
 # Ignore everything
 *
 
-merit/target
+badgeland/target
 
 # But not these files
 !humanize
-!merit
-!merit-web
+!badgeland
+!badgeland-web
 !Cargo.toml
 !Cargo.lock
