@@ -1,6 +1,6 @@
 [package]
 name = "humanize"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["Suntharesan Mohan <suntharesan.mohan@gmail.com>"]
 edition = "2018"
 publish = false
