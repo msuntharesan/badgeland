@@ -21,7 +21,7 @@
 //!   println!("{}", badge.text("Text").to_string());
 //! }
 //! ```
-//! This produce a svg badge: ![](https://merit-badge.dev/b/Subject/Text)
+//! This produce a svg badge: ![](https://badge.land/b/Subject/Text)
 //!```rust
 //! use badgeland::{Badge};
 //!
@@ -31,7 +31,7 @@
 //!   println!("{}", badge.data(&[12., 34., 23., 56., 45.]).to_string());
 //! }
 //! ```
-//! This produce a svg badge: ![](http://merit-badge.dev/b/testing/12,34,23,56,45)
+//! This produce a svg badge: ![](http://badge.land/b/testing/12,34,23,56,45)
 //!
 
 use cssparser::{Color as CssColor, Parser, ParserInput, ToCss};

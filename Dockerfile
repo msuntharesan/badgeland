@@ -16,21 +16,26 @@ ENV PATH=/badgeland/.cargo/bin:$PATH
 WORKDIR /badgeland
 
 # Create skeleton dir for vendoring dependencies
-RUN cargo init --lib --vcs none && \
-    cargo new badgeland --lib --vcs none && \
-    mkdir -p badgeland/src/bin && \
-    touch badgeland/src/bin/cargo-badge.rs && \
-    cargo new humanize --lib --vcs none && \
-    cargo new badgeland-web --lib --vcs none
+RUN cargo init --lib --vcs none \
+    && cargo new badgeland --lib --vcs none \
+    && mkdir -p badgeland/src/bin \
+    && touch badgeland/src/bin/cargo-badge.rs \
+    && cargo new humanize --lib --vcs none \
+    && cargo new badgeland-web --lib --vcs none \
+    && rm -rf src
 
-COPY Cargo.toml Cargo.lock badgeland/Cargo.toml humanize/Cargo.toml badgeland-web/Cargo.toml .
-# COPY badgeland/Cargo.toml ./badgeland
-# COPY humanize/Cargo.toml ./humanize
-# COPY badgeland-web/Cargo.toml ./badgeland-web
+RUN ls -lah
+
+# badgeland/Cargo.toml humanize/Cargo.toml badgeland-web/Cargo.toml ./
+
+COPY Cargo.toml Cargo.lock ./ 
+COPY badgeland/Cargo.toml ./badgeland/
+COPY humanize/Cargo.toml ./humanize/
+COPY badgeland-web/Cargo.toml ./badgeland-web/
 
 # Vendor dependencies
-RUN mkdir .cargo && \
-    cargo vendor > .cargo/config
+RUN mkdir .cargo
+RUN cargo vendor > .cargo/config
 
 COPY . .
 
