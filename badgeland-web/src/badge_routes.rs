@@ -8,6 +8,7 @@ use std::{
   convert::TryFrom,
   hash::{Hash, Hasher},
   str::from_utf8,
+  time::Duration,
 };
 
 const MAX_AGE: u16 = 60 * 24;
@@ -35,7 +36,7 @@ async fn url_badge_handler(req: HttpRequest, query: web::Query<QueryInfo>) -> Re
       url: Some(req.uri().to_string()),
     })?;
 
-  let client = Client::default();
+  let client = Client::builder().timeout(Duration::from_secs(10)).finish();
   let mut resp = client
     .get(url)
     .header("accept", "application/json")

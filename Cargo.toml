@@ -1,8 +1,8 @@
 [workspace]
 members = [
-  "humanize",
   "badgeland",
   "badgeland-web",
+  "humanize",
 ]
 
 [profile.release]
