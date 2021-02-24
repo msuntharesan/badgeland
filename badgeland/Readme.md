@@ -5,7 +5,7 @@
 ### Installation
 
 ```sh
-cargo install badgeland --feature cli
+cargo install badgeland
 ```
 
 ### Usage
