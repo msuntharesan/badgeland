@@ -122,8 +122,17 @@ struct Opt {
   content: Content,
 }
 
+#[derive(Debug, Clap)]
+#[clap(name = "cargo-badge", bin_name = "cargo")]
+enum CargoCmd {
+  #[clap(name = "badge")]
+  Badge(Opt),
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
-  let opt = Opt::parse();
+  let badge_cmd = CargoCmd::parse();
+
+  let CargoCmd::Badge(opt) = badge_cmd;
 
   if matches!(&opt.icon, Some(icon) if !icon_exists(icon)) {
     return Err("Icon does not exists. Try using a fontawesome icon name".into());

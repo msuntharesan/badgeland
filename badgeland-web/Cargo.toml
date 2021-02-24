@@ -9,7 +9,6 @@ publish = false
 actix-files = "0.5"
 actix-web = { version = "3.3", features = ["rustls"] }
 awc = { version = "2.0", features = ["rustls", "compress"] }
-badgeland = { version = "0", path = "../badgeland", features = ["serde_de"] }
 dotenv = "0.15"
 env_logger = "0.8"
 futures = { version = "=0.3", features = ["compat"] }
@@ -20,3 +19,9 @@ markup = "0.11"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "1.0"
+
+[dependencies.badgeland]
+ version = "0"
+ path = "../badgeland"
+ default-features = false
+ features = ["serde_de"]
