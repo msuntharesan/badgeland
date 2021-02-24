@@ -1,11 +1,12 @@
-use criterion::{criterion_group, criterion_main, Benchmark, Criterion};
 use badgeland::{Badge, Color, Icon, Size, Style, DEFAULT_BLUE, DEFAULT_WHITE};
+use criterion::{criterion_group, criterion_main, Criterion, SamplingMode};
 use std::convert::TryFrom;
 
 pub fn criterion_benchmark(c: &mut Criterion) {
-  c.bench(
-    "all_text",
-    Benchmark::new("all_text", |b| {
+  let mut group = c.benchmark_group("badges");
+
+  group
+    .bench_function("all_text", |b| {
       b.iter(|| {
         let mut all_text = Badge::new();
         all_text
@@ -17,11 +18,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
           .size(Size::Large);
         all_text.text("text content").to_string();
       })
-    }),
-  );
-  c.bench(
-    "all_data",
-    Benchmark::new("all_data", |b| {
+    })
+    .bench_function("all_data", |b| {
       b.iter(|| {
         let mut all_data = Badge::new();
         all_data
@@ -33,11 +31,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
           .size(Size::Large);
         all_data.data(&[7., 5., 2., 4., 8., 3., 7.]).to_string();
       })
-    }),
-  );
-  c.bench(
-    "just_text",
-    Benchmark::new("just_text", |b| {
+    })
+    .bench_function("just_text", |b| {
       b.iter(|| {
         let mut just_text = Badge::new();
         just_text
@@ -46,11 +41,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
           .icon_color(DEFAULT_WHITE.parse().unwrap());
         just_text.text("Hello").to_string();
       })
-    }),
-  );
-  c.bench(
-    "with_text",
-    Benchmark::new("with_text", |b| {
+    })
+    .bench_function("with_text", |b| {
       b.iter(|| {
         let mut with_text = Badge::new();
         with_text
@@ -60,11 +52,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
           .icon_color(DEFAULT_WHITE.parse().unwrap());
         with_text.text("text content").to_string();
       })
-    }),
-  );
-  c.bench(
-    "medium_size",
-    Benchmark::new("medium_size", |b| {
+    })
+    .bench_function("medium_size", |b| {
       b.iter(|| {
         let mut medium_size = Badge::new();
         medium_size
@@ -75,11 +64,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
           .size(Size::Medium);
         medium_size.text("text content").to_string();
       })
-    }),
-  );
-  c.bench(
-    "large_size",
-    Benchmark::new("large_size", |b| {
+    })
+    .bench_function("large_size", |b| {
       b.iter(|| {
         let mut large_size = Badge::new();
         large_size
@@ -90,11 +76,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
           .size(Size::Large);
         large_size.text("text content").to_string();
       })
-    }),
-  );
-  c.bench(
-    "red",
-    Benchmark::new("red", |b| {
+    })
+    .bench_function("red", |b| {
       b.iter(|| {
         let mut red = Badge::new();
         red
@@ -104,11 +87,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
           .icon_color(DEFAULT_WHITE.parse().unwrap());
         red.text("red").to_string();
       })
-    }),
-  );
-  c.bench(
-    "icon_brand",
-    Benchmark::new("icon_brand", |b| {
+    })
+    .bench_function("icon_brand", |b| {
       b.iter(|| {
         let mut icon_brand = Badge::new();
         icon_brand
@@ -119,11 +99,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
           .icon_color(DEFAULT_WHITE.parse().unwrap());
         icon_brand.text("brand").to_string();
       })
-    }),
-  );
-  c.bench(
-    "icon_solid",
-    Benchmark::new("icon_solid", |b| {
+    })
+    .bench_function("icon_solid", |b| {
       b.iter(|| {
         let mut icon_solid = Badge::new();
         icon_solid
@@ -134,11 +111,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
           .icon_color(DEFAULT_WHITE.parse().unwrap());
         icon_solid.text("solid").to_string();
       })
-    }),
-  );
-  c.bench(
-    "data",
-    Benchmark::new("data", |b| {
+    })
+    .bench_function("data", |b| {
       b.iter(|| {
         let mut data = Badge::new();
         data
@@ -148,11 +122,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
           .icon_color(DEFAULT_WHITE.parse().unwrap());
         data.data(&[1., 5., 2., 4., 8., 3., 7.]).to_string();
       })
-    }),
-  );
-  c.bench(
-    "flat",
-    Benchmark::new("flat", |b| {
+    })
+    .bench_function("flat", |b| {
       b.iter(|| {
         let mut flat = Badge::new();
         flat
@@ -162,8 +133,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
           .icon_color(DEFAULT_WHITE.parse().unwrap());
         flat.text("flat").to_string();
       })
-    }),
-  );
+    });
 }
 
 criterion_group!(benches, criterion_benchmark);

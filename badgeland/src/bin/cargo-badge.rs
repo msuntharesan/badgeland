@@ -1,6 +1,6 @@
 //! # Cli
 //!
-//! Install using `cargo install badgeland`
+//! Install using `cargo install badgeland --features cli`
 //!
 //! ```sh
 //! Usage: badge -s <subject> [--style <style>] [--size <size>] [--color <color>] [--icon <icon>] [--icon-color <icon-color>] [--out <out>] [-t <text>] [--data <data>]
@@ -22,8 +22,8 @@
 //!
 
 // use argh::FromArgs;
-use clap::Clap;
 use badgeland::{icon_exists, Badge, BadgeData, Color, Icon, Size, Style};
+use clap::{ArgGroup, Clap};
 use std::{convert::TryFrom, error::Error, fs::File, io::prelude::*, path::PathBuf, str::FromStr};
 
 #[derive(Debug, PartialEq)]
@@ -35,43 +35,89 @@ enum Content {
 impl FromStr for Content {
   type Err = String;
   fn from_str(s: &str) -> Result<Self, Self::Err> {
-    Ok(BadgeData::from_str(s).map_or(Content::Text(s.to_string()), |d| Content::Data(d)))
+    BadgeData::from_str(s)
+      .map(|d| Content::Data(d))
+      .or(Ok(Content::Text(s.to_string())))
+  }
+}
+
+#[derive(Clap, Debug)]
+#[clap(group = ArgGroup::new("style").required(false))]
+struct StyleArg {
+  /// Flat badge style
+  #[clap(short, long, group = "style")]
+  flat: bool,
+
+  /// Classic badge style (Default)
+  #[clap(short, long, group = "style")]
+  classic: bool,
+}
+
+impl From<StyleArg> for Style {
+  fn from(s: StyleArg) -> Self {
+    match (s.flat, s.classic) {
+      (true, _) => Self::Flat,
+      _ => Self::Classic,
+    }
+  }
+}
+
+#[derive(Clap, Debug)]
+#[clap(group = ArgGroup::new("size").required(false))]
+struct SizeArg {
+  /// Small badge size (Default)
+  #[clap(short = 'x', long, group = "size")]
+  small: bool,
+
+  /// Medium badge size
+  #[clap(short, long, group = "size")]
+  medium: bool,
+
+  /// Large badge size
+  #[clap(short, long, group = "size")]
+  large: bool,
+}
+
+impl From<SizeArg> for Size {
+  fn from(s: SizeArg) -> Self {
+    match (s.large, s.medium, s.small) {
+      (true, _, _) => Self::Large,
+      (_, true, _) => Self::Medium,
+      _ => Self::Small,
+    }
   }
 }
 
 /// Fast badge generator for any purpose
 #[derive(Debug, Clap)]
-#[clap(version)]
 struct Opt {
-  /// badge subject
+  /// Badge subject
   #[clap(short, long)]
   subject: Option<String>,
 
-  /// badge style. [possible values: flat | f, classic | c]
-  #[clap(long)]
-  style: Option<Style>,
+  #[clap(flatten)]
+  style: StyleArg,
 
-  /// badge size. [possible values: large | l, medium | m, small | s]
-  #[clap(long)]
-  size: Option<Size>,
+  #[clap(flatten)]
+  size: SizeArg,
 
-  /// badge color. Must be a valid css color
+  /// Badge color. Must be a valid css color
   #[clap(long)]
   color: Option<Color>,
 
-  /// badge icon. icon can be any Brand or Solid icons from fontawesome
+  /// Badge icon. icon can be any `Brand` or `Solid` icons from fontawesome
   #[clap(long)]
   icon: Option<String>,
 
-  /// icon color. Must be a valid css color
+  /// Icon color. Must be a valid css color
   #[clap(long)]
   icon_color: Option<Color>,
 
-  /// output svg to file
+  /// Output svg to file
   #[clap(short, long)]
   out: Option<PathBuf>,
 
-  /// badge content
+  /// Badge content
   #[clap()]
   content: Content,
 }
@@ -92,12 +138,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     badge.color(col);
   }
 
-  if let Some(s) = opt.style {
-    badge.style(s);
-  }
-  if let Some(s) = opt.size {
-    badge.size(s);
-  }
+  badge.style(opt.style.into());
+
+  badge.size(opt.size.into());
+
   if let Some(icon) = &opt.icon {
     let icon = Icon::try_from(icon.as_str());
     if let Ok(i) = icon {
