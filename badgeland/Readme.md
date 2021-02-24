@@ -12,11 +12,11 @@ cargo install badgeland
 
 ```sh
 ❯ cargo badge --help
-badgeland
+cargo-badge
 Fast badge generator for any purpose
 
 USAGE:
-    cargo-badge [FLAGS] [OPTIONS] <content>
+    cargo badge [FLAGS] [OPTIONS] <content>
 
 ARGS:
     <content>    Badge content

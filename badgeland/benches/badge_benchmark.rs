@@ -1,5 +1,5 @@
 use badgeland::{Badge, Color, Icon, Size, Style, DEFAULT_BLUE, DEFAULT_WHITE};
-use criterion::{criterion_group, criterion_main, Criterion, SamplingMode};
+use criterion::{criterion_group, criterion_main, Criterion};
 use std::convert::TryFrom;
 
 pub fn criterion_benchmark(c: &mut Criterion) {
