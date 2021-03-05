@@ -1,4 +1,3 @@
-// use phf_codegen::Map;
 use phf_codegen::Map;
 use scraper::{Html, Selector};
 use std::fs::File;
