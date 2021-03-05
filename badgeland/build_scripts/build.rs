@@ -10,31 +10,47 @@ use std::{
 
 fn generate_icon_map() {
   let path = Path::new(&env::var("OUT_DIR").unwrap()).join("icons_map.rs");
-  let selector = Selector::parse("symbol").unwrap();
 
   let mut file = BufWriter::new(File::create(path).unwrap());
 
-  let mut map = Map::<&'static str>::new();
+  let mut map = Map::<&str>::new();
 
-  let doc = Html::parse_fragment(include_str!("./icons/brands.svg"));
+  let exclude_list = [
+    "anchor",
+    "atom",
+    "blender",
+    "box",
+    "circle",
+    "flask",
+    "ghost",
+    "handshake",
+    "meteor",
+    "ring",
+    "rss",
+    "signal",
+    "snowflake",
+    "square",
+    "thumbtack",
+  ];
 
-  for el in doc.select(&selector) {
-    let id = el.value().attr("id").unwrap();
-    let sym = el.html();
-    if id == "font-awesome-logo-full" {
-      continue;
-    }
-    map.entry(id, &format!(r##"r#"{}"#"##, sym));
-  }
+  let selector = Selector::parse("symbol").unwrap();
 
   let doc = Html::parse_fragment(include_str!("./icons/solid.svg"));
   for el in doc.select(&selector) {
     let id = el.value().attr("id").unwrap();
     let sym = el.html();
-    if id == "font-awesome-logo-full" {
-      continue;
+    if !exclude_list.contains(&id) {
+      map.entry(id, &format!(r##"r#"{}"#"##, sym));
     }
-    map.entry(id, &format!(r##"r#"{}"#"##, sym));
+  }
+
+  let doc = Html::parse_fragment(include_str!("./icons/simple-icons.svg"));
+  for el in doc.select(&selector) {
+    let id = el.value().attr("id").unwrap();
+    let sym = el.html();
+    if !exclude_list.contains(&id) {
+      map.entry(id, &format!(r##"r#"{}"#"##, sym));
+    }
   }
 
   writeln!(
