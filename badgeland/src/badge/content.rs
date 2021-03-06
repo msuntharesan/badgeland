@@ -27,7 +27,7 @@ impl<'a> TextWidth for &'a str {
                 gb.width() * 1.12
             })
             .fold(0.0, |acc, w| acc + w)
-            .ceil() as usize
+            .floor() as usize
     }
 }
 

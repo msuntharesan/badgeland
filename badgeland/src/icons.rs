@@ -34,7 +34,7 @@ mod tests {
 
     #[test]
     fn get_icon_symbol() {
-        let icon = Icon::try_from("bluetooth-b");
+        let icon = Icon::try_from("bluetooth");
         assert!(icon.is_ok());
         assert!(icon.unwrap().symbol.len() > 0);
     }
