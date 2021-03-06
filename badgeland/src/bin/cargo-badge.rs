@@ -28,149 +28,149 @@ use std::{convert::TryFrom, error::Error, fs::File, io::prelude::*, path::PathBu
 
 #[derive(Debug, PartialEq)]
 enum Content {
-  Text(String),
-  Data(BadgeData),
+    Text(String),
+    Data(BadgeData),
 }
 
 impl FromStr for Content {
-  type Err = String;
-  fn from_str(s: &str) -> Result<Self, Self::Err> {
-    BadgeData::from_str(s)
-      .map(|d| Content::Data(d))
-      .or(Ok(Content::Text(s.to_string())))
-  }
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        BadgeData::from_str(s)
+            .map(|d| Content::Data(d))
+            .or(Ok(Content::Text(s.to_string())))
+    }
 }
 
 #[derive(Clap, Debug)]
 #[clap(group = ArgGroup::new("style").required(false))]
 struct StyleArg {
-  /// Flat badge style
-  #[clap(short, long, group = "style")]
-  flat: bool,
+    /// Flat badge style
+    #[clap(short, long, group = "style")]
+    flat: bool,
 
-  /// Classic badge style (Default)
-  #[clap(short, long, group = "style")]
-  classic: bool,
+    /// Classic badge style (Default)
+    #[clap(short, long, group = "style")]
+    classic: bool,
 }
 
 impl From<StyleArg> for Style {
-  fn from(s: StyleArg) -> Self {
-    match (s.flat, s.classic) {
-      (true, _) => Self::Flat,
-      _ => Self::Classic,
+    fn from(s: StyleArg) -> Self {
+        match (s.flat, s.classic) {
+            (true, _) => Self::Flat,
+            _ => Self::Classic,
+        }
     }
-  }
 }
 
 #[derive(Clap, Debug)]
 #[clap(group = ArgGroup::new("size").required(false))]
 struct SizeArg {
-  /// Small badge size (Default)
-  #[clap(short = 'x', long, group = "size")]
-  small: bool,
+    /// Small badge size (Default)
+    #[clap(short = 'x', long, group = "size")]
+    small: bool,
 
-  /// Medium badge size
-  #[clap(short, long, group = "size")]
-  medium: bool,
+    /// Medium badge size
+    #[clap(short, long, group = "size")]
+    medium: bool,
 
-  /// Large badge size
-  #[clap(short, long, group = "size")]
-  large: bool,
+    /// Large badge size
+    #[clap(short, long, group = "size")]
+    large: bool,
 }
 
 impl From<SizeArg> for Size {
-  fn from(s: SizeArg) -> Self {
-    match (s.large, s.medium, s.small) {
-      (true, _, _) => Self::Large,
-      (_, true, _) => Self::Medium,
-      _ => Self::Small,
+    fn from(s: SizeArg) -> Self {
+        match (s.large, s.medium, s.small) {
+            (true, _, _) => Self::Large,
+            (_, true, _) => Self::Medium,
+            _ => Self::Small,
+        }
     }
-  }
 }
 
 /// Fast badge generator for any purpose
 #[derive(Debug, Clap)]
 struct Opt {
-  /// Badge subject
-  #[clap(short, long)]
-  subject: Option<String>,
+    /// Badge subject
+    #[clap(short, long)]
+    subject: Option<String>,
 
-  #[clap(flatten)]
-  style: StyleArg,
+    #[clap(flatten)]
+    style: StyleArg,
 
-  #[clap(flatten)]
-  size: SizeArg,
+    #[clap(flatten)]
+    size: SizeArg,
 
-  /// Badge color. Must be a valid css color
-  #[clap(long)]
-  color: Option<Color>,
+    /// Badge color. Must be a valid css color
+    #[clap(long)]
+    color: Option<Color>,
 
-  /// Badge icon. icon can be any `Brand` or `Solid` icons from fontawesome
-  #[clap(long)]
-  icon: Option<String>,
+    /// Badge icon. icon can be any `Brand` or `Solid` icons from fontawesome
+    #[clap(long)]
+    icon: Option<String>,
 
-  /// Icon color. Must be a valid css color
-  #[clap(long)]
-  icon_color: Option<Color>,
+    /// Icon color. Must be a valid css color
+    #[clap(long)]
+    icon_color: Option<Color>,
 
-  /// Output svg to file
-  #[clap(short, long)]
-  out: Option<PathBuf>,
+    /// Output svg to file
+    #[clap(short, long)]
+    out: Option<PathBuf>,
 
-  /// Badge content
-  #[clap()]
-  content: Content,
+    /// Badge content
+    #[clap()]
+    content: Content,
 }
 
 #[derive(Debug, Clap)]
 #[clap(name = "cargo-badge", bin_name = "cargo")]
 enum CargoCmd {
-  #[clap(name = "badge")]
-  Badge(Opt),
+    #[clap(name = "badge")]
+    Badge(Opt),
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-  let badge_cmd = CargoCmd::parse();
+    let badge_cmd = CargoCmd::parse();
 
-  let CargoCmd::Badge(opt) = badge_cmd;
+    let CargoCmd::Badge(opt) = badge_cmd;
 
-  if matches!(&opt.icon, Some(icon) if !icon_exists(icon)) {
-    return Err("Icon does not exists. Try using a fontawesome icon name".into());
-  }
-
-  let mut badge = Badge::new();
-
-  if let Some(sub) = &opt.subject {
-    badge.subject(sub);
-  }
-  if let Some(col) = opt.color {
-    badge.color(col);
-  }
-
-  badge.style(opt.style.into());
-
-  badge.size(opt.size.into());
-
-  if let Some(icon) = &opt.icon {
-    let icon = Icon::try_from(icon.as_str());
-    if let Ok(i) = icon {
-      badge.icon(i);
+    if matches!(&opt.icon, Some(icon) if !icon_exists(icon)) {
+        return Err("Icon does not exists. Try using a fontawesome icon name".into());
     }
-    if let Some(c) = opt.icon_color {
-      badge.icon_color(c);
+
+    let mut badge = Badge::new();
+
+    if let Some(sub) = &opt.subject {
+        badge.subject(sub);
     }
-  }
+    if let Some(col) = opt.color {
+        badge.color(col);
+    }
 
-  let svg = match opt.content {
-    Content::Data(d) => badge.data(&d.0).to_string(),
-    Content::Text(t) => badge.text(&t).to_string(),
-  };
+    badge.style(opt.style.into());
 
-  if let Some(out_file) = opt.out {
-    let mut file = File::create(&out_file).unwrap();
-    file.write_all(svg.as_bytes()).unwrap();
-  } else {
-    println!("{}", svg);
-  }
-  Ok(())
+    badge.size(opt.size.into());
+
+    if let Some(icon) = &opt.icon {
+        let icon = Icon::try_from(icon.as_str());
+        if let Ok(i) = icon {
+            badge.icon(i);
+        }
+        if let Some(c) = opt.icon_color {
+            badge.icon_color(c);
+        }
+    }
+
+    let svg = match opt.content {
+        Content::Data(d) => badge.data(&d.0).to_string(),
+        Content::Text(t) => badge.text(&t).to_string(),
+    };
+
+    if let Some(out_file) = opt.out {
+        let mut file = File::create(&out_file).unwrap();
+        file.write_all(svg.as_bytes()).unwrap();
+    } else {
+        println!("{}", svg);
+    }
+    Ok(())
 }

@@ -1,7 +1,7 @@
 use badgeland::Badge;
 
 fn main() {
-  let badge = Badge::new().text("Badge Maker");
+    let badge = Badge::new().text("Badge Maker");
 
-  println!("{}", badge);
+    println!("{}", badge);
 }

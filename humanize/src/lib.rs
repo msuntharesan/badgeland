@@ -24,39 +24,39 @@ use derive_builder::Builder;
 /// Options to pass to humanize function
 #[derive(Debug, Builder)]
 pub struct HumanizeOptions {
-  #[builder(default = "1000")]
-  denominator: usize,
-  #[builder(default = "2")]
-  precision: usize,
-  #[builder(default = "false")]
-  keep_zero: bool,
-  #[builder(default = r#"".""#)]
-  decimal_separator: &'static str,
-  #[builder(default = "false")]
-  lower_case: bool,
-  #[builder(default = "false")]
-  space: bool,
-  #[builder(default = r#"vec!["", "K", "M", "B", "T", "P", "E"]"#)]
-  units: Vec<&'static str>,
+    #[builder(default = "1000")]
+    denominator: usize,
+    #[builder(default = "2")]
+    precision: usize,
+    #[builder(default = "false")]
+    keep_zero: bool,
+    #[builder(default = r#"".""#)]
+    decimal_separator: &'static str,
+    #[builder(default = "false")]
+    lower_case: bool,
+    #[builder(default = "false")]
+    space: bool,
+    #[builder(default = r#"vec!["", "K", "M", "B", "T", "P", "E"]"#)]
+    units: Vec<&'static str>,
 }
 
 impl HumanizeOptions {
-  /// Create a builder for HumanizeOptions
-  pub fn builder() -> HumanizeOptionsBuilder {
-    HumanizeOptionsBuilder::default()
-  }
+    /// Create a builder for HumanizeOptions
+    pub fn builder() -> HumanizeOptionsBuilder {
+        HumanizeOptionsBuilder::default()
+    }
 }
 
 impl AsRef<HumanizeOptions> for HumanizeOptions {
-  fn as_ref(&self) -> &HumanizeOptions {
-    self
-  }
+    fn as_ref(&self) -> &HumanizeOptions {
+        self
+    }
 }
 
 /// Trait that can be implemented for any type.
 pub trait Humanize {
-  /// formats a type to human readable string
-  fn humanize<T: AsRef<HumanizeOptions>>(&self, opts: T) -> Option<String>;
+    /// formats a type to human readable string
+    fn humanize<T: AsRef<HumanizeOptions>>(&self, opts: T) -> Option<String>;
 }
 
 macro_rules! impl_humanize_u {
@@ -127,125 +127,125 @@ impl_humanize_f!(for f32 f64);
 
 #[cfg(test)]
 mod tests {
-  use super::{Humanize, HumanizeOptions};
+    use super::{Humanize, HumanizeOptions};
 
-  #[test]
-  fn test_usize() {
-    let opt = HumanizeOptions::builder().build().unwrap();
-    assert_eq!(100.humanize(&opt), Some("100".to_owned()));
-    assert_eq!(1000.humanize(&opt), Some("1K".to_owned()));
-    assert_eq!(1000000.humanize(&opt), Some("1M".to_owned()));
-    assert_eq!(1000000000.humanize(&opt), Some("1B".to_owned()));
-    assert_eq!(1000000000000u64.humanize(&opt), Some("1T".to_owned()));
-  }
+    #[test]
+    fn test_usize() {
+        let opt = HumanizeOptions::builder().build().unwrap();
+        assert_eq!(100.humanize(&opt), Some("100".to_owned()));
+        assert_eq!(1000.humanize(&opt), Some("1K".to_owned()));
+        assert_eq!(1000000.humanize(&opt), Some("1M".to_owned()));
+        assert_eq!(1000000000.humanize(&opt), Some("1B".to_owned()));
+        assert_eq!(1000000000000u64.humanize(&opt), Some("1T".to_owned()));
+    }
 
-  #[test]
-  fn test_isize() {
-    let opt = HumanizeOptions::builder().build().unwrap();
-    assert_eq!((-100).humanize(&opt), Some("-100".to_string()));
-    assert_eq!((100).humanize(&opt), Some("100".to_owned()));
-    assert_eq!((-1000).humanize(&opt), Some("-1K".to_owned()));
-    assert_eq!((-1000000).humanize(&opt), Some("-1M".to_owned()));
-    assert_eq!((-1000000000).humanize(&opt), Some("-1B".to_owned()));
-    assert_eq!((-1000000000000i64).humanize(&opt), Some("-1T".to_owned()));
-  }
+    #[test]
+    fn test_isize() {
+        let opt = HumanizeOptions::builder().build().unwrap();
+        assert_eq!((-100).humanize(&opt), Some("-100".to_string()));
+        assert_eq!((100).humanize(&opt), Some("100".to_owned()));
+        assert_eq!((-1000).humanize(&opt), Some("-1K".to_owned()));
+        assert_eq!((-1000000).humanize(&opt), Some("-1M".to_owned()));
+        assert_eq!((-1000000000).humanize(&opt), Some("-1B".to_owned()));
+        assert_eq!((-1000000000000i64).humanize(&opt), Some("-1T".to_owned()));
+    }
 
-  #[test]
-  fn test_floats() {
-    let opt = HumanizeOptions::builder().build().unwrap();
-    assert_eq!((-100f32).humanize(&opt), Some("-100".to_string()));
-    assert_eq!((100f32).humanize(&opt), Some("100".to_owned()));
-    assert_eq!((-1000f32).humanize(&opt), Some("-1K".to_owned()));
-    assert_eq!((-1000000f32).humanize(&opt), Some("-1M".to_owned()));
-    assert_eq!((-1000000000f32).humanize(&opt), Some("-1B".to_owned()));
-    assert_eq!((-1000000000000f64).humanize(&opt), Some("-1T".to_owned()));
-    assert_eq!((-12345.678f32).humanize(&opt), Some("-12.35K".to_owned()))
-  }
+    #[test]
+    fn test_floats() {
+        let opt = HumanizeOptions::builder().build().unwrap();
+        assert_eq!((-100f32).humanize(&opt), Some("-100".to_string()));
+        assert_eq!((100f32).humanize(&opt), Some("100".to_owned()));
+        assert_eq!((-1000f32).humanize(&opt), Some("-1K".to_owned()));
+        assert_eq!((-1000000f32).humanize(&opt), Some("-1M".to_owned()));
+        assert_eq!((-1000000000f32).humanize(&opt), Some("-1B".to_owned()));
+        assert_eq!((-1000000000000f64).humanize(&opt), Some("-1T".to_owned()));
+        assert_eq!((-12345.678f32).humanize(&opt), Some("-12.35K".to_owned()))
+    }
 
-  #[test]
-  fn test_lowercase_suffix() {
-    let opt = HumanizeOptions::builder().lower_case(true).build().unwrap();
+    #[test]
+    fn test_lowercase_suffix() {
+        let opt = HumanizeOptions::builder().lower_case(true).build().unwrap();
 
-    assert_eq!(1000.humanize(&opt), Some("1k".to_owned()));
-    assert_eq!(1000000.humanize(&opt), Some("1m".to_owned()));
-    assert_eq!(1000000000.humanize(&opt), Some("1b".to_owned()));
-    assert_eq!(1000000000000u64.humanize(&opt), Some("1t".to_owned()));
-  }
+        assert_eq!(1000.humanize(&opt), Some("1k".to_owned()));
+        assert_eq!(1000000.humanize(&opt), Some("1m".to_owned()));
+        assert_eq!(1000000000.humanize(&opt), Some("1b".to_owned()));
+        assert_eq!(1000000000000u64.humanize(&opt), Some("1t".to_owned()));
+    }
 
-  #[test]
-  fn test_precision() {
-    let value = 12345.6789;
+    #[test]
+    fn test_precision() {
+        let value = 12345.6789;
 
-    let mut opts = HumanizeOptions::builder();
-    assert_eq!(
-      value.humanize(&opts.precision(0usize).build().unwrap()),
-      Some("12K".to_owned())
-    );
-    assert_eq!(
-      value.humanize(&opts.precision(1usize).build().unwrap()),
-      Some("12.3K".to_owned())
-    );
-    assert_eq!(
-      value.humanize(&opts.precision(2usize).build().unwrap()),
-      Some("12.35K".to_owned())
-    );
-    assert_eq!(
-      value.humanize(&opts.precision(3usize).build().unwrap()),
-      Some("12.345K".to_owned())
-    );
-  }
+        let mut opts = HumanizeOptions::builder();
+        assert_eq!(
+            value.humanize(&opts.precision(0usize).build().unwrap()),
+            Some("12K".to_owned())
+        );
+        assert_eq!(
+            value.humanize(&opts.precision(1usize).build().unwrap()),
+            Some("12.3K".to_owned())
+        );
+        assert_eq!(
+            value.humanize(&opts.precision(2usize).build().unwrap()),
+            Some("12.35K".to_owned())
+        );
+        assert_eq!(
+            value.humanize(&opts.precision(3usize).build().unwrap()),
+            Some("12.345K".to_owned())
+        );
+    }
 
-  #[test]
-  fn test_precision_with_zero() {
-    let mut opt_builder = HumanizeOptions::builder();
-    let opt = opt_builder.precision(1usize).build().unwrap();
+    #[test]
+    fn test_precision_with_zero() {
+        let mut opt_builder = HumanizeOptions::builder();
+        let opt = opt_builder.precision(1usize).build().unwrap();
 
-    assert_eq!(1010000000.humanize(&opt), Some("1B".to_owned()));
-    assert_eq!(1060000000.humanize(&opt), Some("1.1B".to_owned()));
-    assert_eq!(1810000000.humanize(&opt), Some("1.8B".to_owned()));
+        assert_eq!(1010000000.humanize(&opt), Some("1B".to_owned()));
+        assert_eq!(1060000000.humanize(&opt), Some("1.1B".to_owned()));
+        assert_eq!(1810000000.humanize(&opt), Some("1.8B".to_owned()));
 
-    let opt = opt_builder.keep_zero(true).precision(1usize).build().unwrap();
+        let opt = opt_builder.keep_zero(true).precision(1usize).build().unwrap();
 
-    assert_eq!(1010000000.humanize(&opt), Some("1.0B".to_owned()));
-    assert_eq!(1060000000.humanize(&opt), Some("1.1B".to_owned()));
-    assert_eq!(1810000000.humanize(&opt), Some("1.8B".to_owned()));
+        assert_eq!(1010000000.humanize(&opt), Some("1.0B".to_owned()));
+        assert_eq!(1060000000.humanize(&opt), Some("1.1B".to_owned()));
+        assert_eq!(1810000000.humanize(&opt), Some("1.8B".to_owned()));
 
-    let opt = opt_builder.keep_zero(false).precision(2usize).build().unwrap();
+        let opt = opt_builder.keep_zero(false).precision(2usize).build().unwrap();
 
-    assert_eq!(1001000000.humanize(&opt), Some("1B".to_owned()));
-    assert_eq!(1060000000.humanize(&opt), Some("1.06B".to_owned()));
-    assert_eq!(1810000000.humanize(&opt), Some("1.81B".to_owned()));
+        assert_eq!(1001000000.humanize(&opt), Some("1B".to_owned()));
+        assert_eq!(1060000000.humanize(&opt), Some("1.06B".to_owned()));
+        assert_eq!(1810000000.humanize(&opt), Some("1.81B".to_owned()));
 
-    let opt = opt_builder.precision(2usize).keep_zero(true).build().unwrap();
+        let opt = opt_builder.precision(2usize).keep_zero(true).build().unwrap();
 
-    assert_eq!(1001000000.humanize(&opt), Some("1.00B".to_owned()));
-    assert_eq!(1060000000.humanize(&opt), Some("1.06B".to_owned()));
-    assert_eq!(1810000000.humanize(&opt), Some("1.81B".to_owned()));
+        assert_eq!(1001000000.humanize(&opt), Some("1.00B".to_owned()));
+        assert_eq!(1060000000.humanize(&opt), Some("1.06B".to_owned()));
+        assert_eq!(1810000000.humanize(&opt), Some("1.81B".to_owned()));
 
-    let opt = opt_builder.keep_zero(false).precision(3usize).build().unwrap();
+        let opt = opt_builder.keep_zero(false).precision(3usize).build().unwrap();
 
-    assert_eq!(1000100000.humanize(&opt), Some("1B".to_owned()));
-    assert_eq!(1060000000.humanize(&opt), Some("1.060B".to_owned()));
-    assert_eq!(1813450000.humanize(&opt), Some("1.813B".to_owned()));
+        assert_eq!(1000100000.humanize(&opt), Some("1B".to_owned()));
+        assert_eq!(1060000000.humanize(&opt), Some("1.060B".to_owned()));
+        assert_eq!(1813450000.humanize(&opt), Some("1.813B".to_owned()));
 
-    let opt = opt_builder.keep_zero(true).precision(3usize).build().unwrap();
+        let opt = opt_builder.keep_zero(true).precision(3usize).build().unwrap();
 
-    assert_eq!(1000100000.humanize(&opt), Some("1.000B".to_owned()));
-    assert_eq!(1060000000.humanize(&opt), Some("1.060B".to_owned()));
-    assert_eq!(1813450000.humanize(&opt), Some("1.813B".to_owned()));
-  }
+        assert_eq!(1000100000.humanize(&opt), Some("1.000B".to_owned()));
+        assert_eq!(1060000000.humanize(&opt), Some("1.060B".to_owned()));
+        assert_eq!(1813450000.humanize(&opt), Some("1.813B".to_owned()));
+    }
 
-  #[test]
-  fn test_decimal_separator() {
-    let value = 12345.6789;
-    let opt = HumanizeOptions::builder().decimal_separator("_").build().unwrap();
-    assert_eq!(value.humanize(&opt), Some("12_35K".to_owned()));
-  }
+    #[test]
+    fn test_decimal_separator() {
+        let value = 12345.6789;
+        let opt = HumanizeOptions::builder().decimal_separator("_").build().unwrap();
+        assert_eq!(value.humanize(&opt), Some("12_35K".to_owned()));
+    }
 
-  #[test]
-  fn test_units() {
-    let value = 123450.6789;
-    let opt = HumanizeOptions::builder().units(vec!["m", "km"]).build().unwrap();
-    assert_eq!(value.humanize(&opt), Some("123.45km".to_owned()));
-  }
+    #[test]
+    fn test_units() {
+        let value = 123450.6789;
+        let opt = HumanizeOptions::builder().units(vec!["m", "km"]).build().unwrap();
+        assert_eq!(value.humanize(&opt), Some("123.45km".to_owned()));
+    }
 }
