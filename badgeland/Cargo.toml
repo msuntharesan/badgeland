@@ -1,6 +1,6 @@
 [package]
 name = "badgeland"
-version = "0.10.1"
+version = "0.10.2"
 description = "Fast badge generator for any purpose"
 license = "MIT"
 authors = ["Suntharesan Mohan <suntharesan.mohan@gmail.com>"]
