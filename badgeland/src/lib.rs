@@ -46,6 +46,8 @@ mod icons;
 pub use badge::{Badge, Size, Style};
 pub use icons::{icon_exists, icon_keys, Icon};
 
+pub type InitialBadge<'a> = Badge<'a, badge::BadgeTypeInit>;
+
 pub const DEFAULT_WHITE: &'static str = "#fff";
 pub const DEFAULT_BLACK: &'static str = "#000";
 pub const DEFAULT_BLUE: &'static str = "#0366d6";
