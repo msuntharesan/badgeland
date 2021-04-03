@@ -15,7 +15,7 @@ build = "./build_scripts/build.rs"
 ab_glyph = "0.2"
 cssparser = "0.28"
 maud = "0.22"
-phf = "0.8"
+phf = { version = "0.8", optional = true }
 unicode-normalization = "0.1"
 
 [dependencies.clap]
@@ -38,7 +38,7 @@ scraper = "0.12"
 
 [features]
 serde_de = ["serde"]
-static_icons = []
+static_icons = ["phf"]
 default = ["clap", "static_icons"]
 
 [[bin]]
