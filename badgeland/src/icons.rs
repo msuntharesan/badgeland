@@ -1,21 +1,37 @@
 use std::convert::TryFrom;
 
+#[cfg(feature = "static_icons")]
 include!(concat!(env!("OUT_DIR"), "/icons_map.rs"));
 
+#[cfg(feature = "static_icons")]
 pub fn icon_exists(icon_name: &str) -> bool {
     SYMBOLS.get(icon_name).is_some()
 }
 
+#[cfg(feature = "static_icons")]
 pub fn icon_keys() -> Vec<&'static str> {
     SYMBOLS.keys().map(|k| *k).collect()
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Icon<'a> {
-    pub name: &'a str,
-    pub symbol: &'a str,
+    name: &'a str,
+    symbol: &'a str,
 }
 
+impl<'a> Icon<'a> {
+    pub fn new(name: &'a str, symbol: &'a str) -> Icon<'a> {
+        Icon { name, symbol }
+    }
+    pub fn name(&self) -> &'a str {
+        self.name
+    }
+    pub fn symbol(&self) -> &'a str {
+        self.symbol
+    }
+}
+
+#[cfg(feature = "static_icons")]
 impl<'a> TryFrom<&'a str> for Icon<'a> {
     type Error = Box<dyn std::error::Error>;
 
@@ -29,6 +45,8 @@ impl<'a> TryFrom<&'a str> for Icon<'a> {
 
 #[cfg(test)]
 mod tests {
+
+    #[cfg(feature = "static_icons")]
     use super::{icon_keys, Icon, SYMBOLS};
     use std::convert::TryFrom;
 

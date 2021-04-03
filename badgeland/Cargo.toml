@@ -38,8 +38,8 @@ scraper = "0.12"
 
 [features]
 serde_de = ["serde"]
-default = ["clap"]
-
+static_icons = []
+default = ["clap", "static_icons"]
 
 [[bin]]
 name = "cargo-badge"
