@@ -21,7 +21,6 @@
 //! ```
 //!
 
-// use argh::FromArgs;
 use badgeland::{icon_exists, Badge, BadgeData, Color, Icon, Size, Style};
 use clap::{ArgGroup, Clap};
 use std::{convert::TryFrom, error::Error, fs::File, io::prelude::*, path::PathBuf, str::FromStr};

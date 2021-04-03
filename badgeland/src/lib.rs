@@ -44,7 +44,11 @@ mod badge;
 mod icons;
 
 pub use badge::{Badge, Size, Style};
-pub use icons::{icon_exists, icon_keys, Icon};
+
+#[cfg(feature = "static_icons")]
+pub use icons::{icon_exists, icon_keys};
+
+pub use icons::Icon;
 
 pub type InitialBadge<'a> = Badge<'a, badge::BadgeTypeInit>;
 

@@ -288,7 +288,7 @@ impl<'a, T: BadgeType<'a>> fmt::Display for Badge<'a, T> {
             height=(height)
             width=(width) {
               defs {
-                @if let Some(icon) = &self.icon { (PreEscaped(icon.symbol)) }
+                @if let Some(icon) = &self.icon { (PreEscaped(icon.symbol())) }
                 @if matches!(self.style, Style::Classic) {
                   (CLASSIC_STYLE_GRADIENT)
                 }
@@ -331,7 +331,7 @@ impl<'a, T: BadgeType<'a>> fmt::Display for Badge<'a, T> {
                   @if let Some(icon) = &self.icon {
                     use
                       filter="url(#shadow)"
-                      xlink:href={"#" (icon.name)}
+                      xlink:href={"#" (icon.name())}
                       x=(x_offset)
                       y=(((height - icon_width) / 2))
                       width=(icon_width)
@@ -449,6 +449,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "static_icons")]
     fn badge_with_icon() {
         let icon = Icon::try_from("git").unwrap();
         let mut badge = Badge::new();
@@ -464,6 +465,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "static_icons")]
     fn badge_with_icon_only() {
         let icon = Icon::try_from("git").unwrap();
         let mut badge = Badge::new();

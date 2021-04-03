@@ -24,4 +24,4 @@ thiserror = "1.0"
  version = "0"
  path = "../badgeland"
  default-features = false
- features = ["serde_de"]
+ features = ["serde_de", "static_icons"]
