@@ -103,7 +103,7 @@ Runkit example
 [badge_icon2]: https://badge.land/b/icon/solid?icon=code "badge with solid icon"
 [badge_data]: https://badge.land/b/data/1,5,2,4,8,3,7 "badge with sparkline chart"
 [badge_flat]: https://badge.land/b/style/flat?style=flat "flat badge"
-<!--> Runkit badges<-->
+<!-- Runkit badges -->
 [runkit_alltext]: https://badge.land/url?source=https://badgeland-5pqac9fvgsb8.runkit.sh/alltext "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/alltext"
 [runkit_alldata]: https://badge.land/url?source=https://badgeland-5pqac9fvgsb8.runkit.sh/alldata "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/alldata"
 [runkit_subject]: https://badge.land/url?source=https://badgeland-5pqac9fvgsb8.runkit.sh/subject "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/subject"
