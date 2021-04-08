@@ -82,17 +82,17 @@ Runkit example
 
 |                         |                                                                                |                      |
 | ----------------------- | ------------------------------------------------------------------------------ | -------------------- |
-| Text badge              | `https://badge.land/url?source=https://b5vhr8tsmbj6.runkit.sh/allText`    | ![runkit_allText]    |
-| Data badge              | `https://badge.land/url?source=https://b5vhr8tsmbj6.runkit.sh/allData`    | ![runkit_allData]    |
-| badge with only subject | `https://badge.land/url?source=https://b5vhr8tsmbj6.runkit.sh/subject`    | ![runkit_subject]    |
-| default badge with text | `https://badge.land/url?source=https://b5vhr8tsmbj6.runkit.sh/withText`   | ![runkit_withText]   |
-| Medium size badge       | `https://badge.land/url?source=https://b5vhr8tsmbj6.runkit.sh/mediumSize` | ![runkit_mediumSize] |
-| Large size badge        | `https://badge.land/url?source=https://b5vhr8tsmbj6.runkit.sh/largeSize`  | ![runkit_largeSize]  |
-| Red badge               | `https://badge.land/url?source=https://b5vhr8tsmbj6.runkit.sh/red`        | ![runkit_red]        |
-| badge with brand icon   | `https://badge.land/url?source=https://b5vhr8tsmbj6.runkit.sh/iconBrand`  | ![runkit_iconBrand]  |
-| badge with solid icon   | `https://badge.land/url?source=https://b5vhr8tsmbj6.runkit.sh/iconSolid`  | ![runkit_iconSolid]  |
-| Chart badge             | `https://badge.land/url?source=https://b5vhr8tsmbj6.runkit.sh/data`       | ![runkit_data]       |
-| Flat badge              | `https://badge.land/url?source=https://b5vhr8tsmbj6.runkit.sh/flat`       | ![runkit_flat]       |
+| Text badge              | `https://badge.land/url/?source=https://b5vhr8tsmbj6.runkit.sh/allText`    | ![runkit_allText]    |
+| Data badge              | `https://badge.land/url/?source=https://b5vhr8tsmbj6.runkit.sh/allData`    | ![runkit_allData]    |
+| badge with only subject | `https://badge.land/url/?source=https://b5vhr8tsmbj6.runkit.sh/subject`    | ![runkit_subject]    |
+| default badge with text | `https://badge.land/url/?source=https://b5vhr8tsmbj6.runkit.sh/withText`   | ![runkit_withText]   |
+| Medium size badge       | `https://badge.land/url/?source=https://b5vhr8tsmbj6.runkit.sh/mediumSize` | ![runkit_mediumSize] |
+| Large size badge        | `https://badge.land/url/?source=https://b5vhr8tsmbj6.runkit.sh/largeSize`  | ![runkit_largeSize]  |
+| Red badge               | `https://badge.land/url/?source=https://b5vhr8tsmbj6.runkit.sh/red`        | ![runkit_red]        |
+| badge with brand icon   | `https://badge.land/url/?source=https://b5vhr8tsmbj6.runkit.sh/iconBrand`  | ![runkit_iconBrand]  |
+| badge with solid icon   | `https://badge.land/url/?source=https://b5vhr8tsmbj6.runkit.sh/iconSolid`  | ![runkit_iconSolid]  |
+| Chart badge             | `https://badge.land/url/?source=https://b5vhr8tsmbj6.runkit.sh/data`       | ![runkit_data]       |
+| Flat badge              | `https://badge.land/url/?source=https://b5vhr8tsmbj6.runkit.sh/flat`       | ![runkit_flat]       |
 
 [badge_sub]: https://badge.land/b/text "badge with only text"
 [badge_def]: https://badge.land/b/subject/text "default badge"
@@ -104,14 +104,14 @@ Runkit example
 [badge_data]: https://badge.land/b/data/1,5,2,4,8,3,7 "badge with sparkline chart"
 [badge_flat]: https://badge.land/b/style/flat?style=flat "flat badge"
 <!-- Runkit badges -->
-[runkit_alltext]: https://badge.land/url?source=https://badgeland-5pqac9fvgsb8.runkit.sh/alltext "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/alltext"
-[runkit_alldata]: https://badge.land/url?source=https://badgeland-5pqac9fvgsb8.runkit.sh/alldata "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/alldata"
-[runkit_subject]: https://badge.land/url?source=https://badgeland-5pqac9fvgsb8.runkit.sh/subject "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/subject"
-[runkit_withtext]: https://badge.land/url?source=https://badgeland-5pqac9fvgsb8.runkit.sh/withtext "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/withtext"
-[runkit_mediumsize]: https://badge.land/url?source=https://badgeland-5pqac9fvgsb8.runkit.sh/mediumsize "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/mediumsize"
-[runkit_largesize]: https://badge.land/url?source=https://badgeland-5pqac9fvgsb8.runkit.sh/largesize "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/largesize"
-[runkit_red]: https://badge.land/url?source=https://badgeland-5pqac9fvgsb8.runkit.sh/red "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/red"
-[runkit_iconbrand]: https://badge.land/url?source=https://badgeland-5pqac9fvgsb8.runkit.sh/iconbrand "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/iconbrand"
-[runkit_iconsolid]: https://badge.land/url?source=https://badgeland-5pqac9fvgsb8.runkit.sh/iconsolid "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/iconsolid"
-[runkit_data]: https://badge.land/url?source=https://badgeland-5pqac9fvgsb8.runkit.sh/data "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/data"
-[runkit_flat]: https://badge.land/url?source=https://badgeland-5pqac9fvgsb8.runkit.sh/flat "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/flat"
+[runkit_alltext]: https://badge.land/url/?source=https://badgeland-5pqac9fvgsb8.runkit.sh/alltext "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/alltext"
+[runkit_alldata]: https://badge.land/url/?source=https://badgeland-5pqac9fvgsb8.runkit.sh/alldata "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/alldata"
+[runkit_subject]: https://badge.land/url/?source=https://badgeland-5pqac9fvgsb8.runkit.sh/subject "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/subject"
+[runkit_withtext]: https://badge.land/url/?source=https://badgeland-5pqac9fvgsb8.runkit.sh/withtext "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/withtext"
+[runkit_mediumsize]: https://badge.land/url/?source=https://badgeland-5pqac9fvgsb8.runkit.sh/mediumsize "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/mediumsize"
+[runkit_largesize]: https://badge.land/url/?source=https://badgeland-5pqac9fvgsb8.runkit.sh/largesize "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/largesize"
+[runkit_red]: https://badge.land/url/?source=https://badgeland-5pqac9fvgsb8.runkit.sh/red "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/red"
+[runkit_iconbrand]: https://badge.land/url/?source=https://badgeland-5pqac9fvgsb8.runkit.sh/iconbrand "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/iconbrand"
+[runkit_iconsolid]: https://badge.land/url/?source=https://badgeland-5pqac9fvgsb8.runkit.sh/iconsolid "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/iconsolid"
+[runkit_data]: https://badge.land/url/?source=https://badgeland-5pqac9fvgsb8.runkit.sh/data "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/data"
+[runkit_flat]: https://badge.land/url/?source=https://badgeland-5pqac9fvgsb8.runkit.sh/flat "url badge https://badgeland-5pqac9fvgsb8.runkit.sh/flat"
