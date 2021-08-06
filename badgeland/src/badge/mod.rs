@@ -322,13 +322,13 @@ mod tests {
     fn default_badge_has_333_as_background_color() {
         let mut badge = Badge::new();
         &badge.subject("just text");
-        badge.color(DEFAULT_BLUE.parse::<Color>().unwrap());
+        badge.color(DEFAULT_BLUE.parse().unwrap());
         let def_color: Color = DEFAULT_BLUE.parse().unwrap();
         let badge_svg = badge.to_string();
         let doc = Html::parse_fragment(&badge_svg);
         let rect_sel = Selector::parse("g#bg > rect#subject").unwrap();
         let rect = doc.select(&rect_sel).next().unwrap();
-        assert_eq!(rect.value().attr("fill").unwrap(), &def_color.0);
+        assert_eq!(rect.value().attr("fill").unwrap(), def_color.as_ref());
     }
 
     #[test]
