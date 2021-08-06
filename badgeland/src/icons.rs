@@ -1,4 +1,4 @@
-use std::convert::TryFrom;
+use std::{convert::TryFrom, error::Error};
 
 #[cfg(feature = "static_icons")]
 include!(concat!(env!("OUT_DIR"), "/icons_map.rs"));
@@ -33,13 +33,13 @@ impl<'a> Icon<'a> {
 
 #[cfg(feature = "static_icons")]
 impl<'a> TryFrom<&'a str> for Icon<'a> {
-    type Error = Box<dyn std::error::Error>;
+    type Error = Box<dyn Error>;
 
     fn try_from(name: &'a str) -> Result<Self, Self::Error> {
         SYMBOLS
             .get(name)
             .map(|symbol| Icon { name, symbol })
-            .ok_or("Icon does not exists".into())
+            .ok_or("Icon does not exist".into())
     }
 }
 
