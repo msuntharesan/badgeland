@@ -1,23 +1,25 @@
-//! Formatter for human readable number or struct
-//!
-//! This crate exposes `humanize` fn to format numbers to human readable string
-//!
-//! # Quick Start
-//!
-//! Add `humanize` to your `Cargo.toml` as as a dependency.
-//!
-//! # Examples
-//!
-//! ```rust
-//! use humanize::*;
-//!
-//! fn main() {
-//!   let opts = HumanizeOptions::builder().build();
-//!   let human_readable = 1234;
-//!   assert_eq!(human_readable.humanize(opts), "1.23K".to_string())
-//! }
-//! ```
-//!
+/*!
+Formatter for human readable number or struct
+
+This crate exposes `humanize` fn to format numbers to human readable string
+
+# Quick Start
+
+Add `humanize` to your `Cargo.toml` as as a dependency.
+
+# Examples
+
+```rust
+use humanize::*;
+
+fn main() {
+  let opts = HumanizeOptions::builder().build();
+  let human_readable = 1234;
+  assert_eq!(human_readable.humanize(opts), "1.23K".to_string())
+}
+```
+
+*/
 
 use std::usize;
 
@@ -116,9 +118,9 @@ macro_rules! impl_humanize_u {
                 let opts = opts.as_ref();
                 let denominator = opts.denominator() as f64;
 
-                let mut val: f64 = *self as f64;
+                let mut val = *self as f64;
                 let mut unit = 0;
-                while val>= denominator as f64 {
+                while val >= denominator {
                     val /= denominator;
                     unit += 1;
                 }
@@ -132,7 +134,7 @@ macro_rules! impl_humanize_u {
                     suffix = suffix.to_lowercase();
                 }
 
-                let fract = (val.fract() * (10.0f64).powi(opts.precision as i32)).round() / 10.0f64.powi(opts.precision as i32);
+                let fract = (val.fract() * 10_f64.powi(opts.precision as i32)).round() / 10_f64.powi(opts.precision as i32);
 
                 let precision: usize = if fract == 0.0 && !opts.keep_zero { 0 } else { opts.precision as usize };
 

@@ -32,6 +32,19 @@ pub fn criterion_benchmark(c: &mut Criterion) {
                 all_data.data(&[7., 5., 2., 4., 8., 3., 7.]).to_string();
             })
         })
+        .bench_function("all_big_data", |b| {
+            let array: [f32; 30] = rand::random();
+            b.iter(|| {
+                let mut data = Badge::new();
+                data.subject("Hello")
+                    .color(Color("#6f42c1".to_string()))
+                    .style(Style::Flat)
+                    .icon(Icon::try_from("github").unwrap())
+                    .icon_color(Color("#0366d6".to_string()))
+                    .size(Size::Large);
+                data.data(&array).to_string();
+            })
+        })
         .bench_function("just_text", |b| {
             b.iter(|| {
                 let mut just_text = Badge::new();
@@ -119,6 +132,17 @@ pub fn criterion_benchmark(c: &mut Criterion) {
                     .style(Style::Classic)
                     .icon_color(DEFAULT_WHITE.parse().unwrap());
                 data.data(&[1., 5., 2., 4., 8., 3., 7.]).to_string();
+            })
+        })
+        .bench_function("big_data", |b| {
+            let array: [f32; 30] = rand::random();
+            b.iter(|| {
+                let mut data = Badge::new();
+                data.subject("Hello")
+                    .color(DEFAULT_BLUE.parse().unwrap())
+                    .style(Style::Classic)
+                    .icon_color(DEFAULT_WHITE.parse().unwrap());
+                data.data(&array).to_string();
             })
         })
         .bench_function("flat", |b| {

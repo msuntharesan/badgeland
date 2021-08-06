@@ -7,6 +7,25 @@ use std::{
     path::Path,
 };
 
+const EXCLUDE_LIST: &[&str] = &[
+    "anchor",
+    "atom",
+    "blender",
+    "box",
+    "circle",
+    "flask",
+    "ghost",
+    "handshake",
+    "meteor",
+    "ring",
+    "rss",
+    "signal",
+    "snowflake",
+    "square",
+    "thumbtack",
+    "passport",
+];
+
 fn generate_icon_map() {
     let path = Path::new(&env::var("OUT_DIR").unwrap()).join("icons_map.rs");
 
@@ -14,40 +33,20 @@ fn generate_icon_map() {
 
     let mut map = Map::<&str>::new();
 
-    let exclude_list = [
-        "anchor",
-        "atom",
-        "blender",
-        "box",
-        "circle",
-        "flask",
-        "ghost",
-        "handshake",
-        "meteor",
-        "ring",
-        "rss",
-        "signal",
-        "snowflake",
-        "square",
-        "thumbtack",
-    ];
-
     let selector = Selector::parse("symbol").unwrap();
 
     let doc = Html::parse_fragment(include_str!("./icons/solid.svg"));
     for el in doc.select(&selector) {
         let id = el.value().attr("id").unwrap();
         let sym = el.html();
-        if !exclude_list.contains(&id) {
-            map.entry(id, &format!(r##"r#"{}"#"##, sym));
-        }
+        map.entry(id, &format!(r##"r#"{}"#"##, sym));
     }
 
     let doc = Html::parse_fragment(include_str!("./icons/simple-icons.svg"));
     for el in doc.select(&selector) {
         let id = el.value().attr("id").unwrap();
         let sym = el.html();
-        if !exclude_list.contains(&id) {
+        if !EXCLUDE_LIST.contains(&id) {
             map.entry(id, &format!(r##"r#"{}"#"##, sym));
         }
     }

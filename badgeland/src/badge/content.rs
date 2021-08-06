@@ -1,4 +1,5 @@
 use ab_glyph::{Font, FontRef, PxScale, ScaleFont};
+use std::{cmp::Ordering, ops::Range};
 use unicode_normalization::UnicodeNormalization;
 
 fn get_font() -> FontRef<'static> {
@@ -37,23 +38,27 @@ pub struct Path<'a> {
     chart_height: f32,
     x_offset: f32,
     y_offset: f32,
-    index: usize,
+    index: Range<usize>,
 }
 
 impl<'a> Path<'a> {
     pub fn new(values: &'a [f32], height: usize, width: usize) -> Self {
+        let len = values.len();
         let chart_height = height as f32;
-        let max = *values.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(&0.);
+        let max = values
+            .iter()
+            .max_by(|&a, &b| a.partial_cmp(b).unwrap_or(Ordering::Equal))
+            .unwrap_or(&0.);
 
         let y_offset = chart_height / max;
-        let x_offset = width as f32 / (values.len() as f32 - 1.0);
+        let x_offset = width as f32 / (len as f32 - 1.0);
 
         Path {
             values,
             chart_height,
             x_offset,
             y_offset,
-            index: 0,
+            index: 0..len,
         }
     }
 }
@@ -61,14 +66,11 @@ impl<'a> Path<'a> {
 impl<'a> Iterator for Path<'a> {
     type Item = (f32, f32);
     fn next(&mut self) -> Option<Self::Item> {
-        let index = self.index;
-        if index >= self.values.len() {
-            return None;
-        }
-        let x = index as f32 * self.x_offset;
-        let y = self.chart_height - self.y_offset * self.values[index];
-        self.index += 1;
-        Some((x, y))
+        self.index.next().map(|i| {
+            let x = i as f32 * self.x_offset;
+            let y = self.chart_height - self.y_offset * self.values[i];
+            (x, y)
+        })
     }
 }
 

@@ -1,85 +1,16 @@
 mod content;
+mod size;
+mod style;
+
+pub use size::Size;
+
+pub use style::Style;
+use style::{classic_template, flat_template};
 
 use super::{icons::Icon, Color, DEFAULT_BLACK, DEFAULT_BLUE, DEFAULT_GRAY, DEFAULT_GRAY_DARK, DEFAULT_WHITE};
 use content::{BadgeContentSize, ContentSize, Path, TextWidth};
 use core::f32;
-use maud::{html, PreEscaped};
-use std::{fmt, str::FromStr};
-
-#[cfg(feature = "serde_de")]
-use serde::{de, Deserialize, Deserializer, Serialize};
-
-#[derive(Debug, PartialEq, Copy, Clone)]
-#[cfg_attr(feature = "serde_de", derive(Serialize))]
-pub enum Style {
-    Classic,
-    Flat,
-}
-
-const CLASSIC_STYLE_GRADIENT: PreEscaped<&'static str> = PreEscaped(
-    r##"<linearGradient id="a" x2="0" y2="75%"><stop offset="0" stop-color="#eee" stop-opacity="0.1"></stop><stop offset="1" stop-opacity="0.3"></stop></linearGradient>"##,
-);
-
-impl Default for Style {
-    fn default() -> Self {
-        Style::Classic
-    }
-}
-
-#[cfg(feature = "serde_de")]
-impl<'de> Deserialize<'de> for Style {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-
-        Style::from_str(&s).map_err(|e| de::Error::custom(e))
-    }
-}
-
-impl FromStr for Style {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_ref() {
-            "classic" | "c" => Ok(Style::Classic),
-            "flat" | "f" => Ok(Style::Flat),
-            _ => Err(format!("'{}' is not a valid value for Styles", s)),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Copy, Clone)]
-#[cfg_attr(feature = "serde_de", derive(Serialize))]
-pub enum Size {
-    Large,
-    Medium,
-    Small,
-}
-
-#[cfg(feature = "serde_de")]
-impl<'de> Deserialize<'de> for Size {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-
-        Size::from_str(s.as_str()).map_err(de::Error::custom)
-    }
-}
-
-impl FromStr for Size {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_ref() {
-            "large" | "l" => Ok(Size::Large),
-            "medium" | "m" => Ok(Size::Medium),
-            "small" | "s" => Ok(Size::Small),
-            _ => Err(format!("'{}' is not a valid value for Size", s)),
-        }
-    }
-}
+use std::fmt;
 
 #[derive(Debug)]
 pub struct BadgeTypeInit;
@@ -89,41 +20,68 @@ pub struct BadgeTypeData<'a>(&'a [f32]);
 pub struct BadgeTypeText<'a>(&'a str);
 
 pub trait BadgeType<'a> {
-    fn content(&self) -> BadgeContentTypes;
+    fn content(&self) -> BadgeContentType;
 }
 
 #[derive(Debug)]
-pub enum BadgeContentTypes<'a> {
+pub enum BadgeContentType<'a> {
     None,
     Text(&'a str),
     Data(&'a [f32]),
 }
 
-impl BadgeContentTypes<'_> {
+impl BadgeContentType<'_> {
     #[inline]
     fn is_some(&self) -> bool {
-        !matches!(self, BadgeContentTypes::None)
+        !matches!(self, BadgeContentType::None)
+    }
+
+    #[inline]
+    fn content_size(&self, height: usize, padding: usize, font_size: f32) -> ContentSize {
+        match self {
+            BadgeContentType::Data(d) => d.content_size(height, height * 5, padding, 0),
+            BadgeContentType::Text(c) => c.content_size(height, c.get_text_width(font_size), padding, 0),
+            _ => ContentSize::default(),
+        }
+    }
+
+    #[inline]
+    fn path_str(self, height: usize, width: usize) -> Option<String> {
+        match self {
+            BadgeContentType::Data(d) => {
+                let mut path_str = String::new();
+                let mut path_iter = Path::new(d, height, width);
+                let (x, y) = path_iter.next().unwrap();
+                path_str.push_str(&format!("M0 {y}L{x} {y}", x = x, y = y));
+
+                for (x, y) in path_iter {
+                    path_str.push_str(&format!("L{x} {y}", x = x, y = y));
+                }
+                Some(path_str)
+            }
+            _ => None,
+        }
     }
 }
 
 impl BadgeType<'_> for BadgeTypeInit {
     #[inline]
-    fn content(&self) -> BadgeContentTypes {
-        BadgeContentTypes::None
+    fn content(&self) -> BadgeContentType {
+        BadgeContentType::None
     }
 }
 
 impl<'a> BadgeType<'a> for BadgeTypeData<'a> {
     #[inline]
-    fn content(&self) -> BadgeContentTypes {
-        BadgeContentTypes::Data(self.0)
+    fn content(&self) -> BadgeContentType {
+        BadgeContentType::Data(self.0)
     }
 }
 
 impl<'a> BadgeType<'a> for BadgeTypeText<'a> {
     #[inline]
-    fn content(&self) -> BadgeContentTypes {
-        BadgeContentTypes::Text(self.0)
+    fn content(&self) -> BadgeContentType {
+        BadgeContentType::Text(self.0)
     }
 }
 
@@ -219,12 +177,47 @@ impl<'a, T: BadgeType<'a>> Badge<'a, T> {
     }
 
     #[inline]
+    fn get_font_size(&self) -> f32 {
+        self.get_height() as f32 * SVG_FONT_MULTIPLIER
+    }
+
+    #[inline]
     fn get_icon_size(&self) -> (usize, usize) {
-        match (&self.icon, self.size) {
-            (Some(_), Size::Large) => (30, 10),
-            (Some(_), Size::Medium) => (20, 8),
-            (Some(_), Size::Small) => (15, 5),
-            _ => (0, 0),
+        if self.icon.is_none() {
+            return (0, 0);
+        }
+        match self.size {
+            Size::Large => (30, 10),
+            Size::Medium => (20, 8),
+            Size::Small => (15, 5),
+        }
+    }
+
+    #[inline]
+    fn subject_size(&self, padding: usize) -> ContentSize {
+        let height = self.get_height();
+
+        let font_size = self.get_font_size();
+
+        let (icon_width, x_offset) = self.get_icon_size();
+
+        match self.subject {
+            Some(s) => s.content_size(height, s.get_text_width(font_size), padding, x_offset + icon_width),
+            None if self.icon.is_some() => ContentSize {
+                rw: icon_width + x_offset * 2,
+                x: x_offset,
+                y: height,
+            },
+            _ => ContentSize::default(),
+        }
+    }
+
+    #[inline]
+    fn rx(&self) -> usize {
+        match self.size {
+            Size::Medium => 6,
+            Size::Large => 9,
+            _ => 3,
         }
     }
 }
@@ -235,150 +228,50 @@ impl<'a, T: BadgeType<'a>> fmt::Display for Badge<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let height = self.get_height();
 
-        let font_size = height as f32 * SVG_FONT_MULTIPLIER;
+        let font_size = self.get_font_size();
 
         let padding = height / 2;
 
         let (icon_width, x_offset) = self.get_icon_size();
 
-        let subject_size: ContentSize = match self.subject {
-            Some(s) => s.content_size(height, s.get_text_width(font_size), padding, x_offset + icon_width),
-            None if self.icon.is_some() => ContentSize {
-                rw: icon_width + x_offset * 2,
-                x: x_offset,
-                y: height,
-            },
-            _ => ContentSize::default(),
-        };
+        let subject_size = self.subject_size(padding);
 
         let content = self.content.content();
 
-        let content_size = match content {
-            BadgeContentTypes::Data(d) => d.content_size(height, height * 5, padding, 0),
-            BadgeContentTypes::Text(c) => c.content_size(height, c.get_text_width(font_size), padding, 0),
-            _ => ContentSize::default(),
-        };
-
-        let path_str = if let BadgeContentTypes::Data(d) = content {
-            Path::new(d, height, height * 5)
-                .into_iter()
-                .enumerate()
-                .map(|(i, (x, y))| match i {
-                    0 => format!("M0 {y}L{x} {y}", x = x, y = y),
-                    _ => format!("L{x} {y}", x = x, y = y),
-                })
-                .collect::<String>()
-        } else {
-            String::new()
-        };
+        let content_size = content.content_size(height, padding, font_size);
 
         let width = subject_size.rw + content_size.rw;
 
-        let rx = match self.size {
-            Size::Medium => 6,
-            Size::Large => 9,
-            _ => 3,
-        };
+        let rx = self.rx();
 
-        let markup = html! {
-          svg
-            xmlns:xlink="http://www.w3.org/1999/xlink"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox={(format!("0 0 {} {}", width, height))}
-            height=(height)
-            width=(width) {
-              defs {
-                @if let Some(icon) = &self.icon { (PreEscaped(icon.symbol())) }
-                @if matches!(self.style, Style::Classic) {
-                  (CLASSIC_STYLE_GRADIENT)
-                }
-                mask id="bg-mask" {
-                  rect fill=(DEFAULT_WHITE) height=(height) rx=(rx) width=(width) {}
-                }
-                filter id="shadow" {
-                  feDropShadow
-                    dx="-0.8"
-                    dy="-0.8"
-                    stdDeviation="0"
-                    flood-color=@if content.is_some() { (DEFAULT_BLACK) } @else { (DEFAULT_GRAY_DARK) }
-                    flood-opacity="0.4" {}
-                }
-              }
-              g#bg mask=@if self.style == Style::Classic { "url(#bg-mask)" } {
-                rect fill=@if self.style == Style::Flat { (DEFAULT_GRAY) } @else { "url(#a)" } height=(height) width=(width) {}
-                @if self.subject.is_some() || self.icon.is_some() {
-                  rect#subject
-                    fill=@if content.is_some() { (DEFAULT_GRAY_DARK) } @else { (self.color.0) }
-                    height=(height)
-                    width=(subject_size.rw)
-                    {}
-                }
-                rect#content
-                  fill=@match &content{
-                    BadgeContentTypes::Data(_) => { (DEFAULT_GRAY) }
-                    _ => (self.color.0)
-                  }
-                  height=(height)
-                  width=(content_size.rw)
-                  x=(subject_size.rw)
-                  {}
-              }
-              g#text
-                fill=(DEFAULT_WHITE)
-                font-family="Verdana,sans-serif"
-                font-size=(font_size)
-                transform="translate(0, 0)" {
-                  @if let Some(icon) = &self.icon {
-                    use
-                      filter="url(#shadow)"
-                      xlink:href={"#" (icon.name())}
-                      x=(x_offset)
-                      y=(((height - icon_width) / 2))
-                      width=(icon_width)
-                      height=(icon_width)
-                      fill=(self.icon_color.0)
-                      {}
-                  }
-                  @if let Some(s) = self.subject {
-                    text
-                    dominant-baseline="middle"
-                    text-anchor="middle"
-                    x=(subject_size.x)
-                      y=(subject_size.y)
-                      filter="url(#shadow)"
-                      { (s) }
-                  }
-                  @match content {
-                    BadgeContentTypes::Data(_) => {
-                      path
-                        fill="none"
-                        transform=(format!("translate({}, {})", subject_size.rw, 0))
-                        stroke=(self.color.0)
-                        stroke-width="1px"
-                        d=(&path_str)
-                        {}
-                      path
-                        fill=(self.color.0)
-                        fill-opacity="0.2"
-                        transform=(format!("translate({}, {})", subject_size.rw, 0))
-                        stroke="none"
-                        stroke-width="0px"
-                        d=(format!("{}V{}H0Z", &path_str, height))
-                        {}
-                    }
-                    BadgeContentTypes::Text(c) => {
-                      text
-                        x=((subject_size.rw + content_size.x))
-                        y=(content_size.y)
-                        text-anchor="middle"
-                        dominant-baseline="middle"
-                        filter="url(#shadow)"
-                        { (c) }
-                    }
-                    _ => {}
-                  }
-              }
-          }
+        let markup = match self.style {
+            Style::Classic => classic_template(
+                width,
+                height,
+                font_size,
+                x_offset,
+                rx,
+                self.icon.as_ref().map(|i| (i, &self.icon_color)),
+                icon_width,
+                &self.color,
+                content,
+                content_size,
+                self.subject,
+                subject_size,
+            ),
+            Style::Flat => flat_template(
+                width,
+                height,
+                font_size,
+                x_offset,
+                self.icon.as_ref().map(|i| (i, &self.icon_color)),
+                icon_width,
+                &self.color,
+                content,
+                content_size,
+                self.subject,
+                subject_size,
+            ),
         };
 
         write!(f, "{}", markup.into_string())
@@ -387,7 +280,7 @@ impl<'a, T: BadgeType<'a>> fmt::Display for Badge<'a, T> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Badge, Color, Size, Style, DEFAULT_BLUE};
+    use super::{style::Style, Badge, Color, Size, DEFAULT_BLUE};
     use scraper::{Html, Selector};
 
     use crate::Icon;
@@ -429,13 +322,13 @@ mod tests {
     fn default_badge_has_333_as_background_color() {
         let mut badge = Badge::new();
         &badge.subject("just text");
-        badge.color(DEFAULT_BLUE.parse::<Color>().unwrap());
+        badge.color(DEFAULT_BLUE.parse().unwrap());
         let def_color: Color = DEFAULT_BLUE.parse().unwrap();
         let badge_svg = badge.to_string();
         let doc = Html::parse_fragment(&badge_svg);
         let rect_sel = Selector::parse("g#bg > rect#subject").unwrap();
         let rect = doc.select(&rect_sel).next().unwrap();
-        assert_eq!(rect.value().attr("fill").unwrap(), &def_color.0);
+        assert_eq!(rect.value().attr("fill").unwrap(), def_color.as_ref());
     }
 
     #[test]

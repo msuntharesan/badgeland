@@ -15,7 +15,7 @@ build = "./build_scripts/build.rs"
 ab_glyph = "0.2"
 cssparser = "0.28"
 maud = "0.22"
-phf = { version = "0.8", optional = true }
+phf = { version = "0.9", optional = true }
 unicode-normalization = "0.1"
 
 [dependencies.clap]
@@ -31,9 +31,10 @@ optional = true
 [dev-dependencies]
 criterion = "0.3"
 scraper = "0.12"
+rand = "0.8.4"
 
 [build-dependencies]
-phf_codegen = "0.8"
+phf_codegen = "0.9"
 scraper = "0.12"
 
 [features]
