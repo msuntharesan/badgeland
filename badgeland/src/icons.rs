@@ -1,4 +1,6 @@
-use std::{convert::TryFrom, error::Error};
+use std::convert::TryFrom;
+
+use super::error::IconError;
 
 #[cfg(feature = "static_icons")]
 include!(concat!(env!("OUT_DIR"), "/icons_map.rs"));
@@ -33,28 +35,34 @@ impl<'a> Icon<'a> {
 
 #[cfg(feature = "static_icons")]
 impl<'a> TryFrom<&'a str> for Icon<'a> {
-    type Error = Box<dyn Error>;
+    type Error = IconError<'a>;
 
     fn try_from(name: &'a str) -> Result<Self, Self::Error> {
         SYMBOLS
             .get(name)
             .map(|&symbol| Icon { name, symbol })
-            .ok_or("Icon does not exist".into())
+            .ok_or(Self::Error { name })
     }
 }
 
 #[cfg(test)]
 mod tests {
-
     #[cfg(feature = "static_icons")]
     use super::{icon_keys, Icon, SYMBOLS};
     use std::convert::TryFrom;
 
     #[test]
-    fn get_icon_symbol() {
+    fn get_icon_symbol_pass() {
         let icon = Icon::try_from("bluetooth");
         assert!(icon.is_ok());
         assert!(icon.unwrap().symbol.len() > 0);
+    }
+
+    #[test]
+    fn get_icon_symbol_fail() {
+        let icon = Icon::try_from("someicon");
+        assert!(icon.is_err());
+        assert_eq!(icon.unwrap_err().to_string(), "Invalid Icon Name someicon");
     }
 
     #[test]

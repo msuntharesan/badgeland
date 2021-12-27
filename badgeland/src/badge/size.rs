@@ -1,3 +1,4 @@
+use crate::SizeError;
 use std::str::FromStr;
 
 #[cfg(feature = "serde_de")]
@@ -24,13 +25,13 @@ impl<'de> Deserialize<'de> for Size {
 }
 
 impl FromStr for Size {
-    type Err = String;
+    type Err = SizeError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_ref() {
             "large" | "l" => Ok(Size::Large),
             "medium" | "m" => Ok(Size::Medium),
             "small" | "s" => Ok(Size::Small),
-            _ => Err(format!("'{}' is not a valid value for Size", s)),
+            _ => Err(SizeError {}),
         }
     }
 }

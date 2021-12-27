@@ -4,27 +4,30 @@
 Install using `cargo install badgeland --features cli`
 
 ```sh
-Usage: badge -s <subject> [--style <style>] [--size <size>] [--color <color>] [--icon <icon>] [--icon-color <icon-color>] [--out <out>] [-t <text>] [--data <data>]
+USAGE:
+    cargo badge [OPTIONS] <CONTENT>
 
-Fast badge generator for any purpose
+ARGS:
+    <CONTENT>    Badge content. Can be string or csv
 
-Options:
-  -s, --subject     badge subject
-  --style           badge style. [possible values: flat | f, classic | c]
-  --size            badge size. [possible values: large | l, medium | m, small | s]
-  --color           badge color. Must be a valid css color
-  --icon            badge icon. icon can be any Brand or Solid icons from fontawesome
-  --icon-color      icon color. Must be a valid css color
-  --out             output svg to file
-  -t, --text        badge text
-  --data            data for badge chart.
-  --help            display usage information
+OPTIONS:
+    -c, --classic                    Classic badge style (Default)
+        --color <COLOR>              Badge color. Must be a valid css color
+    -f, --flat                       Flat badge style
+    -h, --help                       Print help information
+        --icon <ICON>                Badge icon. icon can be any `Brand` or `Solid` icons from fontawesome
+        --icon-color <ICON_COLOR>    Icon color. Must be a valid css color
+    -l, --large                      Large badge size
+    -m, --medium                     Medium badge size
+    -o, --out <OUT>                  Output svg to file
+    -s, --subject <SUBJECT>          Badge subject
+    -x, --small                      Small badge size (Default)
 ```
 
 */
 
 use badgeland::{icon_exists, Badge, BadgeData, Color, Icon, Size, Style};
-use clap::{ArgGroup, Clap};
+use clap::{Parser, ArgGroup};
 use std::{convert::TryFrom, error::Error, fs::File, io::prelude::*, path::PathBuf, str::FromStr};
 
 #[derive(Debug, PartialEq)]
@@ -42,7 +45,7 @@ impl FromStr for Content {
     }
 }
 
-#[derive(Clap, Debug)]
+#[derive(Parser, Debug)]
 #[clap(group = ArgGroup::new("style").required(false))]
 struct StyleArg {
     /// Flat badge style
@@ -63,7 +66,7 @@ impl From<StyleArg> for Style {
     }
 }
 
-#[derive(Clap, Debug)]
+#[derive(Parser, Debug)]
 #[clap(group = ArgGroup::new("size").required(false))]
 struct SizeArg {
     /// Small badge size (Default)
@@ -90,7 +93,7 @@ impl From<SizeArg> for Size {
 }
 
 /// Fast badge generator for any purpose
-#[derive(Debug, Clap)]
+#[derive(Debug, Parser)]
 struct Opt {
     /// Badge subject
     #[clap(short, long)]
@@ -118,12 +121,12 @@ struct Opt {
     #[clap(short, long)]
     out: Option<PathBuf>,
 
-    /// Badge content
+    /// Badge content. Can be string or csv
     #[clap()]
     content: Content,
 }
 
-#[derive(Debug, Clap)]
+#[derive(Debug, Parser)]
 #[clap(name = "cargo-badge", bin_name = "cargo")]
 enum CargoCmd {
     #[clap(name = "badge")]
