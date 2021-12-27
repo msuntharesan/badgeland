@@ -1,8 +1,10 @@
 use cssparser::{Color as CssColor, Parser, ParserInput, ToCss};
-use std::{error::Error, fmt::Display, str::FromStr};
+use std::{fmt::Display, str::FromStr};
 
 #[cfg(feature = "serde_de")]
 use serde::{de, Deserialize, Deserializer, Serialize};
+
+use super::error::ColorError;
 
 pub const DEFAULT_WHITE: &'static str = "#fff";
 pub const DEFAULT_BLACK: &'static str = "#000";
@@ -15,7 +17,7 @@ pub const DEFAULT_GRAY_DARK: &'static str = "#24292e";
 pub struct Color(pub String);
 
 impl FromStr for Color {
-    type Err = Box<dyn Error>;
+    type Err = ColorError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut input = ParserInput::new(s);
         let mut parser = Parser::new(&mut input);
@@ -23,7 +25,7 @@ impl FromStr for Color {
         CssColor::parse(&mut parser)
             .or_else(|_| CssColor::parse_hash(s.as_bytes()))
             .map(|c| Color(c.to_css_string()))
-            .map_err(|_| format!("Invalid css color: {}", s).into())
+            .map_err(|_| Self::Err {})
     }
 }
 
@@ -95,6 +97,7 @@ mod test {
             let cx = Color::from_str(c);
 
             assert!(cx.is_err(), "input = {}, received = {:?}", c, cx);
+            assert_eq!(cx.unwrap_err().to_string(), "Invalid Color".to_string());
         }
     }
 }

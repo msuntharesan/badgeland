@@ -1,16 +1,17 @@
 mod content;
 mod size;
 mod style;
+mod templates;
 
 pub use size::Size;
 
 pub use style::Style;
-use style::{classic_template, flat_template};
 
 use super::{icons::Icon, Color, DEFAULT_BLACK, DEFAULT_BLUE, DEFAULT_GRAY, DEFAULT_GRAY_DARK, DEFAULT_WHITE};
 use content::{BadgeContentSize, ContentSize, Path, TextWidth};
 use core::f32;
 use std::fmt;
+use templates::{classic_template, flat_template};
 
 #[derive(Debug)]
 pub struct BadgeTypeInit;
@@ -46,7 +47,7 @@ impl BadgeContentType<'_> {
     }
 
     #[inline]
-    fn path_str(self, height: usize, width: usize) -> Option<String> {
+    fn path_str(&self, height: usize, width: usize) -> Option<String> {
         match self {
             BadgeContentType::Data(d) => {
                 let mut path_str = String::new();
@@ -289,7 +290,7 @@ mod tests {
     #[test]
     fn default_badge_has_classic_style() {
         let mut badge = Badge::new();
-        &badge.subject("just text");
+        badge.subject("just text");
         let badge_svg = badge.to_string();
         let doc = Html::parse_fragment(&badge_svg);
         assert_eq!(badge.style, Style::Classic, "style not Classic");
@@ -299,7 +300,7 @@ mod tests {
     #[test]
     fn default_badge_has_20px_height() {
         let mut badge = Badge::new();
-        &badge.subject("just text");
+        badge.subject("just text");
         let badge_svg = badge.to_string();
         let doc = Html::parse_fragment(&badge_svg);
         let selector = Selector::parse("svg").unwrap();
@@ -309,7 +310,7 @@ mod tests {
     #[test]
     fn default_badge_only_has_subject() {
         let mut badge = Badge::new();
-        &badge.subject("just subject");
+        badge.subject("just subject");
         let badge_svg = badge.to_string();
         let doc = Html::parse_fragment(&badge_svg);
         let text_sel = Selector::parse("g#text > text").unwrap();
@@ -321,7 +322,7 @@ mod tests {
     #[test]
     fn default_badge_has_333_as_background_color() {
         let mut badge = Badge::new();
-        &badge.subject("just text");
+        badge.subject("just text");
         badge.color(DEFAULT_BLUE.parse().unwrap());
         let def_color: Color = DEFAULT_BLUE.parse().unwrap();
         let badge_svg = badge.to_string();
@@ -346,7 +347,7 @@ mod tests {
     fn badge_with_icon() {
         let icon = Icon::try_from("git").unwrap();
         let mut badge = Badge::new();
-        &badge.subject("with icon").icon(icon);
+        badge.subject("with icon").icon(icon);
 
         let icon = &badge.icon;
         assert!(icon.is_some());
@@ -362,7 +363,7 @@ mod tests {
     fn badge_with_icon_only() {
         let icon = Icon::try_from("git").unwrap();
         let mut badge = Badge::new();
-        &badge.icon(icon);
+        badge.icon(icon);
 
         let icon = &badge.icon;
         assert!(icon.is_some());
@@ -376,7 +377,7 @@ mod tests {
     #[test]
     fn badge_has_medium_icon() {
         let mut badge = Badge::new();
-        &badge.subject("with icon").size(Size::Medium);
+        badge.subject("with icon").size(Size::Medium);
         let doc = Html::parse_fragment(&badge.to_string());
         let svg_sel = Selector::parse("svg").unwrap();
         let svg = doc.select(&svg_sel).next().unwrap();
@@ -385,7 +386,7 @@ mod tests {
     #[test]
     fn badge_has_large_icon() {
         let mut badge = Badge::new();
-        &badge.subject("with icon").size(Size::Large);
+        badge.subject("with icon").size(Size::Large);
         let doc = Html::parse_fragment(&badge.to_string());
         let svg_sel = Selector::parse("svg").unwrap();
         let svg = doc.select(&svg_sel).next().unwrap();

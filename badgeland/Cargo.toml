@@ -13,13 +13,15 @@ build = "./build_scripts/build.rs"
 
 [dependencies]
 ab_glyph = "0.2"
-cssparser = "0.28"
-maud = "0.22"
-phf = { version = "0.9", optional = true }
+cssparser = "0.29"
+maud = "0.23"
+phf = { version = "0.10", optional = true }
+thiserror = "1.0"
 unicode-normalization = "0.1"
 
+
 [dependencies.clap]
-version = "3.0.0-beta.2"
+version = "3.0.0-rc.7"
 features = ["derive", "suggestions", "color"]
 optional = true
 
@@ -34,7 +36,7 @@ scraper = "0.12"
 rand = "0.8.4"
 
 [build-dependencies]
-phf_codegen = "0.9"
+phf_codegen = "0.10"
 scraper = "0.12"
 
 [features]
