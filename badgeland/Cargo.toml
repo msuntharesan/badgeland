@@ -19,9 +19,8 @@ phf = { version = "0.10", optional = true }
 thiserror = "1.0"
 unicode-normalization = "0.1"
 
-
 [dependencies.clap]
-version = "3.0.0-rc.7"
+version = "3.2"
 features = ["derive", "suggestions", "color"]
 optional = true
 
@@ -32,12 +31,12 @@ optional = true
 
 [dev-dependencies]
 criterion = "0.3"
-scraper = "0.12"
 rand = "0.8.4"
+scraper = "0.13"
 
 [build-dependencies]
 phf_codegen = "0.10"
-scraper = "0.12"
+scraper = "0.13"
 
 [features]
 serde_de = ["serde"]

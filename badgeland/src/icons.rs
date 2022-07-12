@@ -15,7 +15,7 @@ pub fn icon_keys() -> Vec<&'static str> {
     SYMBOLS.keys().map(|&k| k).collect()
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Icon<'a> {
     name: &'a str,
     symbol: &'a str,
@@ -35,13 +35,13 @@ impl<'a> Icon<'a> {
 
 #[cfg(feature = "static_icons")]
 impl<'a> TryFrom<&'a str> for Icon<'a> {
-    type Error = IconError<'a>;
+    type Error = IconError;
 
     fn try_from(name: &'a str) -> Result<Self, Self::Error> {
         SYMBOLS
             .get(name)
             .map(|&symbol| Icon { name, symbol })
-            .ok_or(Self::Error { name })
+            .ok_or(Self::Error {})
     }
 }
 
@@ -62,7 +62,7 @@ mod tests {
     fn get_icon_symbol_fail() {
         let icon = Icon::try_from("someicon");
         assert!(icon.is_err());
-        assert_eq!(icon.unwrap_err().to_string(), "Invalid Icon Name someicon");
+        assert_eq!(icon.unwrap_err().to_string(), "Invalid Icon");
     }
 
     #[test]

@@ -7,7 +7,9 @@ pub use size::Size;
 
 pub use style::Style;
 
-use super::{icons::Icon, Color, DEFAULT_BLACK, DEFAULT_BLUE, DEFAULT_GRAY, DEFAULT_GRAY_DARK, DEFAULT_WHITE};
+use super::{
+    icons::Icon, Color, DEFAULT_BLACK, DEFAULT_BLUE, DEFAULT_GRAY, DEFAULT_GRAY_DARK, DEFAULT_WHITE,
+};
 use content::{BadgeContentSize, ContentSize, Path, TextWidth};
 use core::f32;
 use std::fmt;
@@ -41,7 +43,9 @@ impl BadgeContentType<'_> {
     fn content_size(&self, height: usize, padding: usize, font_size: f32) -> ContentSize {
         match self {
             BadgeContentType::Data(d) => d.content_size(height, height * 5, padding, 0),
-            BadgeContentType::Text(c) => c.content_size(height, c.get_text_width(font_size), padding, 0),
+            BadgeContentType::Text(c) => {
+                c.content_size(height, c.get_text_width(font_size), padding, 0)
+            }
             _ => ContentSize::default(),
         }
     }
@@ -203,7 +207,12 @@ impl<'a, T: BadgeType<'a>> Badge<'a, T> {
         let (icon_width, x_offset) = self.get_icon_size();
 
         match self.subject {
-            Some(s) => s.content_size(height, s.get_text_width(font_size), padding, x_offset + icon_width),
+            Some(s) => s.content_size(
+                height,
+                s.get_text_width(font_size),
+                padding,
+                x_offset + icon_width,
+            ),
             None if self.icon.is_some() => ContentSize {
                 rw: icon_width + x_offset * 2,
                 x: x_offset,
@@ -282,9 +291,8 @@ impl<'a, T: BadgeType<'a>> fmt::Display for Badge<'a, T> {
 #[cfg(test)]
 mod tests {
     use super::{style::Style, Badge, Color, Size, DEFAULT_BLUE};
-    use scraper::{Html, Selector};
-
     use crate::Icon;
+    use scraper::{Html, Selector};
     use std::convert::TryFrom;
 
     #[test]
@@ -317,7 +325,10 @@ mod tests {
         let text_els = doc.select(&text_sel);
         assert_eq!(text_els.count(), 1);
         let text = doc.select(&text_sel).next().unwrap();
-        assert_eq!(text.text().collect::<String>(), String::from("just subject"));
+        assert_eq!(
+            text.text().collect::<String>(),
+            String::from("just subject")
+        );
     }
     #[test]
     fn default_badge_has_333_as_background_color() {
@@ -339,15 +350,19 @@ mod tests {
         let doc = Html::parse_fragment(&badge.text("badge text").to_string());
         let subject_sel = Selector::parse("g#text > text:last-child").unwrap();
         let subject = doc.select(&subject_sel).next().unwrap();
-        assert_eq!(subject.text().collect::<String>(), String::from("badge text"));
+        assert_eq!(
+            subject.text().collect::<String>(),
+            String::from("badge text")
+        );
     }
 
     #[test]
     #[cfg(feature = "static_icons")]
     fn badge_with_icon() {
-        let icon = Icon::try_from("git").unwrap();
         let mut badge = Badge::new();
-        badge.subject("with icon").icon(icon);
+        badge
+            .subject("with icon")
+            .icon(Icon::try_from("git").unwrap());
 
         let icon = &badge.icon;
         assert!(icon.is_some());
@@ -361,9 +376,8 @@ mod tests {
     #[test]
     #[cfg(feature = "static_icons")]
     fn badge_with_icon_only() {
-        let icon = Icon::try_from("git").unwrap();
         let mut badge = Badge::new();
-        badge.icon(icon);
+        badge.icon(Icon::try_from("git").unwrap());
 
         let icon = &badge.icon;
         assert!(icon.is_some());

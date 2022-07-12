@@ -1,15 +1,27 @@
 use crate::SizeError;
-use std::str::FromStr;
+use std::{fmt, str::FromStr};
 
 #[cfg(feature = "serde_de")]
 use serde::{de, Deserialize, Deserializer, Serialize};
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone, Default)]
 #[cfg_attr(feature = "serde_de", derive(Serialize))]
 pub enum Size {
     Large,
     Medium,
+    #[default]
     Small,
+}
+
+impl fmt::Display for Size {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Size::Large => "Large",
+            Size::Medium => "Medium",
+            Size::Small => "Small",
+        };
+        write!(f, "{}", s)
+    }
 }
 
 #[cfg(feature = "serde_de")]

@@ -65,7 +65,13 @@ mod test {
 
     #[test]
     fn get_color_pass() {
-        let colors = vec!["red", "#ff0000", "ff0000", "rgb(255, 0, 0)", "rgba(255, 0, 0, 1)"];
+        let colors = vec![
+            "red",
+            "#ff0000",
+            "ff0000",
+            "rgb(255, 0, 0)",
+            "rgba(255, 0, 0, 1)",
+        ];
 
         let expected = Color(String::from("rgb(255, 0, 0)"));
 

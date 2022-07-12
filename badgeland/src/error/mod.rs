@@ -4,16 +4,15 @@ use thiserror::Error;
 #[error("Invalid Color")]
 pub struct ColorError;
 
+#[cfg(feature = "static_icons")]
 #[derive(Error, Debug)]
-#[error("Invalid Icon Name {}", name)]
-pub struct IconError<'a> {
-    pub name: &'a str,
-}
+#[error("Invalid Icon")]
+pub struct IconError;
 
 #[derive(Error, Debug)]
 #[error("Invalid Size")]
 pub struct SizeError;
 
 #[derive(Error, Debug)]
-#[error("Invalid Size")]
+#[error("Invalid Style")]
 pub struct StyleError;
