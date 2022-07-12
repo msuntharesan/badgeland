@@ -1,10 +1,7 @@
-use std::{convert::From, num::ParseFloatError, str::FromStr};
+use std::{iter::FromIterator, num::ParseFloatError, str::FromStr};
 
-#[cfg(feature = "serde_de")]
-use serde::Deserialize;
-
-#[derive(Debug, PartialEq)]
-#[cfg_attr(feature = "serde_de", derive(Deserialize))]
+#[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "serde_de", derive(serde::Serialize, serde::Deserialize))]
 pub struct BadgeData(pub Vec<f32>);
 
 impl FromStr for BadgeData {
@@ -12,14 +9,19 @@ impl FromStr for BadgeData {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         s.split(",")
             .map(|s| s.trim().parse::<f32>())
-            .collect::<Result<Vec<_>, Self::Err>>()
-            .map(|values| BadgeData(values))
+            .collect::<Result<Self, Self::Err>>()
     }
 }
 
-impl From<Vec<f32>> for BadgeData {
-    fn from(values: Vec<f32>) -> Self {
-        BadgeData(values)
+impl AsRef<[f32]> for BadgeData {
+    fn as_ref(&self) -> &[f32] {
+        &self.0[..]
+    }
+}
+
+impl FromIterator<f32> for BadgeData {
+    fn from_iter<I: IntoIterator<Item = f32>>(iter: I) -> Self {
+        BadgeData(iter.into_iter().collect())
     }
 }
 
@@ -44,8 +46,8 @@ mod tests {
     }
 
     #[test]
-    fn data_from_json_parse_fails() {
-        let d = "12, 32!,23, 23, 12".parse::<BadgeData>();
-        assert!(d.is_err());
+    fn struct_collect_pass() {
+        let d: BadgeData = vec![12, 32, 32, 12, 42].into_iter().map(|v| v as f32).collect();
+        assert_eq!(d, BadgeData(vec![12., 32., 32., 12., 42.]));
     }
 }
