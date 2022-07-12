@@ -1,4 +1,3 @@
 sign-commit = true
 sign-tag = true
 tag-prefix = "{{crate_name}}@"
-no-dev-version = true
