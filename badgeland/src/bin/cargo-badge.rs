@@ -4,6 +4,8 @@
 Install using `cargo install badgeland --features cli`
 
 ```sh
+Fast badge generator for any purpose
+
 USAGE:
     cargo badge [OPTIONS] <CONTENT>
 
@@ -15,7 +17,10 @@ OPTIONS:
         --color <COLOR>              Badge color. Must be a valid css color
     -f, --flat                       Flat badge style
     -h, --help                       Print help information
-        --icon <ICON>                Badge icon. icon can be any `Brand` or `Solid` icons from fontawesome
+        --icon <ICON>                Badge icon. Icons are from
+                                     <https://fontawesome.com/search?s=brands>,
+                                     <https://fontawesome.com/search?s=solid> and
+                                     <https://simpleicons.org/>
         --icon-color <ICON_COLOR>    Icon color. Must be a valid css color
     -l, --large                      Large badge size
     -m, --medium                     Medium badge size
@@ -27,10 +32,10 @@ OPTIONS:
 */
 
 use badgeland::{icon_exists, Badge, BadgeData, Color, Icon, Size, Style};
-use clap::{Parser, ArgGroup};
+use clap::{ArgGroup, Parser};
 use std::{convert::TryFrom, error::Error, fs::File, io::prelude::*, path::PathBuf, str::FromStr};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 enum Content {
     Text(String),
     Data(BadgeData),
@@ -49,19 +54,20 @@ impl FromStr for Content {
 #[clap(group = ArgGroup::new("style").required(false))]
 struct StyleArg {
     /// Flat badge style
-    #[clap(short, long, group = "style")]
+    #[clap(short, long, group = "style", action)]
     flat: bool,
 
     /// Classic badge style (Default)
-    #[clap(short, long, group = "style")]
+    #[clap(short, long, group = "style", action)]
     classic: bool,
 }
 
 impl From<StyleArg> for Style {
     fn from(s: StyleArg) -> Self {
-        match (s.flat, s.classic) {
-            (true, _) => Self::Flat,
-            _ => Self::Classic,
+        if s.flat {
+            Self::Flat
+        } else {
+            Self::Classic
         }
     }
 }
@@ -70,15 +76,15 @@ impl From<StyleArg> for Style {
 #[clap(group = ArgGroup::new("size").required(false))]
 struct SizeArg {
     /// Small badge size (Default)
-    #[clap(short = 'x', long, group = "size")]
+    #[clap(short = 'x', long, group = "size", action)]
     small: bool,
 
     /// Medium badge size
-    #[clap(short, long, group = "size")]
+    #[clap(short, long, group = "size", action)]
     medium: bool,
 
     /// Large badge size
-    #[clap(short, long, group = "size")]
+    #[clap(short, long, group = "size", action)]
     large: bool,
 }
 
@@ -96,7 +102,7 @@ impl From<SizeArg> for Size {
 #[derive(Debug, Parser)]
 struct Opt {
     /// Badge subject
-    #[clap(short, long)]
+    #[clap(short, long, value_parser)]
     subject: Option<String>,
 
     #[clap(flatten)]
@@ -106,23 +112,23 @@ struct Opt {
     size: SizeArg,
 
     /// Badge color. Must be a valid css color
-    #[clap(long)]
+    #[clap(long, value_parser)]
     color: Option<Color>,
 
-    /// Badge icon. icon can be any `Brand` or `Solid` icons from fontawesome
-    #[clap(long)]
+    /// Badge icon. Icons are from <https://fontawesome.com/search?s=brands>, <https://fontawesome.com/search?s=solid> and <https://simpleicons.org/>
+    #[clap(long, value_parser)]
     icon: Option<String>,
 
     /// Icon color. Must be a valid css color
-    #[clap(long)]
+    #[clap(long, value_parser)]
     icon_color: Option<Color>,
 
     /// Output svg to file
-    #[clap(short, long)]
+    #[clap(short, long, value_parser)]
     out: Option<PathBuf>,
 
     /// Badge content. Can be string or csv
-    #[clap()]
+    #[clap(value_parser)]
     content: Content,
 }
 
@@ -166,7 +172,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let svg = match opt.content {
-        Content::Data(d) => badge.data(&d.0).to_string(),
+        Content::Data(d) => badge.data(d.as_ref()).to_string(),
         Content::Text(t) => badge.text(&t).to_string(),
     };
 
