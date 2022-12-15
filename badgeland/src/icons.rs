@@ -1,5 +1,7 @@
+#[cfg(feature = "static_icons")]
 use std::convert::TryFrom;
 
+#[cfg(feature = "static_icons")]
 use super::error::IconError;
 
 #[cfg(feature = "static_icons")]

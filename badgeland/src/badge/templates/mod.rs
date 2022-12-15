@@ -1,5 +1,5 @@
-use super::{content::ContentSize, BadgeContentType};
-use super::{DEFAULT_BLACK, DEFAULT_GRAY, DEFAULT_GRAY_DARK, DEFAULT_WHITE};
+use super::{content::ContentSize, SvgPath};
+use crate::badge::BadgeContentType;
 use crate::{Color, Icon};
 use maud::PreEscaped;
 use maud::{html, Markup};
@@ -23,7 +23,7 @@ fn content_template<'a>(
 ) -> Markup {
     html!(
         g#text
-            fill=(DEFAULT_WHITE)
+            fill=(PreEscaped(Color::white().as_ref()))
             font-family="Verdana,sans-serif"
             font-size=(font_size)
             transform="translate(0, 0)" {
@@ -35,7 +35,7 @@ fn content_template<'a>(
                     y=(((height - icon_width) / 2))
                     width=(icon_width)
                     height=(icon_width)
-                    fill=(icon_color) {}
+                    fill=(icon_color.as_ref()) {}
                 }
                 @if let Some(s) = subject {
                 text
@@ -44,7 +44,7 @@ fn content_template<'a>(
                     x=(subject_size.x)
                     y=(subject_size.y)
                     filter="url(#shadow)"
-                    { (s) }
+                    { (PreEscaped(s)) }
                 }
                 @if let BadgeContentType::Text(c) = content {
                     text
@@ -53,22 +53,24 @@ fn content_template<'a>(
                         text-anchor="middle"
                         dominant-baseline="middle"
                         filter="url(#shadow)"
-                        { (c) }
-                    }
-                @if let Some(path_str) = content.path_str(height, height * 5) {
+                        { (PreEscaped(c)) }
+                }
+                @if let BadgeContentType::Data(d) = content {
+                    @let path_str = d.svg_path(height, height * 5);
+
                     path
                         fill="none"
                         transform=(format!("translate({}, {})", subject_size.rw, 0))
-                        stroke=(color)
+                        stroke=(color.as_ref())
                         stroke-width="1px"
-                        d=(&path_str) {}
+                        d=(PreEscaped(&path_str)) {}
                     path
-                        fill=(color)
+                        fill=(color.as_ref())
                         fill-opacity="0.2"
-                        transform=(format!("translate({}, {})", subject_size.rw, 0))
+                        transform=(PreEscaped(format!("translate({}, {})", subject_size.rw, 0)))
                         stroke="none"
                         stroke-width="0px"
-                        d=(format!("{}V{}H0Z", &path_str, height)) {}
+                        d=(PreEscaped(format!("{}V{}H0Z", &path_str, height))) {}
                 }
         }
     )
@@ -107,14 +109,13 @@ pub(super) fn classic_template<'a>(
                         stop offset="1" stop-opacity="0.3" {}
                     }
                     mask id="bg-mask" {
-                        rect fill=(DEFAULT_WHITE) height=(height) rx=(rx) width=(width){}
+                        rect fill=(PreEscaped(Color::white().as_ref())) height=(height) rx=(rx) width=(width){}
                     }
                     filter id="shadow" {
                         feDropShadow
                             dx="-0.8"
                             dy="-0.8"
-                            stdDeviation="0"
-                            flood-color=@if content.is_some() { (DEFAULT_BLACK) } @else { (DEFAULT_GRAY_DARK) }
+                            flood-color=@if content.is_some() { (PreEscaped(Color::black().as_ref())) } @else { (PreEscaped(Color::gray_dark().as_ref())) }
                             flood-opacity="0.4" {}
                     }
                 }
@@ -122,14 +123,14 @@ pub(super) fn classic_template<'a>(
                     rect fill="url(#a)" height=(height) width=(width) {}
                     @if subject.is_some() || icon.is_some() {
                         rect#subject
-                            fill=@if content.is_some() { (DEFAULT_GRAY_DARK) } @else { (color) }
+                            fill=@if content.is_some() { (PreEscaped(Color::gray_dark().as_ref())) } @else { (color.as_ref()) }
                             height=(height)
                             width=(subject_size.rw) {}
                     }
                     rect#content
                         fill=@match &content{
-                            BadgeContentType::Data(_) => { (DEFAULT_GRAY) }
-                            _ => (color)
+                            BadgeContentType::Data(_) => { (PreEscaped(Color::gray().as_ref())) }
+                            _ => (color.as_ref())
                         }
                         height=(height)
                         width=(content_size.rw)
@@ -188,22 +189,22 @@ pub(super) fn flat_template<'a>(
                             dx="-0.8"
                             dy="-0.8"
                             stdDeviation="0"
-                            flood-color=@if content.is_some() { (DEFAULT_BLACK) } @else { (DEFAULT_GRAY_DARK) }
+                            flood-color=@if content.is_some() { (PreEscaped(Color::black().as_ref())) } @else { (PreEscaped(Color::gray_dark().as_ref())) }
                             flood-opacity="0.4" {}
                     }
                 }
                 g#bg {
-                    rect fill=(DEFAULT_GRAY) height=(height) width=(width) {}
+                    rect fill=(PreEscaped(Color::gray().as_ref())) height=(height) width=(width) {}
                     @if subject.is_some() || icon.is_some() {
                         rect#subject
-                            fill=@if content.is_some() { (DEFAULT_GRAY_DARK) } @else { (color) }
+                            fill=@if content.is_some() { (PreEscaped(Color::gray_dark().as_ref())) } @else { (color.as_ref()) }
                             height=(height)
                             width=(subject_size.rw) {}
                     }
                     rect#content
-                        fill=@match &content{
-                            BadgeContentType::Data(_) => { (DEFAULT_GRAY) }
-                            _ => (color)
+                        fill=@match &content {
+                            BadgeContentType::Data(_) => { (PreEscaped(Color::gray().as_ref())) }
+                            _ => (color.as_ref())
                         }
                         height=(height)
                         width=(content_size.rw)

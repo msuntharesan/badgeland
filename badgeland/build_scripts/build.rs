@@ -7,7 +7,7 @@ use std::{
     path::Path,
 };
 
-const EXCLUDE_LIST: &[&str] = &[
+const DUPLICATES: &[&str] = &[
     "anchor",
     "atom",
     "blender",
@@ -27,10 +27,6 @@ const EXCLUDE_LIST: &[&str] = &[
 ];
 
 fn generate_icon_map() {
-    let path = Path::new(&env::var("OUT_DIR").unwrap()).join("icons_map.rs");
-
-    let mut file = BufWriter::new(File::create(path).unwrap());
-
     let mut map = Map::<&str>::new();
 
     let selector = Selector::parse("symbol").unwrap();
@@ -45,12 +41,16 @@ fn generate_icon_map() {
     let doc = Html::parse_fragment(include_str!("./icons/simple-icons.svg"));
     for el in doc.select(&selector) {
         let id = el.value().attr("id").unwrap();
-        let sym = el.html();
-        if !EXCLUDE_LIST.contains(&id) {
-            map.entry(id, &format!(r##"r#"{}"#"##, sym));
+        if DUPLICATES.contains(&id) {
+            continue;
         }
+        let sym = el.html();
+        map.entry(id, &format!(r##"r#"{}"#"##, sym));
     }
 
+    let path = Path::new(&env::var("OUT_DIR").unwrap()).join("icons_map.rs");
+
+    let mut file = BufWriter::new(File::create(path).unwrap());
     writeln!(
         &mut file,
         "const SYMBOLS: phf::Map<&'static str, &'static str> = {};",
@@ -60,5 +60,7 @@ fn generate_icon_map() {
 }
 
 fn main() {
-    generate_icon_map()
+    if cfg!(feature = "static_icons") {
+        generate_icon_map()
+    }
 }

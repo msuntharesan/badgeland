@@ -13,12 +13,11 @@ Add `humanize` to your `Cargo.toml` as as a dependency.
 use humanize::*;
 
 fn main() {
-  let opts = HumanizeOptions::builder().build();
-  let human_readable = 1234;
-  assert_eq!(human_readable.humanize(opts), "1.23K".to_string())
+    let opts = HumanizeOptions::default_options();
+    let human_readable = 1234;
+    assert_eq!(human_readable.humanize(opts), "1.23K".to_string())
 }
 ```
-
 */
 
 use std::usize;
@@ -78,12 +77,25 @@ pub struct HumanizeOptions {
 
 impl HumanizeOptions {
     #[inline]
+    pub fn default_options() -> &'static Self {
+        DEFAULT_OPTIONS.as_ref()
+    }
+    pub fn default_bytes_options() -> &'static Self {
+        DEFAULT_BYTES_OPTIONS.as_ref()
+    }
+
+    pub fn default_bits_options() -> &'static Self {
+        DEFAULT_BITS_OPTIONS.as_ref()
+    }
+
+    #[inline]
     fn denominator(&self) -> usize {
         self.base.get_denominator()
     }
 }
 
-pub static DEFAULT_OPTIONS: Lazy<HumanizeOptions> = Lazy::new(|| HumanizeOptions::builder().build());
+pub static DEFAULT_OPTIONS: Lazy<HumanizeOptions> =
+    Lazy::new(|| HumanizeOptions::builder().build());
 
 pub static DEFAULT_BYTES_OPTIONS: Lazy<HumanizeOptions> = Lazy::new(|| {
     HumanizeOptions::builder()
@@ -197,6 +209,17 @@ mod tests {
     }
 
     #[test]
+    fn test_default_option() {
+        let opt = HumanizeOptions::default_options();
+
+        assert_eq!(100.humanize(opt), "100".to_string());
+        assert_eq!(1_024.humanize(opt), "1.02K".to_string());
+        assert_eq!(1_050_000.humanize(opt), "1.05M".to_string());
+        assert_eq!(1_080_000_000.humanize(opt), "1.08B".to_string());
+        assert_eq!(1_100_000_000_000u64.humanize(opt), "1.10T".to_string());
+    }
+
+    #[test]
     fn test_usize() {
         let opt = HumanizeOptions::builder().build();
         assert_eq!(100.humanize(&opt), "100".to_owned());
@@ -244,19 +267,19 @@ mod tests {
         let value = 12345.6789;
 
         assert_eq!(
-            value.humanize(&HumanizeOptions::builder().precision(0usize).build()),
+            value.humanize(&HumanizeOptions::builder().precision(9).build()),
             "12K".to_owned()
         );
         assert_eq!(
-            value.humanize(&HumanizeOptions::builder().precision(1usize).build()),
+            value.humanize(&HumanizeOptions::builder().precision(1).build()),
             "12.3K".to_owned()
         );
         assert_eq!(
-            value.humanize(&HumanizeOptions::builder().precision(2usize).build()),
+            value.humanize(&HumanizeOptions::builder().precision(2).build()),
             "12.35K".to_owned()
         );
         assert_eq!(
-            value.humanize(&HumanizeOptions::builder().precision(3usize).build()),
+            value.humanize(&HumanizeOptions::builder().precision(3).build()),
             "12.345K".to_owned()
         );
     }
@@ -269,31 +292,46 @@ mod tests {
         assert_eq!(1060000000.humanize(&opt), "1.1B".to_owned());
         assert_eq!(1810000000.humanize(&opt), "1.8B".to_owned());
 
-        let opt = HumanizeOptions::builder().keep_zero(true).precision(1usize).build();
+        let opt = HumanizeOptions::builder()
+            .keep_zero(true)
+            .precision(1)
+            .build();
 
         assert_eq!(1010000000.humanize(&opt), "1.0B".to_owned());
         assert_eq!(1060000000.humanize(&opt), "1.1B".to_owned());
         assert_eq!(1810000000.humanize(&opt), "1.8B".to_owned());
 
-        let opt = HumanizeOptions::builder().keep_zero(false).precision(2usize).build();
+        let opt = HumanizeOptions::builder()
+            .keep_zero(false)
+            .precision(2)
+            .build();
 
         assert_eq!(1001000000.humanize(&opt), "1B".to_owned());
         assert_eq!(1060000000.humanize(&opt), "1.06B".to_owned());
         assert_eq!(1810000000.humanize(&opt), "1.81B".to_owned());
 
-        let opt = HumanizeOptions::builder().precision(2usize).keep_zero(true).build();
+        let opt = HumanizeOptions::builder()
+            .precision(2)
+            .keep_zero(true)
+            .build();
 
         assert_eq!(1001000000.humanize(&opt), "1.00B".to_owned());
         assert_eq!(1060000000.humanize(&opt), "1.06B".to_owned());
         assert_eq!(1810000000.humanize(&opt), "1.81B".to_owned());
 
-        let opt = HumanizeOptions::builder().keep_zero(false).precision(3usize).build();
+        let opt = HumanizeOptions::builder()
+            .keep_zero(false)
+            .precision(3usize)
+            .build();
 
         assert_eq!(1000100000.humanize(&opt), "1B".to_owned());
         assert_eq!(1060000000.humanize(&opt), "1.060B".to_owned());
         assert_eq!(1813450000.humanize(&opt), "1.813B".to_owned());
 
-        let opt = HumanizeOptions::builder().keep_zero(true).precision(3usize).build();
+        let opt = HumanizeOptions::builder()
+            .keep_zero(true)
+            .precision(3)
+            .build();
 
         assert_eq!(1000100000.humanize(&opt), "1.000B".to_owned());
         assert_eq!(1060000000.humanize(&opt), "1.060B".to_owned());
