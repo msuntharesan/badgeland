@@ -1,20 +1,43 @@
 use cssparser::{Color as CssColor, Parser, ParserInput, ToCss};
-use std::{fmt::Display, str::FromStr};
+use std::{borrow::Cow, fmt::Display, str::FromStr};
 
 #[cfg(feature = "serde_de")]
 use serde::{de, Deserialize, Deserializer, Serialize};
 
 use super::error::ColorError;
 
-pub const DEFAULT_WHITE: &'static str = "#fff";
-pub const DEFAULT_BLACK: &'static str = "#000";
-pub const DEFAULT_BLUE: &'static str = "#0366d6";
-pub const DEFAULT_GRAY: &'static str = "#f6f8fa";
-pub const DEFAULT_GRAY_DARK: &'static str = "#24292e";
+const DEFAULT_WHITE: &'static str = "rgb(255, 255, 255)";
+const DEFAULT_BLACK: &'static str = "rgb(0, 0, 0)";
+const DEFAULT_BLUE: &'static str = "rgb(3, 102, 214)";
+const DEFAULT_GRAY: &'static str = "rgb(246, 248, 250)";
+const DEFAULT_GRAY_DARK: &'static str = "rgb(36, 41, 46)";
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 #[cfg_attr(feature = "serde_de", derive(Serialize))]
-pub struct Color(pub String);
+pub struct Color(Cow<'static, str>);
+
+impl Color {
+    #[inline]
+    pub fn white() -> Color {
+        Color(DEFAULT_WHITE.into())
+    }
+    #[inline]
+    pub fn black() -> Color {
+        Color(DEFAULT_BLACK.into())
+    }
+    #[inline]
+    pub fn blue() -> Color {
+        Color(DEFAULT_BLUE.into())
+    }
+    #[inline]
+    pub fn gray() -> Color {
+        Color(DEFAULT_GRAY.into())
+    }
+    #[inline]
+    pub fn gray_dark() -> Color {
+        Color(DEFAULT_GRAY_DARK.into())
+    }
+}
 
 impl FromStr for Color {
     type Err = ColorError;
@@ -24,14 +47,14 @@ impl FromStr for Color {
 
         CssColor::parse(&mut parser)
             .or_else(|_| CssColor::parse_hash(s.as_bytes()))
-            .map(|c| Color(c.to_css_string()))
+            .map(|c| Color(c.to_css_string().into()))
             .map_err(|_| Self::Err {})
     }
 }
 
 impl Default for Color {
     fn default() -> Self {
-        "#000".parse().unwrap()
+        Self::black()
     }
 }
 
@@ -43,7 +66,7 @@ impl Display for Color {
 
 impl AsRef<str> for Color {
     fn as_ref(&self) -> &str {
-        self.0.as_str()
+        self.0.as_ref()
     }
 }
 
@@ -69,11 +92,13 @@ mod test {
             "red",
             "#ff0000",
             "ff0000",
+            "#f00",
+            "f00",
             "rgb(255, 0, 0)",
             "rgba(255, 0, 0, 1)",
         ];
 
-        let expected = Color(String::from("rgb(255, 0, 0)"));
+        let expected = Color("rgb(255, 0, 0)".into());
 
         for c in colors {
             let cx = Color::from_str(c);

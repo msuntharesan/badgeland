@@ -7,12 +7,10 @@ pub use size::Size;
 
 pub use style::Style;
 
-use super::{
-    icons::Icon, Color, DEFAULT_BLACK, DEFAULT_BLUE, DEFAULT_GRAY, DEFAULT_GRAY_DARK, DEFAULT_WHITE,
-};
-use content::{BadgeContentSize, ContentSize, Path, TextWidth};
-use core::f32;
-use std::fmt;
+use super::{icons::Icon, Color};
+use content::{BadgeContentSize, ContentSize, SvgPath, TextWidth};
+use core::{f32, fmt};
+use std::fmt::Debug;
 use templates::{classic_template, flat_template};
 
 #[derive(Debug)]
@@ -44,27 +42,9 @@ impl BadgeContentType<'_> {
         match self {
             BadgeContentType::Data(d) => d.content_size(height, height * 5, padding, 0),
             BadgeContentType::Text(c) => {
-                c.content_size(height, c.get_text_width(font_size), padding, 0)
+                c.content_size(height, c.text_width(font_size), padding, 0)
             }
             _ => ContentSize::default(),
-        }
-    }
-
-    #[inline]
-    fn path_str(&self, height: usize, width: usize) -> Option<String> {
-        match self {
-            BadgeContentType::Data(d) => {
-                let mut path_str = String::new();
-                let mut path_iter = Path::new(d, height, width);
-                let (x, y) = path_iter.next().unwrap();
-                path_str.push_str(&format!("M0 {y}L{x} {y}", x = x, y = y));
-
-                for (x, y) in path_iter {
-                    path_str.push_str(&format!("L{x} {y}", x = x, y = y));
-                }
-                Some(path_str)
-            }
-            _ => None,
         }
     }
 }
@@ -105,10 +85,10 @@ impl<'a> Badge<'a, BadgeTypeInit> {
     pub fn new() -> Self {
         Badge {
             subject: None,
-            color: DEFAULT_BLUE.parse().unwrap(),
+            color: Color::blue(),
             style: Style::Classic,
             icon: None,
-            icon_color: DEFAULT_WHITE.parse().unwrap(),
+            icon_color: Color::white(),
             size: Size::Small,
             content: BadgeTypeInit,
         }
@@ -173,7 +153,7 @@ impl<'a> Badge<'a, BadgeTypeInit> {
 
 impl<'a, T: BadgeType<'a>> Badge<'a, T> {
     #[inline]
-    fn get_height(&self) -> usize {
+    fn height(&self) -> usize {
         match self.size {
             Size::Small => 20,
             Size::Medium => 30,
@@ -182,12 +162,12 @@ impl<'a, T: BadgeType<'a>> Badge<'a, T> {
     }
 
     #[inline]
-    fn get_font_size(&self) -> f32 {
-        self.get_height() as f32 * SVG_FONT_MULTIPLIER
+    fn font_size(&self) -> f32 {
+        self.height() as f32 * SVG_FONT_MULTIPLIER
     }
 
     #[inline]
-    fn get_icon_size(&self) -> (usize, usize) {
+    fn icon_size(&self) -> (usize, usize) {
         if self.icon.is_none() {
             return (0, 0);
         }
@@ -200,16 +180,16 @@ impl<'a, T: BadgeType<'a>> Badge<'a, T> {
 
     #[inline]
     fn subject_size(&self, padding: usize) -> ContentSize {
-        let height = self.get_height();
+        let height = self.height();
 
-        let font_size = self.get_font_size();
+        let font_size = self.font_size();
 
-        let (icon_width, x_offset) = self.get_icon_size();
+        let (icon_width, x_offset) = self.icon_size();
 
         match self.subject {
             Some(s) => s.content_size(
                 height,
-                s.get_text_width(font_size),
+                s.text_width(font_size),
                 padding,
                 x_offset + icon_width,
             ),
@@ -234,15 +214,16 @@ impl<'a, T: BadgeType<'a>> Badge<'a, T> {
 
 const SVG_FONT_MULTIPLIER: f32 = 0.65;
 
-impl<'a, T: BadgeType<'a>> fmt::Display for Badge<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let height = self.get_height();
+impl<'a, T: BadgeType<'a>> Badge<'a, T> {
+    #[inline]
+    fn render(&self) -> String {
+        let height = self.height();
 
-        let font_size = self.get_font_size();
+        let font_size = self.font_size();
 
         let padding = height / 2;
 
-        let (icon_width, x_offset) = self.get_icon_size();
+        let (icon_width, x_offset) = self.icon_size();
 
         let subject_size = self.subject_size(padding);
 
@@ -254,6 +235,8 @@ impl<'a, T: BadgeType<'a>> fmt::Display for Badge<'a, T> {
 
         let rx = self.rx();
 
+        let icon = self.icon.as_ref().map(|i| (i, &self.icon_color));
+
         let markup = match self.style {
             Style::Classic => classic_template(
                 width,
@@ -261,7 +244,7 @@ impl<'a, T: BadgeType<'a>> fmt::Display for Badge<'a, T> {
                 font_size,
                 x_offset,
                 rx,
-                self.icon.as_ref().map(|i| (i, &self.icon_color)),
+                icon,
                 icon_width,
                 &self.color,
                 content,
@@ -274,7 +257,7 @@ impl<'a, T: BadgeType<'a>> fmt::Display for Badge<'a, T> {
                 height,
                 font_size,
                 x_offset,
-                self.icon.as_ref().map(|i| (i, &self.icon_color)),
+                icon,
                 icon_width,
                 &self.color,
                 content,
@@ -283,14 +266,19 @@ impl<'a, T: BadgeType<'a>> fmt::Display for Badge<'a, T> {
                 subject_size,
             ),
         };
+        markup.into_string()
+    }
+}
 
-        write!(f, "{}", markup.into_string())
+impl<'a, T: BadgeType<'a>> fmt::Display for Badge<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.render())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{style::Style, Badge, Color, Size, DEFAULT_BLUE};
+    use super::{style::Style, Badge, Color, Size};
     use crate::Icon;
     use scraper::{Html, Selector};
     use std::convert::TryFrom;
@@ -334,8 +322,8 @@ mod tests {
     fn default_badge_has_333_as_background_color() {
         let mut badge = Badge::new();
         badge.subject("just text");
-        badge.color(DEFAULT_BLUE.parse().unwrap());
-        let def_color: Color = DEFAULT_BLUE.parse().unwrap();
+        badge.color(Color::blue());
+        let def_color: Color = Color::blue();
         let badge_svg = badge.to_string();
         let doc = Html::parse_fragment(&badge_svg);
         let rect_sel = Selector::parse("g#bg > rect#subject").unwrap();

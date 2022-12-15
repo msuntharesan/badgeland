@@ -1,23 +1,21 @@
 use ab_glyph::{Font, FontRef, PxScale, ScaleFont};
-use std::{cmp::Ordering, ops::Range};
+use once_cell::sync::Lazy;
 use unicode_normalization::UnicodeNormalization;
 
-fn get_font() -> FontRef<'static> {
+static FONT: Lazy<FontRef<'static>> = Lazy::new(|| {
     let font_data: &[u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resx/Verdana.ttf"));
     FontRef::try_from_slice(font_data).expect("Error constructing Font")
-}
+});
 
 pub(crate) trait TextWidth {
-    fn get_text_width(&self, height: f32) -> usize;
+    fn text_width(&self, height: f32) -> usize;
 }
 
 impl<'a> TextWidth for &'a str {
     #[inline]
-    fn get_text_width(&self, height: f32) -> usize {
-        let font = get_font();
-
-        let scale = PxScale::from(height as f32);
-        let scaled_font = font.as_scaled(scale);
+    fn text_width(&self, height: f32) -> usize {
+        let scale = PxScale::from(height);
+        let scaled_font = FONT.as_scaled(scale);
 
         let normalized: String = self.trim().nfc().collect();
         normalized
@@ -32,45 +30,31 @@ impl<'a> TextWidth for &'a str {
     }
 }
 
-#[derive(Debug, Default, Clone)]
-pub struct Path<'a> {
-    values: &'a [f32],
-    chart_height: f32,
-    x_offset: f32,
-    y_offset: f32,
-    index: Range<usize>,
+pub(super) trait SvgPath {
+    fn svg_path(&self, height: usize, width: usize) -> String;
 }
 
-impl<'a> Path<'a> {
-    pub fn new(values: &'a [f32], height: usize, width: usize) -> Self {
-        let len = values.len();
+impl<'a> SvgPath for [f32] {
+    fn svg_path(&self, height: usize, width: usize) -> String {
+        let len = self.len();
         let chart_height = height as f32;
-        let max = values
-            .iter()
-            .max_by(|&a, &b| a.partial_cmp(b).unwrap_or(Ordering::Equal))
-            .unwrap_or(&0.);
+        let max = *self.iter().max_by_key(|&a| *a as i32).unwrap_or(&0.);
 
         let y_offset = chart_height / max;
         let x_offset = width as f32 / (len as f32 - 1.0);
 
-        Path {
-            values,
-            chart_height,
-            x_offset,
-            y_offset,
-            index: 0..len,
-        }
-    }
-}
+        let mut path_str = String::new();
 
-impl<'a> Iterator for Path<'a> {
-    type Item = (f32, f32);
-    fn next(&mut self) -> Option<Self::Item> {
-        self.index.next().map(|i| {
-            let x = i as f32 * self.x_offset;
-            let y = self.chart_height - self.y_offset * self.values[i];
-            (x, y)
-        })
+        for (i, v) in self.iter().enumerate() {
+            let x = i as f32 * x_offset;
+            let y = chart_height - y_offset * v;
+            let path = match i {
+                0 => format!("M0 {y}L{x} {y}", x = 0, y = y),
+                _ => format!("L{x} {y}", x = x, y = y),
+            };
+            path_str.push_str(&path);
+        }
+        path_str
     }
 }
 
@@ -82,7 +66,13 @@ pub(super) struct ContentSize {
 }
 
 pub(super) trait BadgeContentSize {
-    fn content_size(&self, height: usize, width: usize, padding: usize, x_offset: usize) -> ContentSize;
+    fn content_size(
+        &self,
+        height: usize,
+        width: usize,
+        padding: usize,
+        x_offset: usize,
+    ) -> ContentSize;
 }
 
 impl<'a> BadgeContentSize for &'a [f32] {
@@ -98,7 +88,13 @@ impl<'a> BadgeContentSize for &'a [f32] {
 
 impl<'a> BadgeContentSize for &'a str {
     #[inline]
-    fn content_size(&self, height: usize, width: usize, padding: usize, x_offset: usize) -> ContentSize {
+    fn content_size(
+        &self,
+        height: usize,
+        width: usize,
+        padding: usize,
+        x_offset: usize,
+    ) -> ContentSize {
         let w = width + x_offset;
         let x = (width + padding) / 2 + x_offset;
         let y = height / 2;
@@ -109,33 +105,29 @@ impl<'a> BadgeContentSize for &'a str {
 
 #[cfg(test)]
 mod tests {
-    use super::{Path, TextWidth};
+    use super::{SvgPath, TextWidth};
 
     #[test]
     fn content_str_width() {
         let s = "Hello";
-        let bc = s.get_text_width(20.);
+        let bc = s.text_width(20.);
         assert!(bc > 0);
     }
     #[test]
     fn content_text_has_width() {
-        let text = "".get_text_width(20.);
+        let text = "".text_width(20.);
         assert_eq!(text, 0);
-        let text = "npm".get_text_width(20.);
+        let text = "npm".text_width(20.);
         assert_eq!(text, 46);
-        let text = "long text".get_text_width(20.);
+        let text = "long text".text_width(20.);
         assert_eq!(text, 90);
     }
 
     #[test]
     fn path_generate() {
-        let d = [2., 4., 3., 2.];
-        let path = Path::new(&d, 20, 100).into_iter().collect::<Vec<_>>();
+        let d: &[f32; 4] = &[2., 4., 3., 2.];
+        let path = &d.svg_path(20, 100);
 
-        assert_eq!(path.len(), 4);
-        assert_eq!(
-            path,
-            vec![(0.0, 10.0), (33.333332, 0.0), (66.666664, 5.0), (100.0, 10.0)]
-        )
+        assert_eq!(path, "M0 10L0 10L33.333332 0L66.666664 5L100 10")
     }
 }
