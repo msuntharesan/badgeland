@@ -5,7 +5,7 @@
 ### Installation
 
 ```sh
-cargo install badgeland
+cargo install badgeland --features cli
 ```
 
 ### Usage
@@ -16,27 +16,25 @@ cargo-badge
 Fast badge generator for any purpose
 
 USAGE:
-    cargo badge [FLAGS] [OPTIONS] <content>
+    cargo badge [OPTIONS] <CONTENT>
 
 ARGS:
-    <content>    Badge content
-
-FLAGS:
-    -h, --help       Prints help information
-    -V, --version    Prints version information
-
-    -c, --classic    Classic badge style (Default)
-    -f, --flat       Flat badge style
-        --social     Social badge style
-    -l, --large      Large badge size
-    -m, --medium     Medium badge size
-    -x, --small      Small badge size (Default)
+    <CONTENT>    Badge content. Can be string or csv
 
 OPTIONS:
-        --color <color>              Badge color. Must be a valid css color
-        --icon <icon>                Badge icon. icon can be any `Brand` or `Solid` icons from
-                                     fontawesome
-        --icon-color <icon-color>    Icon color. Must be a valid css color
-    -o, --out <out>                  Output svg to file
-    -s, --subject <subject>          Badge subject
+    -c, --classic                    Classic badge style (Default)
+        --color <COLOR>              Badge color. Must be a valid css color
+    -f, --flat                       Flat badge style
+    -z, --social                     Social badge style
+    -h, --help                       Print help information
+        --icon <ICON>                Badge icon. Icons are from
+                                     https://fontawesome.com/search?s=brands,
+                                     https://fontawesome.com/search?s=solid and
+                                     https://simpleicons.org/
+        --icon-color <ICON_COLOR>    Icon color. Must be a valid css color
+    -l, --large                      Large badge size
+    -m, --medium                     Medium badge size
+    -o, --out <OUT>                  Output svg to file
+    -s, --subject <SUBJECT>          Badge subject
+    -x, --small                      Small badge size (Default)
 ```
