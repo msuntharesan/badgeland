@@ -94,16 +94,15 @@ impl HumanizeOptions {
     }
 }
 
-pub static DEFAULT_OPTIONS: Lazy<HumanizeOptions> =
-    Lazy::new(|| HumanizeOptions::builder().build());
+static DEFAULT_OPTIONS: Lazy<HumanizeOptions> = Lazy::new(|| HumanizeOptions::builder().build());
 
-pub static DEFAULT_BYTES_OPTIONS: Lazy<HumanizeOptions> = Lazy::new(|| {
+static DEFAULT_BYTES_OPTIONS: Lazy<HumanizeOptions> = Lazy::new(|| {
     HumanizeOptions::builder()
         .units(vec!["B", "KB", "MB", "GB", "TB", "PB", "EB"])
         .build()
 });
 
-pub static DEFAULT_BITS_OPTIONS: Lazy<HumanizeOptions> = Lazy::new(|| {
+static DEFAULT_BITS_OPTIONS: Lazy<HumanizeOptions> = Lazy::new(|| {
     HumanizeOptions::builder()
         .base(2)
         .units(vec!["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"])
@@ -119,15 +118,14 @@ impl AsRef<HumanizeOptions> for HumanizeOptions {
 /// Trait that can be implemented for any type.
 pub trait Humanize {
     /// formats a type to human readable string
-    fn humanize<T: AsRef<HumanizeOptions>>(&self, opts: T) -> String;
+    fn humanize(&self, opts: &HumanizeOptions) -> String;
 }
 
 macro_rules! impl_humanize_u {
     (for $($t: ty)*) => ($(
         impl Humanize for $t {
             #[inline]
-            fn humanize<T: AsRef<HumanizeOptions>>(&self, opts: T) -> String {
-                let opts = opts.as_ref();
+            fn humanize(&self, opts: &HumanizeOptions) -> String {
                 let denominator = opts.denominator() as f64;
 
                 let mut val = *self as f64;
@@ -165,8 +163,8 @@ macro_rules! impl_humanize_i {
     (for $($t: ty)*) => ($(
         impl Humanize for $t {
             #[inline]
-            fn humanize<T: AsRef<HumanizeOptions>>(&self, _opts: T) -> String{
-                let opts: &HumanizeOptions = _opts.as_ref();
+            fn humanize(&self, opts: &HumanizeOptions) -> String{
+                // let opts: &HumanizeOptions = _opts.as_ref();
                 let sign = if *self < 0 { "-" } else { "" };
                 format!("{}{}", sign, (self.abs() as u64).humanize(opts))
             }
@@ -178,8 +176,8 @@ macro_rules! impl_humanize_f {
     (for $($t: ty)*) => ($(
         impl Humanize for $t {
             #[inline]
-            fn humanize<T: AsRef<HumanizeOptions>>(&self, _opts: T) -> String{
-                let opts: &HumanizeOptions = _opts.as_ref();
+            fn humanize(&self, opts: &HumanizeOptions) -> String{
+                // let opts: &HumanizeOptions = _opts.as_ref();
                 let sign = if *self < 0.0 { "-" } else { "" };
                 format!("{}{}", sign, (self.abs() as u64).humanize(opts))
             }

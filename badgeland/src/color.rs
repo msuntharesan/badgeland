@@ -1,5 +1,7 @@
-use cssparser::{Color as CssColor, Parser, ParserInput, ToCss};
-use std::{borrow::Cow, fmt::Display, str::FromStr};
+use cssparser::{Parser, ParserInput, ToCss};
+use cssparser_color::Color as CssColor;
+use sailfish::runtime::{Buffer, Render, RenderError};
+use std::{borrow::Cow, convert::From, fmt::Display, str::FromStr};
 
 #[cfg(feature = "serde_de")]
 use serde::{de, Deserialize, Deserializer, Serialize};
@@ -46,9 +48,22 @@ impl FromStr for Color {
         let mut parser = Parser::new(&mut input);
 
         CssColor::parse(&mut parser)
-            .or_else(|_| CssColor::parse_hash(s.as_bytes()))
-            .map(|c| Color(c.to_css_string().into()))
             .map_err(|_| Self::Err {})
+            .and_then(|c| {
+                let mut w = String::new();
+                if matches!(c.to_css(&mut w), Err(_)) {
+                    Err(Self::Err {})
+                } else {
+                    Ok(Color(w.into()))
+                }
+            })
+    }
+}
+
+impl From<String> for Color {
+    #[inline]
+    fn from(value: String) -> Self {
+        Self(value.into())
     }
 }
 
@@ -81,6 +96,13 @@ impl<'de> Deserialize<'de> for Color {
     }
 }
 
+impl Render for Color {
+    fn render(&self, b: &mut Buffer) -> Result<(), RenderError> {
+        let _ = self.0.render(b);
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::Color;
@@ -91,9 +113,7 @@ mod test {
         let colors = vec![
             "red",
             "#ff0000",
-            "ff0000",
             "#f00",
-            "f00",
             "rgb(255, 0, 0)",
             "rgba(255, 0, 0, 1)",
         ];

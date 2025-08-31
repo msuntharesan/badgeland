@@ -1,7 +1,7 @@
 mod content;
 mod size;
 mod style;
-mod templates;
+use sailfish::TemplateOnce;
 
 pub use size::Size;
 
@@ -11,7 +11,6 @@ use super::{icons::Icon, Color};
 use content::{BadgeContentSize, ContentSize, SvgPath, TextWidth};
 use core::{f32, fmt};
 use std::fmt::Debug;
-use templates::{classic_template, flat_template};
 
 #[derive(Debug)]
 pub struct BadgeTypeInit;
@@ -21,7 +20,7 @@ pub struct BadgeTypeData<'a>(&'a [f32]);
 pub struct BadgeTypeText<'a>(&'a str);
 
 pub trait BadgeType<'a> {
-    fn content(&self) -> BadgeContentType;
+    fn content(&self) -> BadgeContentType<'_>;
 }
 
 #[derive(Debug)]
@@ -51,27 +50,27 @@ impl BadgeContentType<'_> {
 
 impl BadgeType<'_> for BadgeTypeInit {
     #[inline]
-    fn content(&self) -> BadgeContentType {
+    fn content(&self) -> BadgeContentType<'_> {
         BadgeContentType::None
     }
 }
 
 impl<'a> BadgeType<'a> for BadgeTypeData<'a> {
     #[inline]
-    fn content(&self) -> BadgeContentType {
+    fn content(&self) -> BadgeContentType<'a> {
         BadgeContentType::Data(self.0)
     }
 }
 
 impl<'a> BadgeType<'a> for BadgeTypeText<'a> {
     #[inline]
-    fn content(&self) -> BadgeContentType {
+    fn content(&self) -> BadgeContentType<'a> {
         BadgeContentType::Text(self.0)
     }
 }
 
 #[derive(Debug)]
-pub struct Badge<'a, S: BadgeType<'a>> {
+pub struct Badge<'a, S: BadgeType<'a> = BadgeTypeInit> {
     subject: Option<&'a str>,
     color: Color,
     style: Style,
@@ -81,7 +80,7 @@ pub struct Badge<'a, S: BadgeType<'a>> {
     content: S,
 }
 
-impl<'a> Badge<'a, BadgeTypeInit> {
+impl<'a> Badge<'a> {
     pub fn new() -> Self {
         Badge {
             subject: None,
@@ -93,7 +92,9 @@ impl<'a> Badge<'a, BadgeTypeInit> {
             content: BadgeTypeInit,
         }
     }
+}
 
+impl<'a> Badge<'a, BadgeTypeInit> {
     pub fn subject(&mut self, subject: &'a str) -> &mut Self {
         self.subject = Some(subject);
         self
@@ -212,6 +213,71 @@ impl<'a, T: BadgeType<'a>> Badge<'a, T> {
     }
 }
 
+#[derive(TemplateOnce)]
+#[template(path = "classic.stpl")]
+struct ClassicTemplate<'a> {
+    width: usize,
+    height: usize,
+    font_size: f32,
+    x_offset: usize,
+    rx: usize,
+
+    icon: Option<(&'a Icon<'a>, &'a Color)>,
+
+    icon_width: usize,
+
+    color: &'a Color,
+
+    content: BadgeContentType<'a>,
+    content_size: ContentSize,
+
+    subject: Option<&'a str>,
+    subject_size: ContentSize,
+}
+
+#[derive(TemplateOnce)]
+#[template(path = "flat.stpl")]
+struct FlatTemplate<'a> {
+    width: usize,
+    height: usize,
+    font_size: f32,
+    x_offset: usize,
+
+    icon: Option<(&'a Icon<'a>, &'a Color)>,
+
+    icon_width: usize,
+
+    color: &'a Color,
+
+    content: BadgeContentType<'a>,
+    content_size: ContentSize,
+
+    subject: Option<&'a str>,
+    subject_size: ContentSize,
+}
+
+#[derive(TemplateOnce)]
+#[template(path = "social.stpl")]
+struct SocialTemplate<'a> {
+    width: usize,
+    height: usize,
+    font_size: f32,
+    x_offset: usize,
+    rx: usize,
+
+    icon: Option<(&'a Icon<'a>, Option<&'a Color>)>,
+
+    icon_width: usize,
+
+    color: &'a Color,
+
+    content: BadgeContentType<'a>,
+    content_size: ContentSize,
+
+    subject: Option<&'a str>,
+    subject_size: ContentSize,
+}
+
 const SVG_FONT_MULTIPLIER: f32 = 0.65;
 
 impl<'a, T: BadgeType<'a>> Badge<'a, T> {
@@ -231,42 +297,76 @@ impl<'a, T: BadgeType<'a>> Badge<'a, T> {
 
         let content_size = content.content_size(height, padding, font_size);
 
-        let width = subject_size.rw + content_size.rw;
+        let mut width = subject_size.rw + content_size.rw;
+
+        // Social style reserves extra space for the split notch and borders
+        if matches!(self.style, Style::Social) {
+            width += 7; // approximates 6px notch + 1px stroke
+        }
 
         let rx = self.rx();
 
         let icon = self.icon.as_ref().map(|i| (i, &self.icon_color));
 
-        let markup = match self.style {
-            Style::Classic => classic_template(
-                width,
-                height,
-                font_size,
-                x_offset,
-                rx,
-                icon,
-                icon_width,
-                &self.color,
-                content,
-                content_size,
-                self.subject,
-                subject_size,
-            ),
-            Style::Flat => flat_template(
-                width,
-                height,
-                font_size,
-                x_offset,
-                icon,
-                icon_width,
-                &self.color,
-                content,
-                content_size,
-                self.subject,
-                subject_size,
-            ),
-        };
-        markup.into_string()
+        match self.style {
+            Style::Classic => {
+                let tpl = ClassicTemplate {
+                    width,
+                    height,
+                    font_size,
+                    x_offset,
+                    rx,
+                    icon,
+                    icon_width,
+                    color: &self.color,
+                    content,
+                    content_size,
+                    subject: self.subject,
+                    subject_size,
+                };
+                tpl.render_once().unwrap()
+            }
+            Style::Flat => {
+                let tpl = FlatTemplate {
+                    width,
+                    height,
+                    font_size,
+                    x_offset,
+                    icon,
+                    icon_width,
+                    color: &self.color,
+                    content,
+                    content_size,
+                    subject: self.subject,
+                    subject_size,
+                };
+                tpl.render_once().unwrap()
+            }
+            Style::Social => {
+                let social_icon = self.icon.as_ref().map(|i| {
+                    if self.icon_color == Color::white() {
+                        (i, None)
+                    } else {
+                        (i, Some(&self.icon_color))
+                    }
+                });
+                let tpl = SocialTemplate {
+                    width,
+                    height,
+                    font_size,
+                    x_offset,
+                    rx,
+                    icon: social_icon,
+                    icon_width,
+                    color: &self.color,
+                    content,
+                    content_size,
+                    subject: self.subject,
+                    subject_size,
+                };
+                tpl.render_once().unwrap()
+            }
+        }
     }
 }
 
@@ -314,7 +414,7 @@ mod tests {
         assert_eq!(text_els.count(), 1);
         let text = doc.select(&text_sel).next().unwrap();
         assert_eq!(
-            text.text().collect::<String>(),
+            text.text().collect::<String>().trim(),
             String::from("just subject")
         );
     }
@@ -339,9 +439,62 @@ mod tests {
         let subject_sel = Selector::parse("g#text > text:last-child").unwrap();
         let subject = doc.select(&subject_sel).next().unwrap();
         assert_eq!(
-            subject.text().collect::<String>(),
+            subject.text().collect::<String>().trim(),
             String::from("badge text")
         );
+    }
+
+    #[test]
+    fn classic_has_a11y_labels() {
+        let mut badge = Badge::new();
+        badge.subject("Any text");
+        let svg = badge.text("you like").to_string();
+        let doc = Html::parse_fragment(&svg);
+        let svg_sel = Selector::parse("svg").unwrap();
+        let svg_el = doc.select(&svg_sel).next().unwrap();
+        assert_eq!(svg_el.value().attr("role"), Some("img"));
+        assert_eq!(svg_el.value().attr("aria-label"), Some("Any text: you like"));
+        let title_sel = Selector::parse("title").unwrap();
+        let title = doc.select(&title_sel).next().unwrap();
+        assert_eq!(title.text().collect::<String>(), "Any text: you like");
+    }
+
+    #[test]
+    fn flat_has_a11y_labels() {
+        let mut badge = Badge::new();
+        badge
+            .subject("Any text")
+            .style(Style::Flat);
+        let svg = badge.text("you like").to_string();
+        let doc = Html::parse_fragment(&svg);
+        let svg_sel = Selector::parse("svg").unwrap();
+        let svg_el = doc.select(&svg_sel).next().unwrap();
+        assert_eq!(svg_el.value().attr("role"), Some("img"));
+        assert_eq!(svg_el.value().attr("aria-label"), Some("Any text: you like"));
+        let title_sel = Selector::parse("title").unwrap();
+        let title = doc.select(&title_sel).next().unwrap();
+        assert_eq!(title.text().collect::<String>(), "Any text: you like");
+    }
+
+    #[test]
+    fn social_has_a11y_and_notch_elements() {
+        let mut badge = Badge::new();
+        badge
+            .subject("Any text")
+            .style(Style::Social);
+        let svg = badge.text("you like").to_string();
+        let doc = Html::parse_fragment(&svg);
+        let svg_sel = Selector::parse("svg").unwrap();
+        let svg_el = doc.select(&svg_sel).next().unwrap();
+        assert_eq!(svg_el.value().attr("role"), Some("img"));
+        assert_eq!(svg_el.value().attr("aria-label"), Some("Any text: you like"));
+        // Notch/gloss indicator elements present
+        let gloss_sel = Selector::parse("#llink").unwrap();
+        assert!(doc.select(&gloss_sel).next().is_some());
+        let style_sel = Selector::parse("style").unwrap();
+        let style_el = doc.select(&style_sel).next().unwrap();
+        let style_txt = style_el.text().collect::<String>();
+        assert!(style_txt.contains("#llink"));
     }
 
     #[test]
@@ -374,6 +527,38 @@ mod tests {
         let icon_sel = Selector::parse("symbol").unwrap();
         let icon_symbol = doc.select(&icon_sel).next().unwrap();
         assert_eq!(icon_symbol.value().attr("id"), Some("git"));
+    }
+
+    #[test]
+    #[cfg(feature = "static_icons")]
+    fn social_default_icon_color_is_gray_dark() {
+        let mut badge = Badge::new();
+        badge
+            .subject("icon")
+            .style(Style::Social)
+            .icon(Icon::try_from("git").unwrap());
+        // Do not set icon_color explicitly
+        let svg = badge.text("text").to_string();
+        let doc = Html::parse_fragment(&svg);
+        let use_sel = Selector::parse("use").unwrap();
+        let u = doc.select(&use_sel).next().unwrap();
+        assert_eq!(u.value().attr("fill"), Some(Color::gray_dark().as_ref()));
+    }
+
+    #[test]
+    #[cfg(feature = "static_icons")]
+    fn social_respects_explicit_icon_color() {
+        let mut badge = Badge::new();
+        badge
+            .subject("icon")
+            .style(Style::Social)
+            .icon(Icon::try_from("git").unwrap())
+            .icon_color(Color::black());
+        let svg = badge.text("text").to_string();
+        let doc = Html::parse_fragment(&svg);
+        let use_sel = Selector::parse("use").unwrap();
+        let u = doc.select(&use_sel).next().unwrap();
+        assert_eq!(u.value().attr("fill"), Some(Color::black().as_ref()));
     }
 
     #[test]

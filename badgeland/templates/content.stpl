@@ -1,0 +1,58 @@
+<g id="text"
+  fill="<%- Color::white() %>"
+  font-family="Verdana,sans-serif"
+  font-size="<%= self.font_size %>"
+  transform="translate(0, 0)"
+>
+  <% if let Some((icon, icon_color)) = &self.icon { %>
+  <use
+    filter="url(#shadow)"
+    xlink:href="#<%= icon.name() %>"
+    x="<%= self.x_offset %>"
+    y="<%= (self.height - self.icon_width) / 2 %>"
+    width="<%= self.icon_width %>"
+    height="<%= self.icon_width %>"
+    fill="<%= icon_color %>"
+  />
+  <% } %>
+  <% if let Some(s) = self.subject { %>
+  <text
+    dominant-baseline="middle"
+    text-anchor="middle"
+    x="<%= self.subject_size.x %>"
+    y="<%= self.subject_size.y %>"
+    filter="url(#shadow)"
+  >
+    <%- s %>
+  </text>
+  <% } %>
+  <% if let BadgeContentType::Text(c) = self.content { %>
+  <text
+    x="<%= self.subject_size.rw + self.content_size.x %>"
+    y="<%= self.content_size.y %>"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    filter="url(#shadow)"
+  >
+    <%- c %>
+  </text>
+  <% } %>
+  <% if let BadgeContentType::Data(d) = self.content { %>
+    <% let path_str = d.svg_path(self.height, self.height * 5); %>
+    <path
+        fill="none"
+        transform="translate(<%= self.subject_size.rw %>,0)"
+        stroke="<%= self.color %>"
+        stroke-width="1px"
+        d="<%- &path_str %>"
+    />
+    <path
+        fill="<%= self.color %>"
+        fill-opacity="0.2"
+        transform="translate(<%= self.subject_size.rw %>,0)"
+        stroke="none"
+        stroke-width="0px"
+        d="<%- &path_str %>V<%= self.height %>H0Z"
+    />
+  <% } %>
+</g>
