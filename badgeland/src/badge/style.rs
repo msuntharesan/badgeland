@@ -10,6 +10,7 @@ pub enum Style {
     #[default]
     Classic,
     Flat,
+    Social,
 }
 
 impl fmt::Display for Style {
@@ -17,6 +18,7 @@ impl fmt::Display for Style {
         let s = match self {
             Style::Classic => "Classic",
             Style::Flat => "Flat",
+            Style::Social => "Social",
         };
         write!(f, "{}", s)
     }
@@ -40,6 +42,7 @@ impl FromStr for Style {
         match s.to_lowercase().as_ref() {
             "classic" | "c" => Ok(Style::Classic),
             "flat" | "f" => Ok(Style::Flat),
+            "social" | "s" => Ok(Style::Social),
             _ => Err(Self::Err {}),
         }
     }

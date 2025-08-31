@@ -1,0 +1,92 @@
+<%
+  // Build accessible label from subject/content when possible
+  let mut a11y_label = String::new();
+  if let Some(s) = self.subject {
+      a11y_label.push_str(s);
+  }
+  match &self.content {
+      BadgeContentType::Text(c) if !a11y_label.is_empty() => {
+          a11y_label.push_str(": ");
+          a11y_label.push_str(c);
+      }
+      BadgeContentType::Text(c) => {
+          a11y_label.push_str(c);
+      }
+      _ => {}
+  }
+%>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+  width="<%= self.width %>" height="<%= self.height %>" viewBox="0 0 <%= self.width %> <%= self.height %>" role="img" aria-label="<%= &a11y_label %>">
+  <title><%= &a11y_label %></title>
+  <style>
+    a:hover #llink{fill:url(#b);stroke:#ccc}
+    a:hover #rlink{fill:#4183c4}
+  </style>
+  <defs>
+    <% if let Some((icon, _)) = &self.icon { %>
+      <%- icon.symbol() %>
+    <% } %>
+    <linearGradient id="a" x2="0" y2="100%">
+      <stop offset="0" stop-color="#fcfcfc" stop-opacity="0"/>
+      <stop offset="1" stop-opacity=".1"/>
+    </linearGradient>
+    <linearGradient id="b" x2="0" y2="100%">
+      <stop offset="0" stop-color="#ccc" stop-opacity=".1"/>
+      <stop offset="1" stop-opacity=".1"/>
+    </linearGradient>
+  </defs>
+
+  <g stroke="#d5d5d5">
+    <!-- Left background -->
+    <rect stroke="none" fill="#fcfcfc" x="0.5" y="0.5" width="<%= self.subject_size.rw %>" height="<%= self.height - 1 %>" rx="<%= self.rx %>"/>
+    <!-- Right background -->
+    <rect x="<%= 0.5 + (self.subject_size.rw as f32) + 6.0 %>" y="0.5" width="<%= self.content_size.rw %>" height="<%= self.height - 1 %>" rx="<%= self.rx %>" fill="#fafafa"/>
+    <!-- Light vertical split -->
+    <rect x="<%= self.subject_size.rw + 6 %>" y="<%= (self.height as f32) * 0.375 %>" width="0.5" height="<%= (self.height as f32) * 0.25 %>" stroke="#fafafa"/>
+    <!-- Notch triangle into left side -->
+    <path d="M<%= 0.5 + (self.subject_size.rw as f32) + 6.0 %> <%= (self.height as f32) * 0.325 %> l-<%= (self.height as f32) * 0.15 %> <%= (self.height as f32) * 0.15 %> v<%= (self.height as f32) * 0.05 %> l<%= (self.height as f32) * 0.15 %> <%= (self.height as f32) * 0.15 %>" fill="#fafafa"/>
+  </g>
+  <!-- Top gloss on left side for hover effect parity -->
+  <rect id="llink" stroke="#d5d5d5" fill="url(#a)" x="0.5" y="0.5" width="<%= self.subject_size.rw %>" height="<%= self.height - 1 %>" rx="<%= self.rx %>"/>
+
+  <!-- Text (consistent with other templates; only notch differs) -->
+  <g id="text"
+    fill="#333"
+    font-family="Verdana,sans-serif"
+    font-size="<%= self.font_size %>"
+    transform="translate(0, 0)">
+    <% if let Some((icon, icon_color_opt)) = &self.icon { %>
+    <% let default_icon_color = Color::gray_dark(); %>
+    <use
+      xlink:href="#<%= icon.name() %>"
+      x="<%= self.x_offset %>"
+      y="<%= (self.height - self.icon_width) / 2 %>"
+      width="<%= self.icon_width %>"
+      height="<%= self.icon_width %>"
+      fill="<%= icon_color_opt.unwrap_or(&default_icon_color) %>"
+    />
+    <% } %>
+    <% if let Some(s) = self.subject { %>
+    <text
+      dominant-baseline="middle"
+      text-anchor="middle"
+      x="<%= self.subject_size.x %>"
+      y="<%= self.subject_size.y %>"
+    >
+      <%- s %>
+    </text>
+    <% } %>
+    <% if let BadgeContentType::Text(c) = self.content { %>
+    <text
+      x="<%= self.subject_size.rw + 6 + self.content_size.x %>"
+      y="<%= self.content_size.y %>"
+      text-anchor="middle"
+      dominant-baseline="middle"
+      id="rlink"
+      fill="<%= self.color %>"
+    >
+      <%- c %>
+    </text>
+    <% } %>
+  </g>
+</svg>

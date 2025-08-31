@@ -27,6 +27,7 @@ FLAGS:
 
     -c, --classic    Classic badge style (Default)
     -f, --flat       Flat badge style
+        --social     Social badge style
     -l, --large      Large badge size
     -m, --medium     Medium badge size
     -x, --small      Small badge size (Default)

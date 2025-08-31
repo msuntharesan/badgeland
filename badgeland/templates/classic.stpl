@@ -1,0 +1,67 @@
+<% let (black, gray_dark, gray) = (Color::black(), Color::gray_dark(), Color::gray()); %>
+<%
+  // Build accessible label from subject/content when possible
+  let mut a11y_label = String::new();
+  if let Some(s) = self.subject {
+      a11y_label.push_str(s);
+  }
+  match &self.content {
+      BadgeContentType::Text(c) if !a11y_label.is_empty() => {
+          a11y_label.push_str(": ");
+          a11y_label.push_str(c);
+      }
+      BadgeContentType::Text(c) => {
+          a11y_label.push_str(c);
+      }
+      _ => {}
+  }
+%>
+<svg
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 <%= self.width %> <%= self.height %>"
+  height="<%= self.height %>"
+  width="<%= self.width %>"
+  role="img"
+  aria-label="<%= &a11y_label %>"
+>
+  <title><%= &a11y_label %></title>
+  <defs>
+  <% if let Some((icon, _)) = &self.icon { %>
+    <%- icon.symbol() %>
+  <% } %>
+    <linearGradient id="a" x2="0" y2="75%">
+      <stop offset="0" stop-color="#eee" stop-opacity="0.1" />
+      <stop offset="1" stop-opacity="0.3" />
+    </linearGradient>
+    <mask id="bg-mask">
+      <rect fill="<%= Color::white() %>" height="<%= self.height %>" rx="<%= self.rx %>" width="<%= self.width %>" />
+    </mask>
+    <filter id="shadow">
+      <feDropShadow
+        dx="-0.8"
+        dy="-0.8"
+  flood-color="<%= if self.content.is_some() { &black } else { &gray_dark } %>"
+        flood-opacity="0.4"
+      />
+    </filter>
+  </defs>
+  <g id="bg" mask="url(#bg-mask)">
+    <rect fill="url(#a)" height="<%= self.height %>" width="<%= self.width %>" />
+    <% if self.subject.is_some() || self.icon.is_some() { %>
+    <rect
+      id="subject"
+      fill="<%= if self.content.is_some() { &gray_dark } else { self.color } %>"
+      height="<%= self.height %>"
+      width="<%= self.subject_size.rw %>"
+    />
+    <% } %>
+    <rect id="content"
+      fill="<%= if matches!(&self.content, BadgeContentType::Data(_)) { &gray } else { self.color } %>"
+      height="<%= self.height %>"
+      width="<%= self.content_size.rw %>"
+      x="<%= self.subject_size.rw %>"
+    />
+  </g>
+  <% include!("content.stpl"); %>
+</svg>

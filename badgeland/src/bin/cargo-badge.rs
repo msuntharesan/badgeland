@@ -16,6 +16,7 @@ OPTIONS:
     -c, --classic                    Classic badge style (Default)
         --color <COLOR>              Badge color. Must be a valid css color
     -f, --flat                       Flat badge style
+    -z  --social                     Social badge style
     -h, --help                       Print help information
         --icon <ICON>                Badge icon. Icons are from
                                      <https://fontawesome.com/search?s=brands>,
@@ -60,12 +61,18 @@ struct StyleArg {
     /// Classic badge style (Default)
     #[clap(short, long, group = "style", action)]
     classic: bool,
+
+    /// Social badge style
+    #[clap(short = 'z', long, group = "style", action)]
+    social: bool,
 }
 
 impl From<StyleArg> for Style {
     fn from(s: StyleArg) -> Self {
         if s.flat {
             Self::Flat
+        } else if s.social {
+            Self::Social
         } else {
             Self::Classic
         }

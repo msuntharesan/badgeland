@@ -1,0 +1,7 @@
+[settings]
+cargo.binstall = true
+
+[tools]
+deno = "latest"
+"cargo:wasm-bindgen-cli" = "latest"
+"cargo:cargo-release" = "latest"
